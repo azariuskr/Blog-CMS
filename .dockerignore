@@ -1,0 +1,58 @@
+# IDE and editor files
+**/.classpath
+**/.dockerignore
+**/.project
+**/.settings
+**/.toolstarget
+**/.vs
+**/.vscode
+**/*.*proj.user
+**/*.dbmdl
+**/*.jfm
+
+# Git
+**/.git
+**/.gitignore
+!**/.gitignore
+!.git/HEAD
+!.git/config
+!.git/packed-refs
+!.git/refs/heads/**
+
+# Environment files (secrets)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Docker data volumes (contains pgAdmin sessions, postgres data, etc.)
+docker/data
+
+# Build and config
+**/azds.yaml
+**/bin
+**/charts
+**/docker-compose*
+**/Dockerfile*
+**/obj
+**/secrets.dev.yaml
+**/values.dev.yaml
+
+# Dependencies
+**/node_modules
+**/npm-debug.log
+**/pnpm-debug.log*
+
+# Build outputs
+dist
+.output
+.vinxi
+
+# Test coverage
+coverage
+
+# Documentation (reduce image size)
+LICENSE
+README.md
+WORKLOG.md
+*.md
+!README.md

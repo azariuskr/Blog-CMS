@@ -1,0 +1,150 @@
+/* Storefront Theme - PartyPop Rose/Pink */
+
+.storefront {
+	--sf-rose: #f43f5e;
+	--sf-rose-light: #fda4af;
+	--sf-rose-dark: #e11d48;
+	--sf-orange: #fb923c;
+	--sf-orange-light: #fdba74;
+	--sf-bg: #fdfbf7;
+	--sf-bg-warm: #fef3ec;
+	--sf-surface: #ffffff;
+	--sf-text: #1e293b;
+	--sf-text-muted: #64748b;
+	--sf-text-light: #94a3b8;
+	--sf-border: #e2e8f0;
+	--sf-border-light: #f1f5f9;
+	--sf-success: #10b981;
+	--sf-error: #ef4444;
+
+	font-family: 'Quicksand', system-ui, sans-serif;
+	background-color: var(--sf-bg);
+	color: var(--sf-text);
+}
+
+.storefront h1,
+.storefront h2,
+.storefront h3,
+.storefront h4,
+.storefront h5,
+.storefront h6 {
+	font-family: 'Varela Round', 'Quicksand', system-ui, sans-serif;
+}
+
+/* Storefront-specific utilities */
+@utility sf-container {
+	margin-inline: auto;
+	max-width: 80rem;
+	padding-inline: 1.5rem;
+}
+
+@utility sf-btn-primary {
+	background-color: var(--sf-rose);
+	color: white;
+	font-weight: 600;
+	border-radius: 9999px;
+	padding: 0.75rem 2rem;
+	transition: all 0.2s ease;
+	&:hover {
+		background-color: var(--sf-rose-dark);
+		transform: translateY(-1px);
+		box-shadow: 0 4px 12px oklch(0.6 0.2 15 / 0.3);
+	}
+	&:active {
+		transform: translateY(0);
+	}
+}
+
+@utility sf-btn-outline {
+	background-color: transparent;
+	color: var(--sf-rose);
+	font-weight: 600;
+	border: 2px solid var(--sf-rose);
+	border-radius: 9999px;
+	padding: 0.625rem 1.75rem;
+	transition: all 0.2s ease;
+	&:hover {
+		background-color: var(--sf-rose);
+		color: white;
+	}
+}
+
+@utility sf-card {
+	background-color: var(--sf-surface);
+	border-radius: 1.5rem;
+	box-shadow: 0 1px 3px oklch(0.5 0 0 / 0.08);
+	transition: all 0.3s ease;
+	&:hover {
+		box-shadow: 0 8px 24px oklch(0.5 0 0 / 0.12);
+		transform: translateY(-2px);
+	}
+}
+
+@utility sf-badge {
+	display: inline-flex;
+	align-items: center;
+	border-radius: 9999px;
+	padding: 0.25rem 0.75rem;
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+/* Cart drawer animation */
+@keyframes slideInRight {
+	from {
+		transform: translateX(100%);
+	}
+	to {
+		transform: translateX(0);
+	}
+}
+
+@keyframes slideOutRight {
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(100%);
+	}
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+/* Toast animation */
+@keyframes toastSlideIn {
+	from {
+		transform: translateY(-100%);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+/* Custom scrollbar for storefront */
+.storefront ::-webkit-scrollbar {
+	width: 6px;
+}
+
+.storefront ::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.storefront ::-webkit-scrollbar-thumb {
+	background: var(--sf-border);
+	border-radius: 3px;
+}
+
+.storefront ::-webkit-scrollbar-thumb:hover {
+	background: var(--sf-text-light);
+}
