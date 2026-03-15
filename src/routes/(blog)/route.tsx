@@ -39,7 +39,7 @@ const navLinks = [
 
 function BlogLayout() {
 	return (
-		<div className="blog-layout min-h-screen bg-[hsl(222,47%,11%)] text-[hsl(217,24%,59%)]">
+		<div className="blog-layout min-h-screen bg-oxford-blue-2 text-shadow-blue">
 			<BlogHeader />
 			<main>
 				<Outlet />
@@ -69,14 +69,14 @@ function BlogHeader() {
 			className={cn(
 				"fixed top-0 left-0 w-full z-50 transition-all duration-500",
 				headerActive
-					? "py-2 bg-[hsl(222,47%,11%)] shadow-[0_8px_20px_0_hsla(0,0%,0%,0.1)] border-b border-[hsl(216,33%,20%)]"
-					: "py-6 bg-[hsl(222,47%,11%)]",
+					? "py-2 bg-oxford-blue-2 shadow-[0_8px_20px_0_hsla(0,0%,0%,0.1)] border-b border-prussian-blue"
+					: "py-6 bg-oxford-blue-2",
 			)}
 		>
 			<div className="container flex items-center justify-between gap-4 mx-auto px-4 max-w-[1140px]">
 				{/* Logo */}
 				<Link to="/" className="flex-shrink-0">
-					<span className="text-2xl font-bold text-[hsl(216,100%,95%)]">
+					<span className="text-2xl font-bold text-alice-blue">
 						Blog<span className="navy-blue-blog-gradient-text">CMS</span>
 					</span>
 				</Link>
@@ -88,8 +88,8 @@ function BlogHeader() {
 							key={link.href}
 							to={link.href}
 							className={cn(
-								"text-[hsl(216,33%,68%)] font-medium transition-colors hover:text-[hsl(199,89%,49%)]",
-								currentPath === link.href && "text-[hsl(199,89%,49%)]",
+								"text-wild-blue-yonder font-medium transition-colors hover:text-carolina-blue",
+								currentPath === link.href && "text-carolina-blue",
 							)}
 						>
 							{link.label}
@@ -101,7 +101,7 @@ function BlogHeader() {
 				<div className="hidden sm:flex items-center gap-4">
 					<button
 						type="button"
-						className="text-[hsl(216,33%,68%)] hover:text-[hsl(199,89%,49%)] transition-colors"
+						className="text-wild-blue-yonder hover:text-carolina-blue transition-colors"
 						aria-label="Search"
 					>
 						<Search className="h-5 w-5" />
@@ -120,14 +120,14 @@ function BlogHeader() {
 								<DropdownMenuTrigger asChild>
 									<button
 										type="button"
-										className="h-10 w-10 rounded-full overflow-hidden border-2 border-[hsl(199,89%,49%)]"
+										className="h-10 w-10 rounded-full overflow-hidden border-2 border-carolina-blue"
 									>
 										<Avatar className="h-10 w-10">
 											<AvatarImage
 												src={user.image ?? undefined}
 												alt={`${user.name ?? "User"}'s avatar`}
 											/>
-											<AvatarFallback className="bg-[hsl(216,33%,20%)] text-[hsl(216,100%,95%)]">
+											<AvatarFallback className="bg-prussian-blue text-alice-blue">
 												{user.name?.charAt(0)?.toUpperCase() ?? "U"}
 											</AvatarFallback>
 										</Avatar>
@@ -135,22 +135,22 @@ function BlogHeader() {
 								</DropdownMenuTrigger>
 								<DropdownMenuContent
 									align="end"
-									className="w-56 bg-[hsl(222,44%,13%)] border-[hsl(216,33%,20%)]"
+									className="w-56 bg-oxford-blue border-prussian-blue"
 								>
-									<div className="px-3 py-2 border-b border-[hsl(216,33%,20%)]">
-										<p className="text-sm font-medium text-[hsl(199,69%,84%)]">
+									<div className="px-3 py-2 border-b border-prussian-blue">
+										<p className="text-sm font-medium text-columbia-blue">
 											{user.name}
 										</p>
-										<p className="text-xs text-[hsl(217,17%,48%)]">{user.email}</p>
+										<p className="text-xs text-slate-gray">{user.email}</p>
 									</div>
-									<DropdownMenuItem className="text-[hsl(216,100%,95%)] hover:bg-[hsl(216,33%,20%)] cursor-pointer">
+									<DropdownMenuItem className="text-alice-blue hover:bg-prussian-blue cursor-pointer">
 										<User className="mr-2 h-4 w-4" />
 										Profile
 									</DropdownMenuItem>
 									<DropdownMenuItem asChild>
 										<Link
 											to={ROUTES.ADMIN.BLOG.POSTS}
-											className="flex items-center text-[hsl(216,100%,95%)] cursor-pointer"
+											className="flex items-center text-alice-blue cursor-pointer"
 										>
 											<FileText className="mr-2 h-4 w-4" />
 											My Posts
@@ -159,17 +159,17 @@ function BlogHeader() {
 									<DropdownMenuItem asChild>
 										<Link
 											to={ROUTES.ACCOUNT.BASE}
-											className="flex items-center text-[hsl(216,100%,95%)] cursor-pointer"
+											className="flex items-center text-alice-blue cursor-pointer"
 										>
 											<Settings className="mr-2 h-4 w-4" />
 											Settings
 										</Link>
 									</DropdownMenuItem>
-									<DropdownMenuSeparator className="bg-[hsl(216,33%,20%)]" />
+									<DropdownMenuSeparator className="bg-prussian-blue" />
 									<DropdownMenuItem asChild>
 										<Link
 											to={ROUTES.LOGOUT}
-											className="flex items-center text-[hsl(216,100%,95%)] cursor-pointer"
+											className="flex items-center text-alice-blue cursor-pointer"
 										>
 											<LogOut className="mr-2 h-4 w-4" />
 											Sign Out
@@ -188,7 +188,7 @@ function BlogHeader() {
 				{/* Mobile Menu Toggle */}
 				<button
 					type="button"
-					className="lg:hidden text-[hsl(216,33%,68%)]"
+					className="lg:hidden text-wild-blue-yonder"
 					onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
 					aria-label="Toggle menu"
 				>
@@ -199,29 +199,29 @@ function BlogHeader() {
 			{/* Mobile Sidebar */}
 			<div
 				className={cn(
-					"lg:hidden fixed top-0 right-0 w-[300px] max-w-full h-screen bg-[hsl(222,47%,11%)] z-50 p-8 overflow-y-auto transition-transform duration-500",
+					"lg:hidden fixed top-0 right-0 w-[300px] max-w-full h-screen bg-oxford-blue-2 z-50 p-8 overflow-y-auto transition-transform duration-500",
 					mobileMenuOpen ? "translate-x-0" : "translate-x-full",
 				)}
 			>
-				<div className="flex items-center justify-between mb-6 pb-4 border-b border-[hsl(216,33%,20%)]">
-					<span className="text-xl font-bold text-[hsl(216,100%,95%)]">
+				<div className="flex items-center justify-between mb-6 pb-4 border-b border-prussian-blue">
+					<span className="text-xl font-bold text-alice-blue">
 						Blog<span className="navy-blue-blog-gradient-text">CMS</span>
 					</span>
 					<button
 						type="button"
 						onClick={() => setMobileMenuOpen(false)}
-						className="text-[hsl(216,33%,68%)]"
+						className="text-wild-blue-yonder"
 					>
 						<X className="w-5 h-5" />
 					</button>
 				</div>
-				<nav className="space-y-1 border-b border-[hsl(216,33%,20%)] pb-4 mb-4">
+				<nav className="space-y-1 border-b border-prussian-blue pb-4 mb-4">
 					{navLinks.map((link) => (
 						<Link
 							key={link.href}
 							to={link.href}
 							onClick={() => setMobileMenuOpen(false)}
-							className="block py-2.5 text-[hsl(216,100%,95%)] font-medium hover:text-[hsl(199,89%,49%)] transition-colors"
+							className="block py-2.5 text-alice-blue font-medium hover:text-carolina-blue transition-colors"
 						>
 							{link.label}
 						</Link>
@@ -232,21 +232,21 @@ function BlogHeader() {
 						<Link
 							to={ROUTES.EDITOR.NEW}
 							onClick={() => setMobileMenuOpen(false)}
-							className="block py-2 text-[hsl(216,100%,95%)] hover:text-[hsl(199,89%,49%)]"
+							className="block py-2 text-alice-blue hover:text-carolina-blue"
 						>
 							Write
 						</Link>
 						<Link
 							to={ROUTES.ACCOUNT.BASE}
 							onClick={() => setMobileMenuOpen(false)}
-							className="block py-2 text-[hsl(216,100%,95%)] hover:text-[hsl(199,89%,49%)]"
+							className="block py-2 text-alice-blue hover:text-carolina-blue"
 						>
 							Settings
 						</Link>
 						<Link
 							to={ROUTES.LOGOUT}
 							onClick={() => setMobileMenuOpen(false)}
-							className="block py-2 text-[hsl(216,100%,95%)] hover:text-[hsl(199,89%,49%)]"
+							className="block py-2 text-alice-blue hover:text-carolina-blue"
 						>
 							Sign Out
 						</Link>
@@ -295,13 +295,13 @@ function BlogFooter() {
 	};
 
 	return (
-		<footer className="bg-[hsl(222,44%,13%)] rounded-t-[48px] mx-5 mb-6 text-[hsl(216,33%,68%)]">
+		<footer className="bg-oxford-blue rounded-t-[48px] mx-5 mb-6 text-wild-blue-yonder">
 			<div className="container py-16 mx-auto px-4 max-w-[1140px]">
 				<div className="grid md:grid-cols-3 gap-10">
 					{/* Brand */}
 					<div>
 						<Link to="/" className="inline-block mb-5">
-							<span className="text-2xl font-bold text-[hsl(216,100%,95%)]">
+							<span className="text-2xl font-bold text-alice-blue">
 								Blog<span className="navy-blue-blog-gradient-text">CMS</span>
 							</span>
 						</Link>
@@ -313,10 +313,10 @@ function BlogFooter() {
 
 					{/* Quick Links */}
 					<div>
-						<h3 className="text-[hsl(199,69%,84%)] text-lg mb-6">
+						<h3 className="text-columbia-blue text-lg mb-6">
 							<span className="relative">
 								Quick Links
-								<span className="absolute bottom-[-10px] left-0 w-24 h-[3px] bg-[hsl(199,89%,49%)]" />
+								<span className="absolute bottom-[-10px] left-0 w-24 h-[3px] bg-carolina-blue" />
 							</span>
 						</h3>
 						<ul className="grid grid-cols-2 gap-3 mt-8">
@@ -331,7 +331,7 @@ function BlogFooter() {
 								<li key={link.label}>
 									<Link
 										to={link.to}
-										className="text-sm hover:text-[hsl(199,89%,49%)] transition-colors"
+										className="text-sm hover:text-carolina-blue transition-colors"
 									>
 										{link.label}
 									</Link>
@@ -342,10 +342,10 @@ function BlogFooter() {
 
 					{/* Newsletter */}
 					<div>
-						<h3 className="text-[hsl(199,69%,84%)] text-lg mb-6">
+						<h3 className="text-columbia-blue text-lg mb-6">
 							<span className="relative">
 								Newsletter
-								<span className="absolute bottom-[-10px] left-0 w-24 h-[3px] bg-[hsl(199,89%,49%)]" />
+								<span className="absolute bottom-[-10px] left-0 w-24 h-[3px] bg-carolina-blue" />
 							</span>
 						</h3>
 						<p className="text-sm mb-4 mt-8">Subscribe to get the latest articles.</p>
@@ -355,7 +355,7 @@ function BlogFooter() {
 								value={newsletterEmail}
 								onChange={(e) => setNewsletterEmail(e.target.value)}
 								placeholder="Your email address"
-								className="w-full bg-transparent border-b border-[hsl(216,33%,68%)] py-3 pr-8 text-sm outline-none focus:border-[hsl(199,89%,49%)] transition-colors text-[hsl(216,100%,95%)]"
+								className="w-full bg-transparent border-b border-wild-blue-yonder py-3 pr-8 text-sm outline-none focus:border-carolina-blue transition-colors text-alice-blue"
 								disabled={subscribeNewsletter.isPending}
 							/>
 							<button type="submit" disabled={subscribeNewsletter.isPending} className="absolute right-0 top-1/2 -translate-y-1/2">
@@ -366,18 +366,18 @@ function BlogFooter() {
 				</div>
 			</div>
 
-			<div className="border-t border-[hsl(216,33%,20%)] py-8">
+			<div className="border-t border-prussian-blue py-8">
 				<div className="container flex flex-col md:flex-row items-center justify-between gap-4 mx-auto px-4 max-w-[1140px]">
 					<p className="text-sm text-center">
 						Copyright 2026 ©{" "}
-						<span className="text-[hsl(199,89%,49%)] italic">BlogCMS</span>. All rights reserved.
+						<span className="text-carolina-blue italic">BlogCMS</span>. All rights reserved.
 					</p>
 					<div className="flex items-center gap-4">
 						{["Twitter", "GitHub", "Discord"].map((social) => (
 							<a
 								key={social}
 								href="#"
-								className="text-sm hover:text-[hsl(199,89%,49%)] transition-colors"
+								className="text-sm hover:text-carolina-blue transition-colors"
 							>
 								{social}
 							</a>
@@ -403,7 +403,7 @@ function BackToTopButton() {
 			type="button"
 			onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
 			className={cn(
-				"fixed bottom-5 right-5 w-12 h-12 bg-[hsl(216,33%,20%)] text-white rounded-full border-2 border-[hsl(199,89%,49%)] grid place-items-center transition-all duration-300 z-50 hover:shadow-[0px_3px_20px_hsla(180,90%,43%,0.3)]",
+				"fixed bottom-5 right-5 w-12 h-12 bg-prussian-blue text-white rounded-full border-2 border-carolina-blue grid place-items-center transition-all duration-300 z-50 hover:shadow-[0px_3px_20px_hsla(180,90%,43%,0.3)]",
 				show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none",
 			)}
 			aria-label="Back to top"

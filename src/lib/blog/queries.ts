@@ -638,3 +638,76 @@ export function useMyAuthorApplication() {
 		staleTime: 1000 * 60 * 5,
 	});
 }
+
+// =============================================================================
+// Sites + Pages (Puck)
+// =============================================================================
+
+import {
+	$listSites,
+	$upsertSite,
+	$deleteSite,
+	$listPages,
+	$upsertPage,
+	$deletePage,
+} from "@/lib/blog/functions";
+
+export function useSites() {
+	return useQuery({
+		queryKey: ["blog", "sites"],
+		queryFn: () => $listSites(),
+		staleTime: 1000 * 60 * 2,
+	});
+}
+
+export function useUpsertSite() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (data: Parameters<typeof $upsertSite>[0]["data"]) =>
+			$upsertSite({ data }),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["blog", "sites"] });
+		},
+	});
+}
+
+export function useDeleteSite() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (id: string) => $deleteSite({ data: { id } }),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["blog", "sites"] });
+		},
+	});
+}
+
+export function usePages(siteId: string | null) {
+	return useQuery({
+		queryKey: ["blog", "pages", siteId],
+		queryFn: () => $listPages({ data: { siteId: siteId! } }),
+		enabled: !!siteId,
+		staleTime: 1000 * 60,
+	});
+}
+
+export function useUpsertPage() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (data: Parameters<typeof $upsertPage>[0]["data"]) =>
+			$upsertPage({ data }),
+		onSuccess: (_, vars) => {
+			qc.invalidateQueries({ queryKey: ["blog", "pages", vars.siteId] });
+		},
+	});
+}
+
+export function useDeletePage() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (vars: { id: string; siteId: string }) =>
+			$deletePage({ data: { id: vars.id } }),
+		onSuccess: (_, vars) => {
+			qc.invalidateQueries({ queryKey: ["blog", "pages", vars.siteId] });
+		},
+	});
+}

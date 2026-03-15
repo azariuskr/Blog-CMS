@@ -171,7 +171,7 @@ function PostBlocksRenderer({ blocks }: { blocks: BlogBlock[] }) {
 				}
 				if (block.type === "h2") {
 					const id = block.content.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-					return <h2 key={block.id} id={id} className="text-2xl font-bold text-white mt-8 mb-4 pb-2 border-b border-[hsl(216,33%,20%)] scroll-mt-24">{block.content}</h2>;
+					return <h2 key={block.id} id={id} className="text-2xl font-bold text-white mt-8 mb-4 pb-2 border-b border-prussian-blue scroll-mt-24">{block.content}</h2>;
 				}
 				if (block.type === "h3") {
 					const id = block.content.toLowerCase().replace(/[^a-z0-9]+/g, "-");
@@ -186,7 +186,7 @@ function PostBlocksRenderer({ blocks }: { blocks: BlogBlock[] }) {
 					const level = Number.isFinite(levelRaw) ? Math.min(Math.max(levelRaw, 1), 3) : 2;
 					const id = block.content.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 					if (level === 1) return <h1 key={block.id} id={id} className="text-3xl font-bold text-white mt-10 mb-5 scroll-mt-24">{block.content}</h1>;
-					if (level === 2) return <h2 key={block.id} id={id} className="text-2xl font-bold text-white mt-8 mb-4 pb-2 border-b border-[hsl(216,33%,20%)] scroll-mt-24">{block.content}</h2>;
+					if (level === 2) return <h2 key={block.id} id={id} className="text-2xl font-bold text-white mt-8 mb-4 pb-2 border-b border-prussian-blue scroll-mt-24">{block.content}</h2>;
 					return <h3 key={block.id} id={id} className="text-xl font-semibold text-white mt-6 mb-3 scroll-mt-24">{block.content}</h3>;
 				}
 
@@ -194,15 +194,15 @@ function PostBlocksRenderer({ blocks }: { blocks: BlogBlock[] }) {
 				if (block.type === "paragraph") {
 					const isHtml = block.content?.trimStart().startsWith("<");
 					return isHtml
-						? <div key={block.id} className="tiptap-prose text-[hsl(217,24%,59%)] leading-relaxed text-lg mb-6 [&_a]:text-[hsl(199,89%,49%)] [&_a]:underline [&_code]:bg-[hsl(216,33%,20%)] [&_code]:px-1 [&_code]:rounded [&_code]:text-sm [&_code]:font-mono [&_strong]:text-white [&_em]:italic" dangerouslySetInnerHTML={{ __html: block.content }} />
-						: <p key={block.id} className="text-[hsl(217,24%,59%)] leading-relaxed text-lg mb-6">{block.content}</p>;
+						? <div key={block.id} className="tiptap-prose text-shadow-blue leading-relaxed text-lg mb-6 [&_a]:text-carolina-blue [&_a]:underline [&_code]:bg-prussian-blue [&_code]:px-1 [&_code]:rounded [&_code]:text-sm [&_code]:font-mono [&_strong]:text-white [&_em]:italic" dangerouslySetInnerHTML={{ __html: block.content }} />
+						: <p key={block.id} className="text-shadow-blue leading-relaxed text-lg mb-6">{block.content}</p>;
 				}
 
 				// ── Blockquote (new) / quote (legacy) ──
 				if (block.type === "blockquote" || block.type === "quote") {
 					return (
-						<blockquote key={block.id} className="border-l-4 border-[hsl(199,89%,49%)] pl-6 py-3 my-6 bg-[hsl(216,33%,20%)]/30 rounded-r-xl">
-							<p className="text-[hsl(199,69%,84%)] text-lg italic">{block.content}</p>
+						<blockquote key={block.id} className="border-l-4 border-carolina-blue pl-6 py-3 my-6 bg-prussian-blue/30 rounded-r-xl">
+							<p className="text-columbia-blue text-lg italic">{block.content}</p>
 						</blockquote>
 					);
 				}
@@ -231,8 +231,8 @@ function PostBlocksRenderer({ blocks }: { blocks: BlogBlock[] }) {
 					return (
 						<ul key={block.id} className="my-4 space-y-2 ml-4 list-none">
 							{items.map((item, i) => (
-								<li key={`${block.id}-${i}`} className="flex items-start gap-3 text-[hsl(217,24%,59%)]">
-									<span className="w-2 h-2 rounded-full bg-gradient-to-r from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] mt-2.5 flex-shrink-0" />
+								<li key={`${block.id}-${i}`} className="flex items-start gap-3 text-shadow-blue">
+									<span className="w-2 h-2 rounded-full bg-gradient-to-r from-carolina-blue to-blog-teal mt-2.5 flex-shrink-0" />
 									<span className="text-lg">{item}</span>
 								</li>
 							))}
@@ -242,7 +242,7 @@ function PostBlocksRenderer({ blocks }: { blocks: BlogBlock[] }) {
 				if (block.type === "ol") {
 					const items = block.content.split("\n").map((i) => i.replace(/^\d+\.\s*/, "").trim()).filter(Boolean);
 					return (
-						<ol key={block.id} className="my-4 ml-6 list-decimal space-y-1 text-[hsl(217,24%,59%)] text-lg">
+						<ol key={block.id} className="my-4 ml-6 list-decimal space-y-1 text-shadow-blue text-lg">
 							{items.map((item, i) => <li key={`${block.id}-${i}`}>{item}</li>)}
 						</ol>
 					);
@@ -255,8 +255,8 @@ function PostBlocksRenderer({ blocks }: { blocks: BlogBlock[] }) {
 								const checked = /^\s*-\s*\[x\]/i.test(item);
 								const text = item.replace(/^\s*-\s*\[.\]\s*/, "").trim();
 								return (
-									<li key={`${block.id}-${i}`} className="flex items-center gap-3 text-[hsl(217,24%,59%)] text-lg">
-										<span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-xs ${checked ? "bg-[hsl(199,89%,49%)] border-[hsl(199,89%,49%)] text-white" : "border-[hsl(216,33%,30%)]"}`}>
+									<li key={`${block.id}-${i}`} className="flex items-center gap-3 text-shadow-blue text-lg">
+										<span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-xs ${checked ? "bg-carolina-blue border-carolina-blue text-white" : "border-prussian-blue-dark"}`}>
 											{checked ? "✓" : ""}
 										</span>
 										<span className={checked ? "line-through opacity-60" : ""}>{text}</span>
@@ -279,9 +279,9 @@ function PostBlocksRenderer({ blocks }: { blocks: BlogBlock[] }) {
 								src={src}
 								alt={alt}
 								className="w-full h-auto rounded-2xl shadow-2xl"
-								placeholder={<div className="w-full aspect-video rounded-2xl bg-[hsl(216,33%,20%)] animate-pulse" />}
+								placeholder={<div className="w-full aspect-video rounded-2xl bg-prussian-blue animate-pulse" />}
 							/>
-							{caption && <figcaption className="text-center text-sm text-[hsl(216,33%,50%)] mt-3 italic">{caption}</figcaption>}
+							{caption && <figcaption className="text-center text-sm text-yonder-dim mt-3 italic">{caption}</figcaption>}
 						</figure>
 					);
 				}
@@ -290,9 +290,9 @@ function PostBlocksRenderer({ blocks }: { blocks: BlogBlock[] }) {
 				if (block.type === "separator" || block.type === "divider") {
 					return (
 						<div key={block.id} className="my-10 flex items-center justify-center">
-							<div className="w-1/4 h-px bg-gradient-to-r from-transparent via-[hsl(199,89%,49%)] to-transparent" />
-							<div className="mx-4 w-2 h-2 rounded-full bg-[hsl(199,89%,49%)]" />
-							<div className="w-1/4 h-px bg-gradient-to-r from-transparent via-[hsl(180,70%,45%)] to-transparent" />
+							<div className="w-1/4 h-px bg-gradient-to-r from-transparent via-carolina-blue to-transparent" />
+							<div className="mx-4 w-2 h-2 rounded-full bg-carolina-blue" />
+							<div className="w-1/4 h-px bg-gradient-to-r from-transparent via-blog-teal to-transparent" />
 						</div>
 					);
 				}
@@ -304,14 +304,14 @@ function PostBlocksRenderer({ blocks }: { blocks: BlogBlock[] }) {
 					const [header, , ...body] = rows;
 					if (!header) return null;
 					return (
-						<div key={block.id} className="my-6 overflow-x-auto rounded-xl border border-[hsl(216,33%,20%)]">
-							<table className="w-full text-sm text-[hsl(217,24%,59%)]">
-								<thead className="bg-[hsl(216,33%,20%)]">
+						<div key={block.id} className="my-6 overflow-x-auto rounded-xl border border-prussian-blue">
+							<table className="w-full text-sm text-shadow-blue">
+								<thead className="bg-prussian-blue">
 									<tr>{header.map((h, i) => <th key={i} className="px-4 py-2 text-left text-white font-medium">{h}</th>)}</tr>
 								</thead>
 								<tbody>
 									{body.map((row, ri) => (
-										<tr key={ri} className="border-t border-[hsl(216,33%,20%)] hover:bg-[hsl(216,33%,20%)]/30">
+										<tr key={ri} className="border-t border-prussian-blue hover:bg-prussian-blue/30">
 											{row.map((cell, ci) => <td key={ci} className="px-4 py-2">{cell}</td>)}
 										</tr>
 									))}
@@ -481,7 +481,7 @@ function BlogPostPage() {
 	}
 
 	if (postQuery.isLoading) {
-		return <div className="min-h-screen pt-32 text-center text-[hsl(216,33%,68%)]">Loading post…</div>;
+		return <div className="min-h-screen pt-32 text-center text-wild-blue-yonder">Loading post…</div>;
 	}
 
 	if (!post) {
@@ -491,9 +491,9 @@ function BlogPostPage() {
 	return (
 		<>
 			{/* Reading progress bar */}
-			<div className="fixed top-0 left-0 right-0 h-1 bg-[hsl(216,33%,20%)] z-50">
+			<div className="fixed top-0 left-0 right-0 h-1 bg-prussian-blue z-50">
 				<div
-					className="h-full bg-gradient-to-r from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] transition-all duration-150"
+					className="h-full bg-gradient-to-r from-carolina-blue to-blog-teal transition-all duration-150"
 					style={{ width: `${readingProgress}%` }}
 				/>
 			</div>
@@ -505,7 +505,7 @@ function BlogPostPage() {
 						<Link to="/">
 							<Button
 								variant="ghost"
-								className="text-[hsl(216,33%,68%)] hover:text-white mb-8 -ml-4"
+								className="text-wild-blue-yonder hover:text-white mb-8 -ml-4"
 							>
 								<ChevronLeft className="w-4 h-4 mr-2" />
 								Back to Blog
@@ -515,7 +515,7 @@ function BlogPostPage() {
 						{/* Category */}
 						<div className="flex flex-wrap items-center gap-3 mb-6">
 							{post.category?.name && (
-								<Badge className="bg-gradient-to-r from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] text-white border-0">
+								<Badge className="bg-gradient-to-r from-carolina-blue to-blog-teal text-white border-0">
 									{post.category.name}
 								</Badge>
 							)}
@@ -526,15 +526,15 @@ function BlogPostPage() {
 						</h1>
 
 						{post.excerpt && (
-							<p className="text-xl text-[hsl(216,33%,68%)] mb-8 leading-relaxed">
+							<p className="text-xl text-wild-blue-yonder mb-8 leading-relaxed">
 								{post.excerpt}
 							</p>
 						)}
 
-						<div className="flex flex-wrap items-center gap-6 text-sm text-[hsl(216,33%,68%)]">
+						<div className="flex flex-wrap items-center gap-6 text-sm text-wild-blue-yonder">
 							<div className="flex items-center gap-3">
-								<Avatar className="w-12 h-12 ring-2 ring-[hsl(199,89%,49%)]/30">
-									<AvatarFallback className="bg-gradient-to-br from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] text-white font-bold">
+								<Avatar className="w-12 h-12 ring-2 ring-carolina-blue/30">
+									<AvatarFallback className="bg-gradient-to-br from-carolina-blue to-blog-teal text-white font-bold">
 										{(post.author?.name?.[0] ?? "A").toUpperCase()}
 									</AvatarFallback>
 								</Avatar>
@@ -543,7 +543,7 @@ function BlogPostPage() {
 									<p className="text-xs">Author</p>
 								</div>
 							</div>
-							<span className="text-[hsl(216,33%,20%)]">•</span>
+							<span className="text-prussian-blue">•</span>
 							<div className="flex items-center gap-2">
 								<Calendar className="w-4 h-4" />
 								<span>{formatDate(post.createdAt)}</span>
@@ -585,7 +585,7 @@ function BlogPostPage() {
 										setIsLiked(!isLiked);
 										toggleReaction.mutate({ postId: post.id, userId, type: "like" });
 									}}
-									className={`rounded-full ${isLiked ? "text-pink-500 bg-pink-500/10" : "text-[hsl(216,33%,68%)] hover:text-pink-500"}`}
+									className={`rounded-full ${isLiked ? "text-pink-500 bg-pink-500/10" : "text-wild-blue-yonder hover:text-pink-500"}`}
 								>
 									<Heart className={`w-5 h-5 ${isLiked ? "fill-current" : ""}`} />
 								</Button>
@@ -597,7 +597,7 @@ function BlogPostPage() {
 										setIsBookmarked(!isBookmarked);
 										toggleBookmark.mutate({ postId: post.id, userId });
 									}}
-									className={`rounded-full ${isBookmarked ? "text-[hsl(199,89%,49%)] bg-[hsl(199,89%,49%)]/10" : "text-[hsl(216,33%,68%)] hover:text-[hsl(199,89%,49%)]"}`}
+									className={`rounded-full ${isBookmarked ? "text-carolina-blue bg-carolina-blue/10" : "text-wild-blue-yonder hover:text-carolina-blue"}`}
 								>
 									<Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-current" : ""}`} />
 								</Button>
@@ -605,7 +605,7 @@ function BlogPostPage() {
 									variant="ghost"
 									size="icon"
 									onClick={() => handleShare("twitter")}
-									className="rounded-full text-[hsl(216,33%,68%)] hover:text-[hsl(199,89%,49%)]"
+									className="rounded-full text-wild-blue-yonder hover:text-carolina-blue"
 								>
 									<Twitter className="w-5 h-5" />
 								</Button>
@@ -613,7 +613,7 @@ function BlogPostPage() {
 									variant="ghost"
 									size="icon"
 									onClick={() => handleShare("linkedin")}
-									className="rounded-full text-[hsl(216,33%,68%)] hover:text-blue-400"
+									className="rounded-full text-wild-blue-yonder hover:text-blue-400"
 								>
 									<Linkedin className="w-5 h-5" />
 								</Button>
@@ -621,16 +621,16 @@ function BlogPostPage() {
 									variant="ghost"
 									size="icon"
 									onClick={() => handleShare()}
-									className="rounded-full text-[hsl(216,33%,68%)] hover:text-white"
+									className="rounded-full text-wild-blue-yonder hover:text-white"
 								>
 									<Share2 className="w-5 h-5" />
 								</Button>
-								<div className="w-px h-8 bg-[hsl(216,33%,20%)] mx-auto" />
+								<div className="w-px h-8 bg-prussian-blue mx-auto" />
 								<Button
 									variant="ghost"
 									size="icon"
 									onClick={() => setShowToc(!showToc)}
-									className={`rounded-full ${showToc ? "text-[hsl(199,89%,49%)] bg-[hsl(199,89%,49%)]/10" : "text-[hsl(216,33%,68%)] hover:text-[hsl(199,89%,49%)]"}`}
+									className={`rounded-full ${showToc ? "text-carolina-blue bg-carolina-blue/10" : "text-wild-blue-yonder hover:text-carolina-blue"}`}
 								>
 									<List className="w-5 h-5" />
 								</Button>
@@ -641,7 +641,7 @@ function BlogPostPage() {
 						<div className="flex-1 min-w-0 pb-20">
 							{/* Table of Contents */}
 							{showToc && headings.length > 0 && (
-								<nav className="mb-8 p-6 bg-[hsl(216,33%,20%)]/50 rounded-xl border border-[hsl(216,33%,20%)]">
+								<nav className="mb-8 p-6 bg-prussian-blue/50 rounded-xl border border-prussian-blue">
 									<h4 className="text-white font-semibold mb-4 flex items-center gap-2">
 										<List className="w-4 h-4" />
 										Table of Contents
@@ -654,7 +654,7 @@ function BlogPostPage() {
 											>
 												<a
 													href={`#${heading.id}`}
-													className="text-[hsl(216,33%,68%)] hover:text-[hsl(199,89%,49%)] transition-colors text-sm"
+													className="text-wild-blue-yonder hover:text-carolina-blue transition-colors text-sm"
 												>
 													{heading.text}
 												</a>
@@ -668,7 +668,7 @@ function BlogPostPage() {
 							<div ref={contentRef} className={(post as any).isLocked ? "relative" : ""}>
 								<PostBlocksRenderer blocks={blocks} />
 								{(post as any).isLocked && (
-									<div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[hsl(222,44%,13%)] to-transparent pointer-events-none" />
+									<div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-oxford-blue to-transparent pointer-events-none" />
 								)}
 							</div>
 							{(post as any).isLocked && <PaywallCard />}
@@ -678,25 +678,25 @@ function BlogPostPage() {
 							const profile = (post as any).authorProfile as { displayName?: string; username?: string; bio?: string; avatarUrl?: string } | null;
 							const displayName = profile?.displayName ?? post.author?.name ?? "Unknown Author";
 							return (
-								<div className="mt-16 p-8 bg-gradient-to-br from-[hsl(216,33%,20%)]/50 to-[hsl(222,47%,11%)] rounded-2xl border border-[hsl(216,33%,20%)]">
+								<div className="mt-16 p-8 bg-gradient-to-br from-prussian-blue/50 to-oxford-blue-2 rounded-2xl border border-prussian-blue">
 									<div className="flex items-start gap-6">
-										<Avatar className="w-20 h-20 ring-4 ring-[hsl(199,89%,49%)]/20">
+										<Avatar className="w-20 h-20 ring-4 ring-carolina-blue/20">
 											{profile?.avatarUrl && <AvatarImage src={profile.avatarUrl} alt={displayName} />}
-											<AvatarFallback className="bg-gradient-to-br from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] text-white text-2xl font-bold">
+											<AvatarFallback className="bg-gradient-to-br from-carolina-blue to-blog-teal text-white text-2xl font-bold">
 												{displayName[0].toUpperCase()}
 											</AvatarFallback>
 										</Avatar>
 										<div className="flex-1">
 											<h3 className="text-xl font-bold text-white mb-1">Written by {displayName}</h3>
 											{profile?.username && (
-												<Link to="/@$username" params={{ username: profile.username }} className="text-xs text-[hsl(199,89%,49%)] hover:underline block mb-3">
+												<Link to="/@$username" params={{ username: profile.username }} className="text-xs text-carolina-blue hover:underline block mb-3">
 													@{profile.username}
 												</Link>
 											)}
 											{profile?.bio ? (
-												<p className="text-[hsl(216,33%,68%)] mb-4 leading-relaxed">{profile.bio}</p>
+												<p className="text-wild-blue-yonder mb-4 leading-relaxed">{profile.bio}</p>
 											) : (
-												<p className="text-[hsl(216,33%,68%)] mb-4">No bio available.</p>
+												<p className="text-wild-blue-yonder mb-4">No bio available.</p>
 											)}
 										</div>
 									</div>
@@ -705,14 +705,14 @@ function BlogPostPage() {
 						})()}
 
 							{/* Share */}
-							<div className="mt-12 p-6 bg-[hsl(216,33%,20%)]/30 rounded-xl text-center">
+							<div className="mt-12 p-6 bg-prussian-blue/30 rounded-xl text-center">
 								<h4 className="text-white font-semibold mb-4">Share this article</h4>
 								<div className="flex justify-center gap-4">
 									<Button
 										variant="outline"
 										size="icon"
 										onClick={() => handleShare("twitter")}
-										className="rounded-full border-[hsl(216,33%,20%)] text-[hsl(216,33%,68%)] hover:text-[hsl(199,89%,49%)] hover:border-[hsl(199,89%,49%)]"
+										className="rounded-full border-prussian-blue text-wild-blue-yonder hover:text-carolina-blue hover:border-carolina-blue"
 									>
 										<Twitter className="w-5 h-5" />
 									</Button>
@@ -720,7 +720,7 @@ function BlogPostPage() {
 										variant="outline"
 										size="icon"
 										onClick={() => handleShare("linkedin")}
-										className="rounded-full border-[hsl(216,33%,20%)] text-[hsl(216,33%,68%)] hover:text-blue-400 hover:border-blue-400"
+										className="rounded-full border-prussian-blue text-wild-blue-yonder hover:text-blue-400 hover:border-blue-400"
 									>
 										<Linkedin className="w-5 h-5" />
 									</Button>
@@ -728,7 +728,7 @@ function BlogPostPage() {
 										variant="outline"
 										size="icon"
 										onClick={() => handleShare()}
-										className="rounded-full border-[hsl(216,33%,20%)] text-[hsl(216,33%,68%)] hover:text-white hover:border-white"
+										className="rounded-full border-prussian-blue text-wild-blue-yonder hover:text-white hover:border-white"
 									>
 										<Copy className="w-5 h-5" />
 									</Button>
@@ -738,22 +738,22 @@ function BlogPostPage() {
 							{/* Comments */}
 							<section className="mt-16">
 								<h3 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
-									<MessageCircle className="w-6 h-6 text-[hsl(199,89%,49%)]" />
+									<MessageCircle className="w-6 h-6 text-carolina-blue" />
 									Comments ({realComments.length})
 								</h3>
 
-								<div className="mb-8 p-6 bg-[hsl(216,33%,20%)]/30 rounded-xl">
+								<div className="mb-8 p-6 bg-prussian-blue/30 rounded-xl">
 									<Textarea
 										value={commentText}
 										onChange={(e) => setCommentText(e.target.value)}
 										placeholder="Write a comment..."
-										className="bg-[hsl(216,33%,20%)] border-[hsl(216,33%,30%)] text-white placeholder:text-[hsl(216,33%,68%)] mb-4 min-h-[100px]"
+										className="bg-prussian-blue border-prussian-blue-dark text-white placeholder:text-wild-blue-yonder mb-4 min-h-[100px]"
 									/>
 									<div className="flex justify-end">
 										<Button
 										onClick={handleComment}
 										disabled={!commentText.trim() || createComment.isPending}
-											className="bg-gradient-to-r from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] hover:opacity-90"
+											className="bg-gradient-to-r from-carolina-blue to-blog-teal hover:opacity-90"
 										>
 											<Send className="w-4 h-4 mr-2" />
 											Post Comment
@@ -763,10 +763,10 @@ function BlogPostPage() {
 
 																<div className="space-y-6">
 									{commentsQuery.isLoading && (
-										<p className="text-[hsl(216,33%,68%)] text-sm">Loading comments…</p>
+										<p className="text-wild-blue-yonder text-sm">Loading comments…</p>
 									)}
 									{!commentsQuery.isLoading && topLevelComments.length === 0 && (
-										<p className="text-[hsl(216,33%,68%)] text-sm py-4 text-center">No comments yet. Be the first!</p>
+										<p className="text-wild-blue-yonder text-sm py-4 text-center">No comments yet. Be the first!</p>
 									)}
 									{topLevelComments.map((comment: any) => {
 										const authorName = comment.author?.name ?? "Anonymous";
@@ -774,10 +774,10 @@ function BlogPostPage() {
 										const isReplying = replyToId === comment.id;
 										return (
 											<div key={comment.id} className="space-y-3">
-												<div className="p-6 bg-[hsl(216,33%,20%)]/20 rounded-xl border border-[hsl(216,33%,20%)]/50">
+												<div className="p-6 bg-prussian-blue/20 rounded-xl border border-prussian-blue/50">
 													<div className="flex items-start gap-4">
 														<Avatar className="w-10 h-10">
-															<AvatarFallback className="bg-gradient-to-br from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] text-white">
+															<AvatarFallback className="bg-gradient-to-br from-carolina-blue to-blog-teal text-white">
 																{authorName[0]}
 															</AvatarFallback>
 														</Avatar>
@@ -785,14 +785,14 @@ function BlogPostPage() {
 															<div className="flex items-center justify-between mb-2">
 																<div>
 																	<span className="font-medium text-white">{authorName}</span>
-																	<span className="text-[hsl(216,33%,68%)] text-sm ml-3">
+																	<span className="text-wild-blue-yonder text-sm ml-3">
 																		{formatDate(comment.createdAt)}
 																	</span>
 																</div>
 															</div>
-															<p className="text-[hsl(217,24%,59%)] mb-3">{comment.content}</p>
+															<p className="text-shadow-blue mb-3">{comment.content}</p>
 															<div className="flex items-center gap-4">
-																<span className="flex items-center gap-2 text-sm text-[hsl(216,33%,68%)]">
+																<span className="flex items-center gap-2 text-sm text-wild-blue-yonder">
 																	<ThumbsUp className="w-4 h-4" />
 																	{comment.likeCount}
 																</span>
@@ -802,13 +802,13 @@ function BlogPostPage() {
 																			setReplyToId(isReplying ? null : comment.id);
 																			setReplyText("");
 																		}}
-																		className="text-sm text-[hsl(199,89%,49%)] hover:underline"
+																		className="text-sm text-carolina-blue hover:underline"
 																	>
 																		{isReplying ? "Cancel" : "Reply"}
 																	</button>
 																)}
 																{replies.length > 0 && (
-																	<span className="text-xs text-[hsl(216,33%,68%)]">
+																	<span className="text-xs text-wild-blue-yonder">
 																		{replies.length} {replies.length === 1 ? "reply" : "replies"}
 																	</span>
 																)}
@@ -819,19 +819,19 @@ function BlogPostPage() {
 
 												{/* Inline reply form */}
 												{isReplying && (
-													<div className="ml-10 p-4 bg-[hsl(216,33%,20%)]/30 rounded-xl border border-[hsl(216,33%,30%)]/40">
+													<div className="ml-10 p-4 bg-prussian-blue/30 rounded-xl border border-prussian-blue-dark/40">
 														<Textarea
 															value={replyText}
 															onChange={(e) => setReplyText(e.target.value)}
 															placeholder={`Replying to ${authorName}…`}
-															className="bg-[hsl(216,33%,20%)] border-[hsl(216,33%,30%)] text-white placeholder:text-[hsl(216,33%,68%)] mb-3 min-h-[80px]"
+															className="bg-prussian-blue border-prussian-blue-dark text-white placeholder:text-wild-blue-yonder mb-3 min-h-[80px]"
 														/>
 														<div className="flex justify-end gap-2">
 															<Button
 																variant="ghost"
 																size="sm"
 																onClick={() => { setReplyToId(null); setReplyText(""); }}
-																className="text-[hsl(216,33%,68%)]"
+																className="text-wild-blue-yonder"
 															>
 																Cancel
 															</Button>
@@ -839,7 +839,7 @@ function BlogPostPage() {
 																size="sm"
 																onClick={() => handleReply(comment.id)}
 																disabled={!replyText.trim() || createComment.isPending}
-																className="bg-gradient-to-r from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] hover:opacity-90"
+																className="bg-gradient-to-r from-carolina-blue to-blog-teal hover:opacity-90"
 															>
 																<Send className="w-3 h-3 mr-1" />
 																Post Reply
@@ -856,22 +856,22 @@ function BlogPostPage() {
 															return (
 																<div
 																	key={reply.id}
-																	className="p-4 bg-[hsl(216,33%,20%)]/10 rounded-xl border border-[hsl(216,33%,20%)]/30"
+																	className="p-4 bg-prussian-blue/10 rounded-xl border border-prussian-blue/30"
 																>
 																	<div className="flex items-start gap-3">
 																		<Avatar className="w-8 h-8">
-																			<AvatarFallback className="bg-gradient-to-br from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] text-white text-xs">
+																			<AvatarFallback className="bg-gradient-to-br from-carolina-blue to-blog-teal text-white text-xs">
 																				{replyAuthor[0]}
 																			</AvatarFallback>
 																		</Avatar>
 																		<div className="flex-1">
 																			<div className="mb-1">
 																				<span className="font-medium text-white text-sm">{replyAuthor}</span>
-																				<span className="text-[hsl(216,33%,68%)] text-xs ml-2">
+																				<span className="text-wild-blue-yonder text-xs ml-2">
 																					{formatDate(reply.createdAt)}
 																				</span>
 																			</div>
-																			<p className="text-[hsl(217,24%,59%)] text-sm">{reply.content}</p>
+																			<p className="text-shadow-blue text-sm">{reply.content}</p>
 																		</div>
 																	</div>
 																</div>
@@ -897,7 +897,7 @@ function BlogPostPage() {
 												key={related.id}
 												to="/$slug"
 												params={{ slug: related.slug }}
-												className="flex gap-4 p-4 rounded-xl border border-[hsl(216,33%,20%)] hover:border-[hsl(199,89%,49%)]/50 bg-[hsl(216,33%,20%)]/20 hover:bg-[hsl(216,33%,20%)]/40 transition-all group"
+												className="flex gap-4 p-4 rounded-xl border border-prussian-blue hover:border-carolina-blue/50 bg-prussian-blue/20 hover:bg-prussian-blue/40 transition-all group"
 											>
 												{related.featuredImageUrl && (
 													<img
@@ -907,11 +907,11 @@ function BlogPostPage() {
 													/>
 												)}
 												<div className="flex-1 min-w-0">
-													<h4 className="text-white font-semibold text-sm line-clamp-2 group-hover:text-[hsl(199,89%,49%)] transition-colors mb-1">
+													<h4 className="text-white font-semibold text-sm line-clamp-2 group-hover:text-carolina-blue transition-colors mb-1">
 														{related.title}
 													</h4>
 													{related.excerpt && (
-														<p className="text-xs text-[hsl(216,33%,68%)] line-clamp-2">{related.excerpt}</p>
+														<p className="text-xs text-wild-blue-yonder line-clamp-2">{related.excerpt}</p>
 													)}
 												</div>
 											</Link>
@@ -929,7 +929,7 @@ function BlogPostPage() {
 				<button
 					type="button"
 					onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-					className="fixed bottom-8 right-8 w-12 h-12 rounded-full bg-gradient-to-r from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] text-white shadow-lg hover:opacity-90 transition-opacity flex items-center justify-center z-40"
+					className="fixed bottom-8 right-8 w-12 h-12 rounded-full bg-gradient-to-r from-carolina-blue to-blog-teal text-white shadow-lg hover:opacity-90 transition-opacity flex items-center justify-center z-40"
 				>
 					<ChevronUp className="w-6 h-6" />
 				</button>

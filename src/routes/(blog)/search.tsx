@@ -52,19 +52,19 @@ function BlogSearchPage() {
 						Search <span className="navy-blue-blog-gradient-text">Articles</span>
 					</h1>
 					<div className="relative">
-						<Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[hsl(216,33%,68%)]" />
+						<Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-wild-blue-yonder" />
 						<input
 							type="search"
 							value={inputValue}
 							onChange={(e) => setInputValue(e.target.value)}
 							placeholder="Search articles, topics, authors…"
 							autoFocus
-							className="w-full h-14 pl-12 pr-4 rounded-2xl bg-[hsl(222,44%,13%)] border border-[hsl(216,33%,20%)] text-white placeholder:text-[hsl(216,33%,50%)] focus:outline-none focus:border-[hsl(199,89%,49%)] text-base transition-colors"
+							className="w-full h-14 pl-12 pr-4 rounded-2xl bg-oxford-blue border border-prussian-blue text-white placeholder:text-yonder-dim focus:outline-none focus:border-carolina-blue text-base transition-colors"
 						/>
 						{inputValue && (
 							<button
 								onClick={() => setInputValue("")}
-								className="absolute right-4 top-1/2 -translate-y-1/2 text-[hsl(216,33%,68%)] hover:text-white transition-colors"
+								className="absolute right-4 top-1/2 -translate-y-1/2 text-wild-blue-yonder hover:text-white transition-colors"
 								aria-label="Clear search"
 							>
 								<X className="w-4 h-4" />
@@ -75,14 +75,14 @@ function BlogSearchPage() {
 					{/* Browse Topics */}
 					{!hasFilters && (
 						<div className="mt-6">
-							<p className="text-sm text-[hsl(216,33%,68%)] mb-3">Browse Topics</p>
+							<p className="text-sm text-wild-blue-yonder mb-3">Browse Topics</p>
 							<div className="flex flex-wrap gap-2">
 								{topics.map((t) => (
 									<Link
 										key={t.id}
 										to="/search"
 										search={{ category: t.slug }}
-										className="navy-blue-blog-badge hover:bg-[hsl(199,89%,49%)] transition-colors"
+										className="navy-blue-blog-badge hover:bg-carolina-blue transition-colors"
 									>
 										{t.name}
 									</Link>
@@ -100,12 +100,12 @@ function BlogSearchPage() {
 					{/* Active filters */}
 					{hasFilters && (
 						<div className="flex flex-wrap items-center gap-2 mb-6">
-							<span className="text-sm text-[hsl(216,33%,68%)]">Filtering by:</span>
+							<span className="text-sm text-wild-blue-yonder">Filtering by:</span>
 							{q && (
 								<Link
 									to="/search"
 									search={{ q: undefined, tag, category }}
-									className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[hsl(199,89%,49%)]/20 text-[hsl(199,89%,49%)] text-sm border border-[hsl(199,89%,49%)]/40 hover:bg-[hsl(199,89%,49%)]/30 transition-colors"
+									className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-carolina-blue/20 text-carolina-blue text-sm border border-carolina-blue/40 hover:bg-carolina-blue/30 transition-colors"
 								>
 									"{q}" <X className="w-3 h-3" />
 								</Link>
@@ -114,7 +114,7 @@ function BlogSearchPage() {
 								<Link
 									to="/search"
 									search={{ q, tag: undefined, category }}
-									className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[hsl(199,89%,49%)]/20 text-[hsl(199,89%,49%)] text-sm border border-[hsl(199,89%,49%)]/40 hover:bg-[hsl(199,89%,49%)]/30 transition-colors"
+									className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-carolina-blue/20 text-carolina-blue text-sm border border-carolina-blue/40 hover:bg-carolina-blue/30 transition-colors"
 								>
 									#{tag} <X className="w-3 h-3" />
 								</Link>
@@ -123,12 +123,12 @@ function BlogSearchPage() {
 								<Link
 									to="/search"
 									search={{ q, tag, category: undefined }}
-									className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[hsl(199,89%,49%)]/20 text-[hsl(199,89%,49%)] text-sm border border-[hsl(199,89%,49%)]/40 hover:bg-[hsl(199,89%,49%)]/30 transition-colors"
+									className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-carolina-blue/20 text-carolina-blue text-sm border border-carolina-blue/40 hover:bg-carolina-blue/30 transition-colors"
 								>
 									{category} <X className="w-3 h-3" />
 								</Link>
 							)}
-							<span className="text-sm text-[hsl(216,33%,68%)] ml-2">
+							<span className="text-sm text-wild-blue-yonder ml-2">
 								{results.length} result{results.length !== 1 ? "s" : ""}
 							</span>
 						</div>
@@ -142,12 +142,12 @@ function BlogSearchPage() {
 									key={n}
 									className="navy-blue-blog-card rounded-2xl overflow-hidden sm:flex gap-0 animate-pulse"
 								>
-									<div className="sm:w-56 shrink-0 aspect-video sm:aspect-auto bg-[hsl(216,33%,20%)]" />
+									<div className="sm:w-56 shrink-0 aspect-video sm:aspect-auto bg-prussian-blue" />
 									<div className="p-5 flex-1 space-y-3">
-										<div className="h-4 bg-[hsl(216,33%,20%)] rounded w-1/4" />
-										<div className="h-5 bg-[hsl(216,33%,20%)] rounded w-3/4" />
-										<div className="h-4 bg-[hsl(216,33%,20%)] rounded w-full" />
-										<div className="h-4 bg-[hsl(216,33%,20%)] rounded w-2/3" />
+										<div className="h-4 bg-prussian-blue rounded w-1/4" />
+										<div className="h-5 bg-prussian-blue rounded w-3/4" />
+										<div className="h-4 bg-prussian-blue rounded w-full" />
+										<div className="h-4 bg-prussian-blue rounded w-2/3" />
 									</div>
 								</div>
 							))}
@@ -157,9 +157,9 @@ function BlogSearchPage() {
 					{/* Empty state */}
 					{results.length === 0 && !resultsQuery.isLoading && (
 						<div className="flex flex-col items-center justify-center py-24 text-center">
-							<Search className="w-14 h-14 text-[hsl(216,33%,50%)] mb-4" />
+							<Search className="w-14 h-14 text-yonder-dim mb-4" />
 							<h2 className="text-xl font-bold text-white mb-2">No results found</h2>
-							<p className="text-[hsl(216,33%,68%)] max-w-sm">
+							<p className="text-wild-blue-yonder max-w-sm">
 								{q ? `We couldn't find anything for "${q}".` : "Try searching for a topic, tag, or author."}
 							</p>
 							{hasFilters && (
@@ -199,18 +199,18 @@ function BlogSearchPage() {
 												<span className="navy-blue-blog-badge text-xs">{post.category.name}</span>
 											)}
 										</div>
-										<h2 className="text-[hsl(199,69%,84%)] font-bold text-lg mb-2 hover:text-[hsl(199,89%,49%)] transition-colors line-clamp-2">
+										<h2 className="text-columbia-blue font-bold text-lg mb-2 hover:text-carolina-blue transition-colors line-clamp-2">
 											<Link to="/$slug" params={{ slug: post.slug }}>
 												{post.title}
 											</Link>
 										</h2>
-										<p className="text-sm text-[hsl(216,33%,68%)] mb-4 line-clamp-2">
+										<p className="text-sm text-wild-blue-yonder mb-4 line-clamp-2">
 											{post.excerpt}
 										</p>
-										<div className="flex items-center justify-between flex-wrap gap-3 text-xs text-[hsl(217,17%,48%)]">
+										<div className="flex items-center justify-between flex-wrap gap-3 text-xs text-slate-gray">
 											<Link
 												to={`/@${post.author?.username}` as string}
-												className="flex items-center gap-2 hover:text-[hsl(199,89%,49%)] transition-colors"
+												className="flex items-center gap-2 hover:text-carolina-blue transition-colors"
 											>
 												{post.author?.avatarUrl ? (
 													<img
@@ -219,7 +219,7 @@ function BlogSearchPage() {
 														className="w-5 h-5 rounded-full"
 													/>
 												) : (
-													<div className="w-5 h-5 rounded-full bg-[hsl(216,33%,20%)] flex items-center justify-center text-[8px] text-white font-bold">
+													<div className="w-5 h-5 rounded-full bg-prussian-blue flex items-center justify-center text-[8px] text-white font-bold">
 														{(post.author?.displayName ?? "U").charAt(0).toUpperCase()}
 													</div>
 												)}

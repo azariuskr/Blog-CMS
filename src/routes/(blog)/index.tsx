@@ -82,22 +82,22 @@ function BlogHomePage() {
 				<div className="container mx-auto px-4 max-w-[1140px]">
 					<div className="grid lg:grid-cols-2 gap-12 items-center">
 						<div>
-							<p className="text-sm font-bold text-[hsl(216,33%,68%)] mb-5">
+							<p className="text-sm font-bold text-wild-blue-yonder mb-5">
 								The Modern Publishing Platform
 							</p>
 							<h1 className="headline headline-1 mb-5">
 								Write, Share &{" "}
 								<span className="navy-blue-blog-gradient-text">Connect</span>
 							</h1>
-							<p className="text-[hsl(217,24%,59%)] mb-10 leading-relaxed text-lg">
+							<p className="text-shadow-blue mb-10 leading-relaxed text-lg">
 								A powerful blogging platform with git-backed publishing, block editor, and
 								multi-tenant sites. Create your own publication or contribute to the community.
 							</p>
-							<div className="relative max-w-[390px] p-2.5 pl-5 bg-[hsl(216,33%,20%)] rounded-md border border-[hsl(199,89%,49%)] flex items-center hover:shadow-[0px_3px_20px_hsla(180,90%,43%,0.2)] transition-shadow">
+							<div className="relative max-w-[390px] p-2.5 pl-5 bg-prussian-blue rounded-md border border-carolina-blue flex items-center hover:shadow-[0px_3px_20px_hsla(180,90%,43%,0.2)] transition-shadow">
 								<input
 									type="email"
 									placeholder="Type your email address"
-									className="flex-1 bg-transparent outline-none text-[hsl(216,100%,95%)] placeholder:text-[hsl(216,33%,68%)] pr-2"
+									className="flex-1 bg-transparent outline-none text-alice-blue placeholder:text-wild-blue-yonder pr-2"
 								/>
 								<button type="button" className="navy-blue-blog-btn px-4 py-2 rounded-md text-sm flex items-center gap-1">
 									<span>Subscribe</span>
@@ -149,8 +149,8 @@ function BlogHomePage() {
 					<div className="navy-blue-blog-card p-6 rounded-lg">
 						<div className="grid lg:grid-cols-[0.3fr_1fr] gap-5 items-center">
 							<div className="mb-4 lg:mb-0">
-								<h2 className="headline headline-2 text-[hsl(199,69%,84%)] mb-2.5">Hot topics</h2>
-								<p className="text-[hsl(216,33%,68%)] text-sm mb-5">
+								<h2 className="headline headline-2 text-columbia-blue mb-2.5">Hot topics</h2>
+								<p className="text-wild-blue-yonder text-sm mb-5">
 									Explore trending categories and find what interests you most.
 								</p>
 								<div className="flex items-center gap-2.5">
@@ -180,7 +180,7 @@ function BlogHomePage() {
 												to="/topics"
 												className="block relative group"
 											>
-												<figure className="aspect-[507/618] rounded-lg overflow-hidden bg-[hsl(216,33%,20%)]">
+												<figure className="aspect-[507/618] rounded-lg overflow-hidden bg-prussian-blue">
 													<img
 														src={TOPIC_IMAGES[index % TOPIC_IMAGES.length]}
 														alt={topic.name}
@@ -190,7 +190,7 @@ function BlogHomePage() {
 												</figure>
 												<div className="absolute inset-0 bg-gradient-to-t from-[#000d1a] to-transparent rounded-lg" />
 												<div className="absolute bottom-4 left-4">
-													<span className="text-[hsl(199,69%,84%)] font-bold group-hover:text-[hsl(199,89%,49%)] transition-colors">
+													<span className="text-columbia-blue font-bold group-hover:text-carolina-blue transition-colors">
 														{topic.name}
 													</span>
 												</div>
@@ -207,10 +207,10 @@ function BlogHomePage() {
 			{/* Featured Posts */}
 			<section className="navy-blue-blog-section relative" id="featured">
 				<div className="container mx-auto px-4 max-w-[1140px]">
-					<h2 className="headline headline-2 text-[hsl(199,69%,84%)] mb-2.5">
+					<h2 className="headline headline-2 text-columbia-blue mb-2.5">
 						<span className="navy-blue-blog-gradient-text">Featured</span> Posts
 					</h2>
-					<p className="text-lg text-[hsl(216,33%,68%)] mb-16">
+					<p className="text-lg text-wild-blue-yonder mb-16">
 						Discover our most popular and trending articles
 					</p>
 
@@ -225,10 +225,10 @@ function BlogHomePage() {
 											: "w-full lg:w-[calc(33.33%-22px)]"
 									}`}
 								>
-									<div className="aspect-video rounded-2xl bg-[hsl(216,33%,20%)] mb-6" />
+									<div className="aspect-video rounded-2xl bg-prussian-blue mb-6" />
 									<div className="space-y-3">
-										<div className="h-4 bg-[hsl(216,33%,20%)] rounded w-3/4" />
-										<div className="h-4 bg-[hsl(216,33%,20%)] rounded w-full" />
+										<div className="h-4 bg-prussian-blue rounded w-3/4" />
+										<div className="h-4 bg-prussian-blue rounded w-full" />
 									</div>
 								</div>
 							))}
@@ -244,15 +244,15 @@ function BlogHomePage() {
 											: "w-full lg:w-[calc(33.33%-22px)]"
 									}`}
 								>
-									<figure className="aspect-video rounded-2xl overflow-hidden bg-[hsl(216,33%,20%)] mb-6 relative">
+									<figure className="aspect-video rounded-2xl overflow-hidden bg-prussian-blue mb-6 relative">
 										<ThrottledImage
 											src={post.featuredImageUrl ?? "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&h=500&fit=crop"}
 											alt={post.title}
 											className="w-full h-full object-cover"
-											placeholder={<div className="w-full h-full bg-[hsl(216,33%,20%)] animate-pulse" />}
+											placeholder={<div className="w-full h-full bg-prussian-blue animate-pulse" />}
 										/>
 										{(post as any).isPremium && (
-											<div className="absolute top-3 left-3 flex items-center gap-1 bg-gradient-to-r from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+											<div className="absolute top-3 left-3 flex items-center gap-1 bg-gradient-to-r from-carolina-blue to-blog-teal text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
 												✦ Premium
 											</div>
 										)}
@@ -262,13 +262,13 @@ function BlogHomePage() {
 										<div className="flex items-center gap-2.5">
 											<Avatar className="w-10 h-10">
 												<AvatarImage src={post.author?.avatarUrl ?? undefined} alt={post.author?.displayName ?? "Unknown"} />
-												<AvatarFallback className="bg-[hsl(216,33%,20%)]">
+												<AvatarFallback className="bg-prussian-blue">
 													{(post.author?.displayName ?? "U").charAt(0).toUpperCase()}
 												</AvatarFallback>
 											</Avatar>
 											<div>
-												<p className="text-[hsl(217,17%,48%)] font-bold">{post.author?.displayName ?? "Unknown"}</p>
-												<p className="text-xs text-[hsl(217,17%,48%)]">
+												<p className="text-slate-gray font-bold">{post.author?.displayName ?? "Unknown"}</p>
+												<p className="text-xs text-slate-gray">
 													{new Date(post.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
 												</p>
 											</div>
@@ -279,18 +279,18 @@ function BlogHomePage() {
 									</div>
 
 									<h3
-										className={`headline-3 text-[hsl(199,69%,84%)] mb-4 hover:text-[hsl(199,89%,49%)] transition-colors ${index >= 2 ? "text-xl" : ""}`}
+										className={`headline-3 text-columbia-blue mb-4 hover:text-carolina-blue transition-colors ${index >= 2 ? "text-xl" : ""}`}
 									>
 										<Link to="/$slug" params={{ slug: post.slug }}>
 											{post.title}
 										</Link>
 									</h3>
 
-									<p className="text-[hsl(216,33%,68%)] text-sm mb-5 line-clamp-2">
+									<p className="text-wild-blue-yonder text-sm mb-5 line-clamp-2">
 										{post.excerpt}
 									</p>
 
-									<div className="flex items-center justify-between text-sm text-[hsl(216,33%,68%)]">
+									<div className="flex items-center justify-between text-sm text-wild-blue-yonder">
 										<div className="flex items-center gap-1">
 											<Clock className="w-4 h-4" />
 											<span>{Math.max(1, Math.round((post.excerpt?.split(" ").length ?? 200) / 200))} min read</span>
@@ -298,7 +298,7 @@ function BlogHomePage() {
 										<Link
 											to="/$slug"
 											params={{ slug: post.slug }}
-											className="text-[hsl(199,89%,49%)] font-medium hover:underline"
+											className="text-carolina-blue font-medium hover:underline"
 										>
 											Read More
 										</Link>
@@ -328,10 +328,10 @@ function BlogHomePage() {
 					<div className="grid lg:grid-cols-[1fr_0.6fr] gap-12 items-start">
 						{/* Recent Posts */}
 						<div>
-							<h2 className="headline headline-2 text-[hsl(199,69%,84%)] mb-2.5">
+							<h2 className="headline headline-2 text-columbia-blue mb-2.5">
 								Recent Posts
 							</h2>
-							<p className="text-lg text-[hsl(216,33%,68%)] mb-16">
+							<p className="text-lg text-wild-blue-yonder mb-16">
 								Stay updated with our latest articles
 							</p>
 
@@ -341,34 +341,34 @@ function BlogHomePage() {
 										key={post.id}
 										className="grid sm:grid-cols-[0.7fr_1fr] gap-5 group"
 									>
-										<figure className="aspect-[4/3] rounded-2xl overflow-hidden bg-[hsl(216,33%,20%)] transition-transform group-hover:-translate-y-0.5">
+										<figure className="aspect-[4/3] rounded-2xl overflow-hidden bg-prussian-blue transition-transform group-hover:-translate-y-0.5">
 											<ThrottledImage
 												src={post.featuredImageUrl ?? "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=300&fit=crop"}
 												alt={post.title}
 												className="w-full h-full object-cover"
-												placeholder={<div className="w-full h-full bg-[hsl(216,33%,20%)] animate-pulse" />}
+												placeholder={<div className="w-full h-full bg-prussian-blue animate-pulse" />}
 											/>
 										</figure>
 										<div>
 											{post.category?.name && (
 												<span className="navy-blue-blog-badge mb-4">{post.category.name}</span>
 											)}
-											<h3 className="headline-3 text-[hsl(199,69%,84%)] mb-4 hover:text-[hsl(199,89%,49%)] transition-colors text-xl mt-2">
+											<h3 className="headline-3 text-columbia-blue mb-4 hover:text-carolina-blue transition-colors text-xl mt-2">
 												<Link to="/$slug" params={{ slug: post.slug }}>
 													{post.title}
 												</Link>
 											</h3>
-											<p className="text-[hsl(216,33%,68%)] text-sm leading-tight mb-5">
+											<p className="text-wild-blue-yonder text-sm leading-tight mb-5">
 												{post.excerpt}
 											</p>
-											<div className="flex items-center gap-4 text-sm text-[hsl(217,17%,48%)]">
+											<div className="flex items-center gap-4 text-sm text-slate-gray">
 												<div className="flex items-center gap-2">
 													<Avatar className="w-6 h-6">
 														<AvatarImage
 															src={post.author?.avatarUrl ?? undefined}
 															alt={post.author?.displayName ?? "Unknown"}
 														/>
-														<AvatarFallback className="bg-[hsl(216,33%,20%)] text-xs">
+														<AvatarFallback className="bg-prussian-blue text-xs">
 															{(post.author?.displayName ?? "U").charAt(0).toUpperCase()}
 														</AvatarFallback>
 													</Avatar>
@@ -394,7 +394,7 @@ function BlogHomePage() {
 										type="button"
 										onClick={() => recentQuery.fetchNextPage()}
 										disabled={recentQuery.isFetchingNextPage}
-										className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[hsl(216,33%,20%)] text-white text-sm font-medium hover:bg-[hsl(199,89%,49%)] transition-colors disabled:opacity-60"
+										className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-prussian-blue text-white text-sm font-medium hover:bg-carolina-blue transition-colors disabled:opacity-60"
 									>
 										{recentQuery.isFetchingNextPage ? (
 											<><Loader2 className="w-4 h-4 animate-spin" /> Loading…</>
@@ -408,10 +408,10 @@ function BlogHomePage() {
 						<aside className="space-y-8">
 							{/* Popular Posts */}
 							<div className="navy-blue-blog-card p-6 rounded-2xl">
-								<h3 className="headline-2 text-[hsl(199,69%,84%)] mb-10 text-xl">
+								<h3 className="headline-2 text-columbia-blue mb-10 text-xl">
 									<span className="relative">
 										Popular Posts
-										<span className="absolute bottom-[-10px] left-0 w-24 h-[3px] bg-[hsl(199,89%,49%)]" />
+										<span className="absolute bottom-[-10px] left-0 w-24 h-[3px] bg-carolina-blue" />
 									</span>
 								</h3>
 
@@ -420,15 +420,15 @@ function BlogHomePage() {
 										<article key={post.id} className="flex items-start gap-3">
 											<Avatar className="w-14 h-14 flex-shrink-0">
 												<AvatarImage src={post.author?.avatarUrl ?? undefined} alt={post.title} />
-												<AvatarFallback className="bg-[hsl(216,33%,20%)]">P</AvatarFallback>
+												<AvatarFallback className="bg-prussian-blue">P</AvatarFallback>
 											</Avatar>
-											<div className="flex-1 border-b border-[hsl(216,33%,20%)] pb-5">
-												<h4 className="text-[hsl(199,69%,84%)] font-medium mb-3 hover:text-[hsl(199,89%,49%)] transition-colors text-sm">
+											<div className="flex-1 border-b border-prussian-blue pb-5">
+												<h4 className="text-columbia-blue font-medium mb-3 hover:text-carolina-blue transition-colors text-sm">
 													<Link to="/$slug" params={{ slug: post.slug }}>
 														{post.title}
 													</Link>
 												</h4>
-												<div className="flex items-center gap-2.5 text-sm text-[hsl(217,17%,48%)]">
+												<div className="flex items-center gap-2.5 text-sm text-slate-gray">
 													<span>
 														{new Date(post.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
 													</span>
@@ -446,13 +446,13 @@ function BlogHomePage() {
 
 							{/* Newsletter */}
 							<div className="navy-blue-blog-card p-6 rounded-2xl">
-								<h3 className="headline-2 text-[hsl(199,69%,84%)] mb-4 text-xl">
+								<h3 className="headline-2 text-columbia-blue mb-4 text-xl">
 									<span className="relative">
 										Newsletter
-										<span className="absolute bottom-[-10px] left-0 w-24 h-[3px] bg-[hsl(199,89%,49%)]" />
+										<span className="absolute bottom-[-10px] left-0 w-24 h-[3px] bg-carolina-blue" />
 									</span>
 								</h3>
-								<p className="text-[hsl(217,17%,48%)] font-bold text-sm mb-8 mt-6">
+								<p className="text-slate-gray font-bold text-sm mb-8 mt-6">
 									Subscribe to get the latest updates
 								</p>
 								<form onSubmit={handleNewsletterSubmit}>
@@ -462,7 +462,7 @@ function BlogHomePage() {
 											value={newsletterEmail}
 											onChange={(e) => setNewsletterEmail(e.target.value)}
 											placeholder="Your email"
-											className="w-full bg-transparent border-b border-[hsl(216,33%,68%)] py-3 pr-8 text-sm outline-none focus:border-[hsl(199,89%,49%)] transition-colors text-[hsl(216,100%,95%)]"
+											className="w-full bg-transparent border-b border-wild-blue-yonder py-3 pr-8 text-sm outline-none focus:border-carolina-blue transition-colors text-alice-blue"
 											disabled={subscribeNewsletter.isPending}
 										/>
 									</div>

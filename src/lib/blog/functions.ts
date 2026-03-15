@@ -1450,3 +1450,180 @@ export const $listNewsletterSubscribers = createServerFn({ method: "GET" })
 			};
 		});
 	});
+
+// =============================================================================
+// Sites
+// =============================================================================
+
+import { sites, pages } from "@/lib/db/schema/cms.schema";
+
+export const $listSites = createServerFn({ method: "GET" })
+	.middleware([accessMiddleware({ permissions: { content: ["read"] } })])
+	.handler(async () => {
+		return safe(async () => {
+			const items = await db.query.sites.findMany({
+				orderBy: [desc(sites.createdAt)],
+				with: { pages: { columns: { id: true } } },
+			});
+			return items;
+		});
+	});
+
+export const $upsertSite = createServerFn({ method: "POST" })
+	.validator(
+		validate(
+			z.object({
+				id: z.string().uuid().optional(),
+				name: z.string().min(1).max(255),
+				slug: z.string().min(1).max(63).regex(/^[a-z0-9-]+$/),
+				description: z.string().optional(),
+				subdomain: z.string().optional(),
+				status: z.enum(["active", "suspended"]).default("active"),
+				gitRepo: z.string().optional(),
+				gitBranch: z.string().default("main"),
+				themeConfig: z
+					.object({
+						primaryColor: z.string().default("hsl(199,89%,49%)"),
+						accentColor: z.string().default("hsl(180,70%,45%)"),
+						fontFamily: z.string().default("Noto Sans"),
+						layout: z.enum(["classic", "magazine", "minimal", "portfolio"]).default("classic"),
+						darkMode: z.boolean().default(true),
+					})
+					.optional(),
+			}),
+		),
+	)
+	.middleware([accessMiddleware({ permissions: { content: ["write"] } })])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			const { id, ...payload } = data.data;
+
+			if (id) {
+				const [updated] = await db
+					.update(sites)
+					.set({ ...payload, updatedAt: new Date() })
+					.where(eq(sites.id, id))
+					.returning();
+				return updated;
+			}
+
+			const [created] = await db
+				.insert(sites)
+				.values({
+					...payload,
+					organizationId: session?.session?.activeOrganizationId ?? null,
+				})
+				.returning();
+			return created;
+		});
+	});
+
+export const $deleteSite = createServerFn({ method: "POST" })
+	.validator(validate(z.object({ id: z.string().uuid() })))
+	.middleware([accessMiddleware({ permissions: { content: ["write"] } })])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			await db.delete(sites).where(eq(sites.id, data.data.id));
+			return { ok: true };
+		});
+	});
+
+// =============================================================================
+// Pages (Puck)
+// =============================================================================
+
+export const $listPages = createServerFn({ method: "GET" })
+	.validator(validate(z.object({ siteId: z.string().uuid() })))
+	.middleware([accessMiddleware({ permissions: { content: ["read"] } })])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const items = await db.query.pages.findMany({
+				where: eq(pages.siteId, data.data.siteId),
+				orderBy: [asc(pages.showInNav), asc(pages.title)],
+			});
+			return items;
+		});
+	});
+
+export const $upsertPage = createServerFn({ method: "POST" })
+	.validator(
+		validate(
+			z.object({
+				id: z.string().uuid().optional(),
+				siteId: z.string().uuid(),
+				title: z.string().min(1).max(500),
+				slug: z.string().min(1).max(500),
+				status: z.enum(["draft", "published"]).default("draft"),
+				showInNav: z.boolean().default(false),
+				metaTitle: z.string().optional(),
+				metaDescription: z.string().optional(),
+				// Puck Data JSON — stored as-is in pages.blocks
+				puckData: z.record(z.unknown()).optional(),
+			}),
+		),
+	)
+	.middleware([accessMiddleware({ permissions: { content: ["write"] } })])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			const authorId = session?.user?.id;
+			if (!authorId) throw new Error("Unauthenticated");
+
+			const { id, puckData, ...payload } = data.data;
+
+			const blocksValue = puckData ?? null;
+
+			if (id) {
+				const [updated] = await db
+					.update(pages)
+					.set({ ...payload, blocks: blocksValue as any, updatedAt: new Date() })
+					.where(eq(pages.id, id))
+					.returning();
+				return updated;
+			}
+
+			const [created] = await db
+				.insert(pages)
+				.values({ ...payload, blocks: blocksValue as any, authorId })
+				.returning();
+			return created;
+		});
+	});
+
+export const $deletePage = createServerFn({ method: "POST" })
+	.validator(validate(z.object({ id: z.string().uuid() })))
+	.middleware([accessMiddleware({ permissions: { content: ["write"] } })])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			await db.delete(pages).where(eq(pages.id, data.data.id));
+			return { ok: true };
+		});
+	});
+
+export const $getPageBySlug = createServerFn({ method: "GET" })
+	.validator(validate(z.object({ siteSlug: z.string(), pageSlug: z.string() })))
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const site = await db.query.sites.findFirst({
+				where: eq(sites.slug, data.data.siteSlug),
+			});
+			if (!site) throw new Error("Site not found");
+
+			const page = await db.query.pages.findFirst({
+				where: and(
+					eq(pages.siteId, site.id),
+					eq(pages.slug, data.data.pageSlug),
+					eq(pages.status, "published"),
+				),
+			});
+			if (!page) throw new Error("Page not found");
+			return { site, page };
+		});
+	});

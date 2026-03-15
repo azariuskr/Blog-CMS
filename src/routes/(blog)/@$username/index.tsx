@@ -43,7 +43,7 @@ function AuthorProfilePage() {
 	if (profileQuery.isLoading) {
 		return (
 			<div className="flex items-center justify-center min-h-screen">
-				<p className="text-[hsl(216,33%,68%)]">Loading profile…</p>
+				<p className="text-wild-blue-yonder">Loading profile…</p>
 			</div>
 		);
 	}
@@ -51,8 +51,8 @@ function AuthorProfilePage() {
 	if (!profile && !profileQuery.isLoading) {
 		return (
 			<div className="flex flex-col items-center justify-center min-h-screen text-center">
-				<FileText className="w-12 h-12 text-[hsl(216,33%,68%)] mb-4" />
-				<p className="text-[hsl(216,33%,68%)] text-lg">Author not found</p>
+				<FileText className="w-12 h-12 text-wild-blue-yonder mb-4" />
+				<p className="text-wild-blue-yonder text-lg">Author not found</p>
 			</div>
 		);
 	}
@@ -78,24 +78,24 @@ function AuthorProfilePage() {
 				) : (
 					<div className="w-full h-full bg-gradient-to-br from-[hsl(199,89%,30%)] to-[hsl(222,47%,20%)]" />
 				)}
-				<div className="absolute inset-0 bg-gradient-to-t from-[hsl(222,47%,11%)] via-[hsl(222,47%,11%)]/40 to-transparent" />
+				<div className="absolute inset-0 bg-gradient-to-t from-oxford-blue-2 via-oxford-blue-2/40 to-transparent" />
 			</div>
 
 			{/* Profile section */}
 			<div className="container mx-auto px-4 max-w-[1140px]">
 				{/* Avatar + actions row */}
 				<div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 -mt-16 mb-8 relative z-10">
-					<Avatar className="w-28 h-28 border-4 border-[hsl(222,47%,11%)] ring-2 ring-[hsl(199,89%,49%)]">
+					<Avatar className="w-28 h-28 border-4 border-oxford-blue-2 ring-2 ring-carolina-blue">
 						{profile!.avatarUrl && (
 							<AvatarImage src={profile!.avatarUrl} alt={displayName} />
 						)}
-						<AvatarFallback className="bg-gradient-to-br from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] text-white text-3xl font-bold">
+						<AvatarFallback className="bg-gradient-to-br from-carolina-blue to-blog-teal text-white text-3xl font-bold">
 							{displayName[0]}
 						</AvatarFallback>
 					</Avatar>
 					<div className="flex items-center gap-3">
 						<Button
-							className="bg-gradient-to-r from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] hover:opacity-90 text-white"
+							className="bg-gradient-to-r from-carolina-blue to-blog-teal hover:opacity-90 text-white"
 							onClick={() => {
 								if (!userId || !profile?.userId) return;
 								setIsFollowing(!isFollowing);
@@ -107,7 +107,7 @@ function AuthorProfilePage() {
 						</Button>
 						<Button
 							variant="outline"
-							className="border-[hsl(216,33%,20%)] text-[hsl(216,33%,68%)] hover:bg-[hsl(216,33%,20%)]"
+							className="border-prussian-blue text-wild-blue-yonder hover:bg-prussian-blue"
 						>
 							Message
 						</Button>
@@ -117,16 +117,16 @@ function AuthorProfilePage() {
 				{/* Author info */}
 				<div className="mb-10">
 					<h1 className="text-3xl font-bold text-white mb-2">{displayName}</h1>
-					<p className="text-[hsl(216,33%,68%)] mb-2">@{username}</p>
+					<p className="text-wild-blue-yonder mb-2">@{username}</p>
 
 					{profile!.bio && (
-						<p className="text-[hsl(217,24%,59%)] max-w-2xl mb-5 leading-relaxed">
+						<p className="text-shadow-blue max-w-2xl mb-5 leading-relaxed">
 							{profile!.bio}
 						</p>
 					)}
 
 					{/* Meta row */}
-					<div className="flex flex-wrap items-center gap-4 text-sm text-[hsl(216,33%,68%)] mb-5">
+					<div className="flex flex-wrap items-center gap-4 text-sm text-wild-blue-yonder mb-5">
 						{profile!.location && (
 							<div className="flex items-center gap-1.5">
 								<MapPin className="w-4 h-4" />
@@ -138,7 +138,7 @@ function AuthorProfilePage() {
 								href={profile!.website}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="flex items-center gap-1.5 hover:text-[hsl(199,89%,49%)] transition-colors"
+								className="flex items-center gap-1.5 hover:text-carolina-blue transition-colors"
 							>
 								<Globe className="w-4 h-4" />
 								{profile!.website.replace(/^https?:\/\//, "")}
@@ -194,23 +194,23 @@ function AuthorProfilePage() {
 				<div className="grid grid-cols-3 gap-6 p-6 navy-blue-blog-card rounded-2xl mb-12 max-w-sm">
 					<div className="text-center">
 						<div className="flex items-center justify-center gap-1.5 text-2xl font-bold text-white mb-1">
-							<FileText className="w-5 h-5 text-[hsl(199,89%,49%)]" />
+							<FileText className="w-5 h-5 text-carolina-blue" />
 							{profile!.postCount ?? 0}
 						</div>
-						<p className="text-xs text-[hsl(216,33%,68%)]">Posts</p>
+						<p className="text-xs text-wild-blue-yonder">Posts</p>
 					</div>
-					<div className="text-center border-x border-[hsl(216,33%,20%)]">
+					<div className="text-center border-x border-prussian-blue">
 						<div className="flex items-center justify-center gap-1.5 text-2xl font-bold text-white mb-1">
-							<Users className="w-5 h-5 text-[hsl(199,89%,49%)]" />
+							<Users className="w-5 h-5 text-carolina-blue" />
 							{(profile!.followersCount ?? 0).toLocaleString()}
 						</div>
-						<p className="text-xs text-[hsl(216,33%,68%)]">Followers</p>
+						<p className="text-xs text-wild-blue-yonder">Followers</p>
 					</div>
 					<div className="text-center">
 						<div className="text-2xl font-bold text-white mb-1">
 							{profile!.followingCount ?? 0}
 						</div>
-						<p className="text-xs text-[hsl(216,33%,68%)]">Following</p>
+						<p className="text-xs text-wild-blue-yonder">Following</p>
 					</div>
 				</div>
 
@@ -219,7 +219,7 @@ function AuthorProfilePage() {
 					<h2 className="text-2xl font-bold text-white mb-8">
 						<span className="relative">
 							Latest Posts
-							<span className="absolute bottom-[-8px] left-0 w-20 h-[3px] bg-gradient-to-r from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)]" />
+							<span className="absolute bottom-[-8px] left-0 w-20 h-[3px] bg-gradient-to-r from-carolina-blue to-blog-teal" />
 						</span>
 					</h2>
 
@@ -242,20 +242,20 @@ function AuthorProfilePage() {
 										<span className="navy-blue-blog-badge">
 											{post.category?.name ?? "Uncategorized"}
 										</span>
-										<div className="flex items-center gap-1 text-xs text-[hsl(217,17%,48%)]">
+										<div className="flex items-center gap-1 text-xs text-slate-gray">
 											<Eye className="w-3.5 h-3.5" />
 											<span>{(post.viewCount ?? 0).toLocaleString()}</span>
 										</div>
 									</div>
-									<h3 className="text-[hsl(199,69%,84%)] font-semibold mb-3 text-lg hover:text-[hsl(199,89%,49%)] transition-colors line-clamp-2">
+									<h3 className="text-columbia-blue font-semibold mb-3 text-lg hover:text-carolina-blue transition-colors line-clamp-2">
 										<Link to="/$slug" params={{ slug: post.slug }}>
 											{post.title}
 										</Link>
 									</h3>
-									<p className="text-[hsl(216,33%,68%)] text-sm mb-4 line-clamp-2">
+									<p className="text-wild-blue-yonder text-sm mb-4 line-clamp-2">
 										{post.excerpt}
 									</p>
-									<div className="flex items-center justify-between text-xs text-[hsl(217,17%,48%)]">
+									<div className="flex items-center justify-between text-xs text-slate-gray">
 										<span>
 											{post.publishedAt
 												? new Date(post.publishedAt).toLocaleDateString("en-US", {
@@ -276,8 +276,8 @@ function AuthorProfilePage() {
 
 					{authorPosts.length === 0 && (
 						<div className="flex flex-col items-center justify-center py-20 text-center">
-							<FileText className="w-12 h-12 text-[hsl(216,33%,68%)] mb-4" />
-							<p className="text-[hsl(216,33%,68%)]">No posts yet</p>
+							<FileText className="w-12 h-12 text-wild-blue-yonder mb-4" />
+							<p className="text-wild-blue-yonder">No posts yet</p>
 						</div>
 					)}
 				</div>

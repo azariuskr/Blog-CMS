@@ -39,7 +39,7 @@ A multi-tenant publishing platform supporting:
 
 ### 0.4 Client integration
 - [x] Install `better-auth-ui` if not already present; verify org components are available ✅ (`@daveyplate/better-auth-ui` v3.3.12 installed)
-- [ ] Add `OrgProvider` to authenticated layout (`src/routes/(authenticated)/route.tsx`)
+- [x] Add `OrgProvider` to authenticated layout ✅ (org context provided by BetterAuthUiProviders + useActiveOrganization — no separate provider needed)
 - [x] Add org switcher to admin sidebar / header ✅ (`OrganizationSwitcher` in `app-header.tsx`)
 - [x] Wire create-organization flow (replaces manual tenant creation) ✅ (`OrganizationView` routes at `/org/` + `/admin/organization/`)
 - [x] Wire invite-member flow (replaces manual tenant member addition) ✅ (handled via `OrganizationView`)

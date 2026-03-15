@@ -182,13 +182,13 @@
 ## Phase E — Asset Pipeline (Author-First)
 
 ### E1. Processing pipeline
-- [ ] Upload endpoint with org/user scoping.
-- [ ] Async optimization jobs:
-  - [ ] resize
-  - [ ] compression
-  - [ ] webp variants
-  - [ ] metadata extraction
-- [ ] Quotas/limits per role/org plan.
+- [x] Upload endpoint with org/user scoping. ✅ (orgId/isOrgShared on uploadFile(), storageQuota table)
+- [x] Async optimization jobs: ✅ (fileUploadedFunction in functions.ts)
+  - [x] resize ✅
+  - [x] compression ✅
+  - [x] webp variants ✅
+  - [x] metadata extraction ✅
+- [x] Quotas/limits per role/org plan. ✅ (enforceQuota(), adjustQuota(), applyRoleQuota() in service.ts)
 
 ### E2. Asset library + picker
 - [x] My Assets page with search/filter/sort. ✅ (`/dashboard/assets` reuses `AdminStorageView`)
@@ -196,12 +196,12 @@
 - [x] Insert assets as typed content blocks. ✅ (inserts as `image` block)
 
 ### E3. Ownership/governance
-- [ ] Ownership model (user-owned vs org-shared).
-- [ ] Deletion safety (block delete if in-use, or provide replace flow).
+- [x] Ownership model (user-owned vs org-shared). ✅ (orgId + isOrgShared cols; migration 0010_asset_governance.sql)
+- [x] Deletion safety (block delete if in-use, or provide replace flow). ✅ (isFileInUse() check; soft-delete via deletedAt)
 
 **Done criteria**
-- [ ] Author upload-to-insert flow is smooth and reusable.
-- [ ] Served assets are optimized by default.
+- [x] Author upload-to-insert flow is smooth and reusable. ✅
+- [x] Served assets are optimized by default. ✅
 
 ---
 
@@ -221,7 +221,7 @@
 
 ### F2. Public/blog migration (earlier Phase 2)
 - [ ] Replace hardcoded `hsl(...)`/raw color classes in `src/routes/(blog)/*` with semantic classes.
-- [ ] Keep `navy-blue-blog-*` utilities for pattern-level styling only.
+- [x] Keep `navy-blue-blog-*` utilities for pattern-level styling only. ✅
 
 ### F3. Unified light + dark (earlier Phase 3)
 - [ ] Define matching light token set for NavyBlueBlog identity.

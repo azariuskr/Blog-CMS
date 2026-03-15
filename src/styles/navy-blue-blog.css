@@ -51,6 +51,9 @@
 	--text-carolina-blue: hsl(199, 89%, 49%);
 	--text-shadow-blue: hsl(217, 24%, 59%);
 	--text-slate-gray: hsl(217, 17%, 48%);
+	--text-yonder-dim: hsl(216, 33%, 50%);
+	--bg-prussian-blue-dark: hsl(216, 33%, 30%);
+	--bg-teal: hsl(180, 70%, 45%);
 
 	--gradient-1: linear-gradient(90deg, #0ea5ea, #0bd1d1 51%);
 	--gradient-2: linear-gradient(90deg, #0ea5ea, #0bd1d1 51%, #0ea5ea);
@@ -181,3 +184,19 @@
 .hover-1:hover { color: var(--text-wild-blue-yonder); transform: translateX(3px); }
 .hover-2 { transition: var(--transition-1); }
 .hover-2:hover { color: var(--text-carolina-blue); }
+
+/* biome-ignore lint/suspicious/noUnknownAtRules: Tailwind CSS v4 @theme — blog palette tokens */
+@theme inline {
+	--color-oxford-blue-2: var(--bg-oxford-blue-2);
+	--color-oxford-blue: var(--bg-oxford-blue);
+	--color-prussian-blue: var(--bg-prussian-blue);
+	--color-carolina-blue: var(--bg-carolina-blue);
+	--color-wild-blue-yonder: var(--bg-wild-blue-yonder);
+	--color-alice-blue: var(--text-alice-blue);
+	--color-columbia-blue: var(--text-columbia-blue);
+	--color-shadow-blue: var(--text-shadow-blue);
+	--color-slate-gray: var(--text-slate-gray);
+	--color-yonder-dim: var(--text-yonder-dim);
+	--color-prussian-blue-dark: var(--bg-prussian-blue-dark);
+	--color-blog-teal: var(--bg-teal);
+}

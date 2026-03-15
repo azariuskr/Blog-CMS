@@ -66,6 +66,7 @@ import { Route as ApiAuthPasskeyVerifyRegistrationRouteImport } from './routes/a
 import { Route as ApiAuthPasskeySignInRouteImport } from './routes/api/auth/passkey/sign-in'
 import { Route as ApiAuthPasskeyRegistrationOptionsRouteImport } from './routes/api/auth/passkey/registration-options'
 import { Route as ApiAuthPasskeyAddPasskeyRouteImport } from './routes/api/auth/passkey/add-passkey'
+import { Route as blogSitesSiteSlugPageSlugRouteImport } from './routes/(blog)/sites/$siteSlug/$pageSlug'
 import { Route as authenticatedOrgSlugOrganizationViewRouteImport } from './routes/(authenticated)/org/$slug/$organizationView'
 import { Route as authenticatedAdminOrganizationOrganizationViewRouteImport } from './routes/(authenticated)/admin/organization/$organizationView'
 import { Route as authenticatedAdminBlogTagsRouteImport } from './routes/(authenticated)/admin/blog/tags'
@@ -392,6 +393,12 @@ const ApiAuthPasskeyAddPasskeyRoute =
     path: '/api/auth/passkey/add-passkey',
     getParentRoute: () => rootRouteImport,
   } as any)
+const blogSitesSiteSlugPageSlugRoute =
+  blogSitesSiteSlugPageSlugRouteImport.update({
+    id: '/sites/$siteSlug/$pageSlug',
+    path: '/sites/$siteSlug/$pageSlug',
+    getParentRoute: () => blogRouteRoute,
+  } as any)
 const authenticatedOrgSlugOrganizationViewRoute =
   authenticatedOrgSlugOrganizationViewRouteImport.update({
     id: '/org/$slug/$organizationView',
@@ -589,6 +596,7 @@ export interface FileRoutesByFullPath {
   '/admin/blog/tags': typeof authenticatedAdminBlogTagsRoute
   '/admin/organization/$organizationView': typeof authenticatedAdminOrganizationOrganizationViewRoute
   '/org/$slug/$organizationView': typeof authenticatedOrgSlugOrganizationViewRoute
+  '/sites/$siteSlug/$pageSlug': typeof blogSitesSiteSlugPageSlugRoute
   '/api/auth/passkey/add-passkey': typeof ApiAuthPasskeyAddPasskeyRoute
   '/api/auth/passkey/registration-options': typeof ApiAuthPasskeyRegistrationOptionsRoute
   '/api/auth/passkey/sign-in': typeof ApiAuthPasskeySignInRoute
@@ -662,6 +670,7 @@ export interface FileRoutesByTo {
   '/admin/blog/tags': typeof authenticatedAdminBlogTagsRoute
   '/admin/organization/$organizationView': typeof authenticatedAdminOrganizationOrganizationViewRoute
   '/org/$slug/$organizationView': typeof authenticatedOrgSlugOrganizationViewRoute
+  '/sites/$siteSlug/$pageSlug': typeof blogSitesSiteSlugPageSlugRoute
   '/api/auth/passkey/add-passkey': typeof ApiAuthPasskeyAddPasskeyRoute
   '/api/auth/passkey/registration-options': typeof ApiAuthPasskeyRegistrationOptionsRoute
   '/api/auth/passkey/sign-in': typeof ApiAuthPasskeySignInRoute
@@ -744,6 +753,7 @@ export interface FileRoutesById {
   '/(authenticated)/admin/blog/tags': typeof authenticatedAdminBlogTagsRoute
   '/(authenticated)/admin/organization/$organizationView': typeof authenticatedAdminOrganizationOrganizationViewRoute
   '/(authenticated)/org/$slug/$organizationView': typeof authenticatedOrgSlugOrganizationViewRoute
+  '/(blog)/sites/$siteSlug/$pageSlug': typeof blogSitesSiteSlugPageSlugRoute
   '/api/auth/passkey/add-passkey': typeof ApiAuthPasskeyAddPasskeyRoute
   '/api/auth/passkey/registration-options': typeof ApiAuthPasskeyRegistrationOptionsRoute
   '/api/auth/passkey/sign-in': typeof ApiAuthPasskeySignInRoute
@@ -824,6 +834,7 @@ export interface FileRouteTypes {
     | '/admin/blog/tags'
     | '/admin/organization/$organizationView'
     | '/org/$slug/$organizationView'
+    | '/sites/$siteSlug/$pageSlug'
     | '/api/auth/passkey/add-passkey'
     | '/api/auth/passkey/registration-options'
     | '/api/auth/passkey/sign-in'
@@ -897,6 +908,7 @@ export interface FileRouteTypes {
     | '/admin/blog/tags'
     | '/admin/organization/$organizationView'
     | '/org/$slug/$organizationView'
+    | '/sites/$siteSlug/$pageSlug'
     | '/api/auth/passkey/add-passkey'
     | '/api/auth/passkey/registration-options'
     | '/api/auth/passkey/sign-in'
@@ -978,6 +990,7 @@ export interface FileRouteTypes {
     | '/(authenticated)/admin/blog/tags'
     | '/(authenticated)/admin/organization/$organizationView'
     | '/(authenticated)/org/$slug/$organizationView'
+    | '/(blog)/sites/$siteSlug/$pageSlug'
     | '/api/auth/passkey/add-passkey'
     | '/api/auth/passkey/registration-options'
     | '/api/auth/passkey/sign-in'
@@ -1419,6 +1432,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthPasskeyAddPasskeyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(blog)/sites/$siteSlug/$pageSlug': {
+      id: '/(blog)/sites/$siteSlug/$pageSlug'
+      path: '/sites/$siteSlug/$pageSlug'
+      fullPath: '/sites/$siteSlug/$pageSlug'
+      preLoaderRoute: typeof blogSitesSiteSlugPageSlugRouteImport
+      parentRoute: typeof blogRouteRoute
+    }
     '/(authenticated)/org/$slug/$organizationView': {
       id: '/(authenticated)/org/$slug/$organizationView'
       path: '/org/$slug/$organizationView'
@@ -1792,6 +1812,7 @@ interface blogRouteRouteChildren {
   blogTopicsRoute: typeof blogTopicsRoute
   blogIndexRoute: typeof blogIndexRoute
   blogAtusernameIndexRoute: typeof blogAtusernameIndexRoute
+  blogSitesSiteSlugPageSlugRoute: typeof blogSitesSiteSlugPageSlugRoute
 }
 
 const blogRouteRouteChildren: blogRouteRouteChildren = {
@@ -1802,6 +1823,7 @@ const blogRouteRouteChildren: blogRouteRouteChildren = {
   blogTopicsRoute: blogTopicsRoute,
   blogIndexRoute: blogIndexRoute,
   blogAtusernameIndexRoute: blogAtusernameIndexRoute,
+  blogSitesSiteSlugPageSlugRoute: blogSitesSiteSlugPageSlugRoute,
 }
 
 const blogRouteRouteWithChildren = blogRouteRoute._addFileChildren(

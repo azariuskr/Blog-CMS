@@ -1,10 +1,10 @@
 import crypto from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { STORAGE_API, STORAGE_PATHS, type StoragePath } from "@/constants";
 import { env } from "@/env/server";
 import { withBasePath } from "@/lib/url/with-base-path";
 import { db } from "@/lib/db";
-import { file, user } from "@/lib/db/schema";
+import { file, storageQuota, user } from "@/lib/db/schema";
 import {
 	sendFileUploadedEvent,
 	sendUserAvatarUploadedEvent,
@@ -42,6 +42,10 @@ export interface UploadFileInput {
 	mimeType: string;
 	userId: string;
 	category: FileCategory;
+	/** Optional: org ID for org-shared assets */
+	orgId?: string;
+	/** Whether asset should be visible to all org members */
+	isOrgShared?: boolean;
 }
 
 export interface UploadFileResult {
@@ -57,7 +61,116 @@ export interface DeleteResult {
 }
 
 // ============================================================================
-// Path Generation
+// Quota Management
+// ============================================================================
+
+/** Default quota limits by role (bytes) */
+const ROLE_QUOTA_LIMITS: Record<string, number> = {
+	admin: 10 * 1024 * 1024 * 1024,    // 10 GB
+	editor: 2 * 1024 * 1024 * 1024,     // 2 GB
+	author: 512 * 1024 * 1024,           // 512 MB
+	user: 100 * 1024 * 1024,             // 100 MB
+};
+
+/** Get or create a quota record for a user or org */
+async function getOrCreateQuota(ownerType: "user" | "org", ownerId: string): Promise<typeof storageQuota.$inferSelect> {
+	const existing = await db
+		.select()
+		.from(storageQuota)
+		.where(and(eq(storageQuota.ownerType, ownerType), eq(storageQuota.ownerId, ownerId)))
+		.limit(1);
+
+	if (existing[0]) return existing[0];
+
+	const [created] = await db
+		.insert(storageQuota)
+		.values({ ownerType, ownerId })
+		.onConflictDoNothing()
+		.returning();
+
+	if (created) return created;
+
+	// Concurrent insert race — fetch again
+	const [fetched] = await db
+		.select()
+		.from(storageQuota)
+		.where(and(eq(storageQuota.ownerType, ownerType), eq(storageQuota.ownerId, ownerId)))
+		.limit(1);
+	return fetched;
+}
+
+/** Check whether an upload would exceed the quota; throws if it would */
+export async function enforceQuota(userId: string, additionalBytes: number): Promise<void> {
+	const quota = await getOrCreateQuota("user", userId);
+	if (quota.usedBytes + additionalBytes > quota.limitBytes) {
+		const usedMb = Math.round(quota.usedBytes / 1024 / 1024);
+		const limitMb = Math.round(quota.limitBytes / 1024 / 1024);
+		throw new Error(`Storage quota exceeded: ${usedMb} MB used of ${limitMb} MB limit`);
+	}
+}
+
+/** Update quota after upload/delete */
+async function adjustQuota(ownerType: "user" | "org", ownerId: string, deltaBytes: number, deltaCount: number): Promise<void> {
+	await db
+		.insert(storageQuota)
+		.values({ ownerType, ownerId, usedBytes: Math.max(0, deltaBytes), fileCount: Math.max(0, deltaCount) })
+		.onConflictDoUpdate({
+			target: [storageQuota.ownerType, storageQuota.ownerId],
+			set: {
+				usedBytes: sql`GREATEST(0, ${storageQuota.usedBytes} + ${deltaBytes})`,
+				fileCount: sql`GREATEST(0, ${storageQuota.fileCount} + ${deltaCount})`,
+				updatedAt: new Date(),
+			},
+		});
+}
+
+/** Get quota info for a user */
+export async function getUserQuota(userId: string): Promise<{ usedBytes: number; limitBytes: number; fileCount: number; percentUsed: number }> {
+	const quota = await getOrCreateQuota("user", userId);
+	return {
+		usedBytes: quota.usedBytes,
+		limitBytes: quota.limitBytes,
+		fileCount: quota.fileCount,
+		percentUsed: Math.round((quota.usedBytes / quota.limitBytes) * 100),
+	};
+}
+
+/** Set a user's quota limit (admin operation) */
+export async function setUserQuotaLimit(userId: string, limitBytes: number): Promise<void> {
+	await db
+		.insert(storageQuota)
+		.values({ ownerType: "user", ownerId: userId, limitBytes })
+		.onConflictDoUpdate({
+			target: [storageQuota.ownerType, storageQuota.ownerId],
+			set: { limitBytes, updatedAt: new Date() },
+		});
+}
+
+/** Set quota limit based on user role */
+export async function applyRoleQuota(userId: string, role: string): Promise<void> {
+	const limitBytes = ROLE_QUOTA_LIMITS[role] ?? ROLE_QUOTA_LIMITS.user;
+	await setUserQuotaLimit(userId, limitBytes);
+}
+
+// ============================================================================
+// Deletion Safety
+// ============================================================================
+
+/** Check if a file's public URL is referenced in any post content or featured image */
+async function isFileInUse(storageUrl: string): Promise<boolean> {
+	const { posts } = await import("@/lib/db/schema");
+	const refs = await db
+		.select({ id: posts.id })
+		.from(posts)
+		.where(
+			sql`(${posts.featuredImageUrl} = ${storageUrl} OR ${posts.content} LIKE ${"%" + storageUrl + "%"} OR ${posts.blocks}::text LIKE ${"%" + storageUrl + "%"})`
+		)
+		.limit(1);
+	return refs.length > 0;
+}
+
+// ============================================================================
+// Path Generation (existing — unchanged below)
 // ============================================================================
 
 /**
@@ -262,13 +375,16 @@ export async function deleteAvatar(userId: string): Promise<DeleteResult> {
 // ============================================================================
 
 /**
- * Upload a file to storage
+ * Upload a file to storage — with quota check and org scoping
  */
 export async function uploadFile(
 	input: UploadFileInput,
 ): Promise<UploadFileResult> {
-	const { file: fileBuffer, filename, mimeType, userId, category } = input;
+	const { file: fileBuffer, filename, mimeType, userId, category, orgId, isOrgShared } = input;
 	const storage = getStorage();
+
+	// Enforce quota before uploading
+	await enforceQuota(userId, fileBuffer.length);
 
 	// Generate path
 	const categoryPath = getStoragePathForCategory(category) as StoragePath;
@@ -282,6 +398,8 @@ export async function uploadFile(
 		.insert(file)
 		.values({
 			userId,
+			orgId: orgId ?? null,
+			isOrgShared: isOrgShared ?? false,
 			filename: storagePath.split("/").pop() || storagePath,
 			originalName: filename,
 			mimeType,
@@ -295,6 +413,16 @@ export async function uploadFile(
 			}),
 		})
 		.returning();
+
+	// Update quota
+	await adjustQuota("user", userId, newFile.sizeBytes, 1).catch((err) =>
+		console.error("Failed to update quota:", err),
+	);
+	if (orgId) {
+		await adjustQuota("org", orgId, newFile.sizeBytes, 1).catch((err) =>
+			console.error("Failed to update org quota:", err),
+		);
+	}
 
 	await sendFileUploadedEvent({
 		userId,
@@ -314,26 +442,43 @@ export async function uploadFile(
 }
 
 /**
- * Delete a file by ID
+ * Delete a file by ID — with deletion safety check
  */
 export async function deleteFile(
 	fileId: string,
 	userId: string,
+	options?: { force?: boolean },
 ): Promise<DeleteResult> {
 	const storage = getStorage();
 
-	// Get file record
+	// Get file record (exclude soft-deleted)
 	const [userFile] = await db
 		.select()
 		.from(file)
-		.where(and(eq(file.id, fileId), eq(file.userId, userId)))
+		.where(and(eq(file.id, fileId), eq(file.userId, userId), isNull(file.deletedAt)))
 		.limit(1);
 
 	if (!userFile) {
 		throw new Error("File not found");
 	}
 
-	// Delete from storage
+	// Deletion safety: block if the file is referenced in content
+	if (!options?.force) {
+		const inUse = await isFileInUse(userFile.storageUrl);
+		if (inUse) {
+			throw new Error(
+				"Cannot delete: this file is referenced in post content. Remove all references first or use force=true.",
+			);
+		}
+	}
+
+	// Soft-delete first (preserves audit trail)
+	await db
+		.update(file)
+		.set({ deletedAt: new Date() })
+		.where(eq(file.id, fileId));
+
+	// Hard-delete from storage
 	await storage.delete(userFile.storagePath);
 
 	// Delete variants if they exist
@@ -354,8 +499,18 @@ export async function deleteFile(
 		}
 	}
 
-	// Delete from database
+	// Hard-delete DB record
 	await db.delete(file).where(eq(file.id, fileId));
+
+	// Update quota
+	await adjustQuota("user", userId, -userFile.sizeBytes, -1).catch((err) =>
+		console.error("Failed to update quota after delete:", err),
+	);
+	if (userFile.orgId) {
+		await adjustQuota("org", userFile.orgId, -userFile.sizeBytes, -1).catch((err) =>
+			console.error("Failed to update org quota after delete:", err),
+		);
+	}
 
 	return { success: true };
 }

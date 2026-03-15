@@ -34,6 +34,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@mdx-js/mdx": "^3.1.1",
+    "@measured/puck": "^0.20.2",
     "@polar-sh/better-auth": "^1.6.4",
     "@polar-sh/sdk": "^0.42.2",
     "@t3-oss/env-core": "^0.13.8",

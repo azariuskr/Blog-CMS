@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { boolean, index, json, pgTable, text, timestamp, uniqueIndex, integer, uuid } from "drizzle-orm/pg-core";
+import { bigint, boolean, index, json, pgTable, text, timestamp, uniqueIndex, integer, uuid } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -166,6 +166,9 @@ export const file = pgTable(
     storageUrl: text("storage_url").notNull(),
     isPublic: boolean("is_public").default(false).notNull(),
     metadata: text("metadata"),
+    orgId: text("org_id"),
+    isOrgShared: boolean("is_org_shared").default(false).notNull(),
+    deletedAt: timestamp("deleted_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -174,6 +177,24 @@ export const file = pgTable(
   },
   (table) => [
     index("file_user_id_idx").on(table.userId),
+    index("file_org_id_idx").on(table.orgId),
+    index("file_deleted_at_idx").on(table.deletedAt),
+  ],
+);
+
+export const storageQuota = pgTable(
+  "storage_quota",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerType: text("owner_type").notNull(), // 'user' | 'org'
+    ownerId: text("owner_id").notNull(),
+    usedBytes: bigint("used_bytes", { mode: "number" }).default(0).notNull(),
+    limitBytes: bigint("limit_bytes", { mode: "number" }).default(524288000).notNull(), // 500 MB
+    fileCount: integer("file_count").default(0).notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("storage_quota_owner_uidx").on(table.ownerType, table.ownerId),
   ],
 );
 

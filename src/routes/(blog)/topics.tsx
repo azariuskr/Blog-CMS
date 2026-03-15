@@ -19,11 +19,11 @@ function TopicsPage() {
 			{/* Hero */}
 			<section className="pt-[180px] pb-[60px] relative">
 				<div className="container mx-auto px-4 max-w-[1140px]">
-					<p className="text-sm font-bold text-[hsl(216,33%,68%)] mb-4">Explore</p>
+					<p className="text-sm font-bold text-wild-blue-yonder mb-4">Explore</p>
 					<h1 className="headline headline-1 mb-4">
 						Browse <span className="navy-blue-blog-gradient-text">Topics</span>
 					</h1>
-					<p className="text-lg text-[hsl(216,33%,68%)] max-w-xl">
+					<p className="text-lg text-wild-blue-yonder max-w-xl">
 						Find articles organized by topic. From tech and design to travel and lifestyle — there's something for everyone.
 					</p>
 				</div>
@@ -34,7 +34,7 @@ function TopicsPage() {
 			<section className="navy-blue-blog-section pt-0">
 				<div className="container mx-auto px-4 max-w-[1140px]">
 					{query.isLoading && (
-						<div className="animate-pulse opacity-50 py-20 text-center text-[hsl(216,33%,68%)]">
+						<div className="animate-pulse opacity-50 py-20 text-center text-wild-blue-yonder">
 							Loading topics…
 						</div>
 					)}
@@ -44,7 +44,7 @@ function TopicsPage() {
 					)}
 
 					{!query.isLoading && !query.isError && categories.length === 0 && (
-						<div className="py-20 text-center text-[hsl(216,33%,68%)]">
+						<div className="py-20 text-center text-wild-blue-yonder">
 							No topics found.
 						</div>
 					)}
@@ -52,7 +52,7 @@ function TopicsPage() {
 					{trending.length > 0 && (
 						<>
 							<div className="flex items-center gap-2 mb-8">
-								<TrendingUp className="w-5 h-5 text-[hsl(199,89%,49%)]" />
+								<TrendingUp className="w-5 h-5 text-carolina-blue" />
 								<h2 className="text-xl font-bold text-white">Trending Topics</h2>
 							</div>
 
@@ -84,7 +84,7 @@ function TopicsPage() {
 											>
 												Trending
 											</div>
-											<h3 className="text-xl font-bold text-white mb-1 group-hover:text-[hsl(199,89%,49%)] transition-colors">
+											<h3 className="text-xl font-bold text-white mb-1 group-hover:text-carolina-blue transition-colors">
 												{category.name}
 											</h3>
 										</div>
@@ -114,14 +114,14 @@ function TopicsPage() {
 													: "linear-gradient(135deg, hsl(222,44%,13%), hsl(222,44%,22%))",
 											}}
 										/>
-										<h3 className="font-bold text-[hsl(199,69%,84%)] mb-1 group-hover:text-[hsl(199,89%,49%)] transition-colors">
+										<h3 className="font-bold text-columbia-blue mb-1 group-hover:text-carolina-blue transition-colors">
 											{category.name}
 										</h3>
-										<p className="text-xs text-[hsl(216,33%,68%)] mb-3 line-clamp-2">
+										<p className="text-xs text-wild-blue-yonder mb-3 line-clamp-2">
 											{category.description}
 										</p>
 										<div className="flex items-center justify-end">
-											<ArrowRight className="w-4 h-4 text-[hsl(199,89%,49%)] opacity-0 group-hover:opacity-100 transition-opacity" />
+											<ArrowRight className="w-4 h-4 text-carolina-blue opacity-0 group-hover:opacity-100 transition-opacity" />
 										</div>
 									</Link>
 								))}
