@@ -79,6 +79,7 @@ export const ROUTES = {
         CATEGORY: (cat: string) => `/blog/category/${cat}`,
         AUTHOR: (username: string) => `/@${username}`,
         SEARCH: "/search",
+        AUTHOR_ONBOARDING: "/author-onboarding",
     },
 
     // Editor

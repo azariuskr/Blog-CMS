@@ -327,6 +327,7 @@ function BlogFooter() {
 								{ label: "About", to: "/about" },
 								{ label: "Write", to: ROUTES.EDITOR.NEW },
 								{ label: "Sign In", to: ROUTES.LOGIN },
+								{ label: "Become an Author", to: ROUTES.PUBLIC.AUTHOR_ONBOARDING },
 							].map((link) => (
 								<li key={link.label}>
 									<Link

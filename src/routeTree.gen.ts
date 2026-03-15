@@ -26,6 +26,7 @@ import { Route as errors401RouteImport } from './routes/(errors)/401'
 import { Route as blogTopicsRouteImport } from './routes/(blog)/topics'
 import { Route as blogSearchRouteImport } from './routes/(blog)/search'
 import { Route as blogAuthorsRouteImport } from './routes/(blog)/authors'
+import { Route as blogAuthorOnboardingRouteImport } from './routes/(blog)/author-onboarding'
 import { Route as blogAboutRouteImport } from './routes/(blog)/about'
 import { Route as blogSlugRouteImport } from './routes/(blog)/$slug'
 import { Route as authPagesSignupRouteImport } from './routes/(auth-pages)/signup'
@@ -170,6 +171,11 @@ const blogSearchRoute = blogSearchRouteImport.update({
 const blogAuthorsRoute = blogAuthorsRouteImport.update({
   id: '/authors',
   path: '/authors',
+  getParentRoute: () => blogRouteRoute,
+} as any)
+const blogAuthorOnboardingRoute = blogAuthorOnboardingRouteImport.update({
+  id: '/author-onboarding',
+  path: '/author-onboarding',
   getParentRoute: () => blogRouteRoute,
 } as any)
 const blogAboutRoute = blogAboutRouteImport.update({
@@ -547,6 +553,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof authPagesSignupRoute
   '/$slug': typeof blogSlugRoute
   '/about': typeof blogAboutRoute
+  '/author-onboarding': typeof blogAuthorOnboardingRoute
   '/authors': typeof blogAuthorsRoute
   '/search': typeof blogSearchRoute
   '/topics': typeof blogTopicsRoute
@@ -622,6 +629,7 @@ export interface FileRoutesByTo {
   '/signup': typeof authPagesSignupRoute
   '/$slug': typeof blogSlugRoute
   '/about': typeof blogAboutRoute
+  '/author-onboarding': typeof blogAuthorOnboardingRoute
   '/authors': typeof blogAuthorsRoute
   '/search': typeof blogSearchRoute
   '/topics': typeof blogTopicsRoute
@@ -704,6 +712,7 @@ export interface FileRoutesById {
   '/(auth-pages)/signup': typeof authPagesSignupRoute
   '/(blog)/$slug': typeof blogSlugRoute
   '/(blog)/about': typeof blogAboutRoute
+  '/(blog)/author-onboarding': typeof blogAuthorOnboardingRoute
   '/(blog)/authors': typeof blogAuthorsRoute
   '/(blog)/search': typeof blogSearchRoute
   '/(blog)/topics': typeof blogTopicsRoute
@@ -785,6 +794,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/$slug'
     | '/about'
+    | '/author-onboarding'
     | '/authors'
     | '/search'
     | '/topics'
@@ -860,6 +870,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/$slug'
     | '/about'
+    | '/author-onboarding'
     | '/authors'
     | '/search'
     | '/topics'
@@ -941,6 +952,7 @@ export interface FileRouteTypes {
     | '/(auth-pages)/signup'
     | '/(blog)/$slug'
     | '/(blog)/about'
+    | '/(blog)/author-onboarding'
     | '/(blog)/authors'
     | '/(blog)/search'
     | '/(blog)/topics'
@@ -1150,6 +1162,13 @@ declare module '@tanstack/react-router' {
       path: '/authors'
       fullPath: '/authors'
       preLoaderRoute: typeof blogAuthorsRouteImport
+      parentRoute: typeof blogRouteRoute
+    }
+    '/(blog)/author-onboarding': {
+      id: '/(blog)/author-onboarding'
+      path: '/author-onboarding'
+      fullPath: '/author-onboarding'
+      preLoaderRoute: typeof blogAuthorOnboardingRouteImport
       parentRoute: typeof blogRouteRoute
     }
     '/(blog)/about': {
@@ -1807,6 +1826,7 @@ const authenticatedRouteRouteWithChildren =
 interface blogRouteRouteChildren {
   blogSlugRoute: typeof blogSlugRoute
   blogAboutRoute: typeof blogAboutRoute
+  blogAuthorOnboardingRoute: typeof blogAuthorOnboardingRoute
   blogAuthorsRoute: typeof blogAuthorsRoute
   blogSearchRoute: typeof blogSearchRoute
   blogTopicsRoute: typeof blogTopicsRoute
@@ -1818,6 +1838,7 @@ interface blogRouteRouteChildren {
 const blogRouteRouteChildren: blogRouteRouteChildren = {
   blogSlugRoute: blogSlugRoute,
   blogAboutRoute: blogAboutRoute,
+  blogAuthorOnboardingRoute: blogAuthorOnboardingRoute,
   blogAuthorsRoute: blogAuthorsRoute,
   blogSearchRoute: blogSearchRoute,
   blogTopicsRoute: blogTopicsRoute,
