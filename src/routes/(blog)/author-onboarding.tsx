@@ -25,6 +25,13 @@ export const Route = createFileRoute("/(blog)/author-onboarding")({
 			throw redirect({ to: ROUTES.LOGIN });
 		}
 	},
+	loader: async ({ context }) => {
+		// Prefetch existing application so status banner renders on first paint
+		await context.queryClient.prefetchQuery({
+			queryKey: ["blog", "author-application", "mine"],
+			queryFn: () => import("@/lib/blog/functions").then((m) => m.$getMyAuthorApplication({ data: {} })),
+		});
+	},
 	component: AuthorOnboardingPage,
 });
 
