@@ -8,7 +8,6 @@ import {
 	postTags,
 	posts,
 	tags,
-	tenants,
 	sites,
 	user,
 } from "../src/lib/db/schema";
@@ -28,9 +27,8 @@ if (!databaseUrl) {
 }
 
 const sql = postgres(databaseUrl);
-const db = drizzle({ client: sql, schema: { user, authorProfiles, categories, tags, posts, postTags, tenants, sites } });
+const db = drizzle({ client: sql, schema: { user, authorProfiles, categories, tags, posts, postTags, sites } });
 
-const DEFAULT_TENANT_ID = "f1843afa-81d3-4b51-aaf4-72a9345ed301";
 const DEFAULT_SITE_ID = "f1843afa-81d3-4b51-aaf4-72a9345ed302";
 
 async function uploadRemoteAsset(url: string, key: string): Promise<string> {
@@ -77,23 +75,9 @@ async function run() {
 		});
 
 	await db
-		.insert(tenants)
-		.values({
-			id: DEFAULT_TENANT_ID,
-			slug: "default-blog-tenant",
-			name: "Default Blog Tenant",
-			ownerId: owner.id,
-		})
-		.onConflictDoUpdate({
-			target: tenants.slug,
-			set: { name: "Default Blog Tenant", ownerId: owner.id },
-		});
-
-	await db
 		.insert(sites)
 		.values({
 			id: DEFAULT_SITE_ID,
-			tenantId: DEFAULT_TENANT_ID,
 			slug: "main",
 			name: "Main Blog",
 			description: "Seeded blog site",

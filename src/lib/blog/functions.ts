@@ -780,7 +780,10 @@ export const $approveComment = createServerFn({ method: "POST" })
 			async () => {
 				if (!data.ok) throw data.error;
 
-				await db.update(comments).set({ status: "approved" }).where(eq(comments.id, data.data.id));
+				const [updated] = await db.update(comments).set({ status: "approved" }).where(eq(comments.id, data.data.id)).returning({ postId: comments.postId });
+				if (updated?.postId) {
+					await db.update(posts).set({ commentCount: sql`${posts.commentCount} + 1` }).where(eq(posts.id, updated.postId));
+				}
 				return { id: data.data.id };
 			},
 			{ successMessage: "Comment approved successfully" },
@@ -810,7 +813,10 @@ export const $deleteComment = createServerFn({ method: "POST" })
 			async () => {
 				if (!data.ok) throw data.error;
 
-				await db.delete(comments).where(eq(comments.id, data.data.id));
+				const [deleted] = await db.delete(comments).where(eq(comments.id, data.data.id)).returning({ postId: comments.postId, status: comments.status });
+				if (deleted?.postId && deleted.status === "approved") {
+					await db.update(posts).set({ commentCount: sql`GREATEST(0, ${posts.commentCount} - 1)` }).where(eq(posts.id, deleted.postId));
+				}
 				return { id: data.data.id };
 			},
 			{ successMessage: "Comment deleted successfully" },
@@ -1021,7 +1027,6 @@ export const $reviewAuthorApplication = createServerFn({ method: "POST" })
 		return safe(async () => {
 			if (!data.ok) throw data.error;
 			const { userId, action } = data.data;
-
 			const newStatus = action === "approve" ? "approved" : "rejected";
 
 			await db
@@ -1107,10 +1112,12 @@ export const $toggleReaction = createServerFn({ method: "POST" })
 
 			if (existing) {
 				await db.delete(reactions).where(eq(reactions.id, existing.id));
+				await db.update(posts).set({ likeCount: sql`GREATEST(0, ${posts.likeCount} - 1)` }).where(eq(posts.id, validated.postId));
 				return { toggled: false };
 			}
 
 			await db.insert(reactions).values(validated);
+			await db.update(posts).set({ likeCount: sql`${posts.likeCount} + 1` }).where(eq(posts.id, validated.postId));
 			return { toggled: true };
 		});
 	});
@@ -1538,12 +1545,12 @@ export const $upsertSite = createServerFn({ method: "POST" })
 			}
 
 			const [created] = await db
-				.insert(sites)
-				.values({
-					...payload,
-					organizationId: session?.session?.activeOrganizationId ?? null,
-				})
-				.returning();
+					.insert(sites)
+					.values({
+						...payload,
+						organizationId: session?.session?.activeOrganizationId ?? null,
+					})
+					.returning();
 			return created;
 		});
 	});
@@ -1618,9 +1625,9 @@ export const $upsertPage = createServerFn({ method: "POST" })
 			}
 
 			const [created] = await db
-				.insert(pages)
-				.values({ ...payload, blocks: blocksValue as any, authorId })
-				.returning();
+					.insert(pages)
+					.values({ ...payload, blocks: blocksValue as any, authorId })
+					.returning();
 			return created;
 		});
 	});
