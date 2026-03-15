@@ -63,6 +63,8 @@ export const statements = {
 	// Blog permissions
 	posts: ["create", "read", "update", "delete", "publish", "feature"],
 	comments_mod: ["read", "approve", "delete"],
+	// Content permissions (used by blog server functions for admin CRUD)
+	content: ["read", "write", "delete"],
 } as const;
 
 export const ac = createAccessControl(statements);
@@ -73,6 +75,7 @@ export const roles = {
 		session: ["list", "revoke"],
 		// Regular users can create and edit their own posts
 		posts: ["create", "read", "update"],
+		content: ["read"],
 	}),
 	moderator: ac.newRole({
 		user: ["get", "update"],
@@ -82,6 +85,7 @@ export const roles = {
 		// Moderators can manage comments and approve posts
 		posts: ["create", "read", "update", "delete"],
 		comments_mod: ["read", "approve", "delete"],
+		content: ["read", "write"],
 	}),
 	admin: ac.newRole({
 		user: ["create", "list", "get", "update", "ban", "set-role"],
@@ -103,6 +107,7 @@ export const roles = {
 		// Admins have full blog control except feature
 		posts: ["create", "read", "update", "delete", "publish"],
 		comments_mod: ["read", "approve", "delete"],
+		content: ["read", "write", "delete"],
 	}),
 	superAdmin: ac.newRole({
 		user: [
@@ -141,6 +146,7 @@ export const roles = {
 		// SuperAdmins have full blog control including feature
 		posts: ["create", "read", "update", "delete", "publish", "feature"],
 		comments_mod: ["read", "approve", "delete"],
+		content: ["read", "write", "delete"],
 	}),
 } as const;
 
@@ -177,6 +183,7 @@ export const ROLE_GRANTS = {
 		organization: ["read"],
 		posts: ["create", "read", "update", "delete", "publish"],
 		comments_mod: ["read", "approve", "delete"],
+		content: ["read", "write", "delete"],
 	},
 	[ROLES.SUPER_ADMIN]: {
 		user: [
@@ -214,6 +221,7 @@ export const ROLE_GRANTS = {
 		organization: ["read", "write"],
 		posts: ["create", "read", "update", "delete", "publish", "feature"],
 		comments_mod: ["read", "approve", "delete"],
+		content: ["read", "write", "delete"],
 	},
 } as const satisfies Record<AppRole, Record<string, readonly string[]>>;
 

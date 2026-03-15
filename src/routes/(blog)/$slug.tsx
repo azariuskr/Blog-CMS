@@ -84,26 +84,6 @@ export const Route = createFileRoute("/(blog)/$slug")({
 				{ property: "article:author", content: authorName },
 				...(post?.category?.name ? [{ property: "article:section", content: post.category.name }] : []),
 				...tags.map((tag) => ({ property: "article:tag", content: tag })),
-
-				{
-					type: "application/ld+json",
-					children: JSON.stringify({
-						"@context": "https://schema.org",
-						"@type": "Article",
-						headline: title,
-						description,
-						image: imageUrl,
-						datePublished: publishedTime,
-						dateModified: updatedTime ?? publishedTime,
-						author: { "@type": "Person", name: authorName },
-						publisher: {
-							"@type": "Organization",
-							name: siteConfig.organization.name,
-							logo: { "@type": "ImageObject", url: siteConfig.organization.logo },
-						},
-						mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
-					}),
-				},
 			],
 		};
 	},
@@ -394,7 +374,7 @@ function BlogPostPage() {
 	const blocks =
 		rawBlocks.length > 0
 			? rawBlocks
-			: String(post.content ?? "")
+			: String(post?.content ?? "")
 					.split(/\n\n+/)
 					.map((chunk, i) => chunk.trim())
 					.filter(Boolean)
@@ -452,7 +432,7 @@ function BlogPostPage() {
 
 	const handleShare = async (platform?: string) => {
 		const url = window.location.href;
-		const title = post.title;
+		const title = post?.title ?? "";
 		if (platform === "twitter") {
 			window.open(
 				`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
@@ -488,8 +468,26 @@ function BlogPostPage() {
 		return <div className="min-h-screen pt-32 text-center text-red-400">Failed to load this post.</div>;
 	}
 
+	// Build JSON-LD structured data
+	const jsonLd = post ? JSON.stringify({
+		"@context": "https://schema.org",
+		"@type": "Article",
+		headline: post.title,
+		description: post.excerpt ?? "",
+		image: post.featuredImageUrl ?? "",
+		datePublished: post.publishedAt ? new Date(post.publishedAt as string | Date).toISOString() : undefined,
+		dateModified: post.updatedAt ? new Date(post.updatedAt as string | Date).toISOString() : undefined,
+		author: { "@type": "Person", name: (post as any)?.author?.name ?? "BlogCMS" },
+	}) : null;
+
 	return (
 		<>
+			{jsonLd && (
+				<script
+					type="application/ld+json"
+					dangerouslySetInnerHTML={{ __html: jsonLd }}
+				/>
+			)}
 			{/* Reading progress bar */}
 			<div className="fixed top-0 left-0 right-0 h-1 bg-prussian-blue z-50">
 				<div

@@ -328,6 +328,21 @@ export const postVersions = pgTable(
 	],
 );
 
+export const cmsVersion = pgTable(
+	"cms_versions",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		profileId: text("profile_id").notNull(),
+		version: integer("version").notNull(),
+		data: jsonb("data"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(t) => [
+		index("cms_versions_profile_idx").on(t.profileId),
+		index("cms_versions_version_idx").on(t.version),
+	],
+);
+
 export const postTags = pgTable(
 	"post_tags",
 	{
