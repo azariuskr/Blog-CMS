@@ -1,8 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, TrendingUp } from "lucide-react";
-import { usePublicCategories } from "@/lib/blog/queries";
+import { usePublicCategories, publicCategoriesQueryOptions } from "@/lib/blog/queries";
 
 export const Route = createFileRoute("/(blog)/topics")({
+	loader: async ({ context }) => {
+		await context.queryClient.prefetchQuery(publicCategoriesQueryOptions());
+	},
 	component: TopicsPage,
 });
 

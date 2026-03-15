@@ -22,7 +22,7 @@ import {
 	Linkedin,
 } from "lucide-react";
 import { toast } from "sonner";
-import { usePostBySlug, usePublishedPosts, usePublicComments, useCreateComment, useToggleReaction, useToggleBookmark, postBySlugQueryOptions } from "@/lib/blog/queries";
+import { usePostBySlug, usePublishedPosts, usePublicComments, useCreateComment, useToggleReaction, useToggleBookmark, postBySlugQueryOptions, publicCommentsQueryOptions } from "@/lib/blog/queries";
 import { PaywallCard } from "@/components/blog/PaywallCard";
 import { useSession } from "@/lib/auth/auth-client";
 import { unwrap } from "@/lib/result";
@@ -34,6 +34,14 @@ import { ThrottledImage } from "@/components/shared/ThrottledImage";
 export const Route = createFileRoute("/(blog)/$slug")({
 	loader: async ({ context, params }) => {
 		await context.queryClient.prefetchQuery(postBySlugQueryOptions(params.slug));
+		// Also prefetch comments so they render on first load without a loading state
+		const postResult = context.queryClient.getQueryData(
+			postBySlugQueryOptions(params.slug).queryKey,
+		);
+		const postId = postResult?.ok ? (postResult as any).data?.id : undefined;
+		if (postId) {
+			await context.queryClient.prefetchQuery(publicCommentsQueryOptions(postId));
+		}
 	},
 	head: ({ loaderData: _l, params, ...ctx }) => {
 		// Read cached post data for SSR meta — may be undefined during first render
