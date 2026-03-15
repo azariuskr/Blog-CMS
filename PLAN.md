@@ -330,20 +330,20 @@ Admin toggles use a reusable `<SwitchForm checked onSubmit name>` component — 
 > **Goal:** Visual page builder for structured sites/landing pages/campaigns.
 
 ### 5.1 Install and configure Puck
-- [ ] Install `@measured-co/puck`
-- [ ] Define Puck component config: `HeroSection`, `FeatureGrid`, `CTASection`, `TextBlock`, `ImageBlock`, `TestimonialsSection`, `NewsletterSignup`
-- [ ] Create `src/lib/puck/config.tsx` with component definitions + field schemas
-- [ ] Create `src/lib/puck/render.tsx` for SSR-safe `<Render>`
+- [x] Install `@measured/puck` ✅ (0.20.2 — correct package name is @measured/puck)
+- [x] Define Puck component config: HeroSection, FeatureGrid, CTASection, TextBlock, ImageBlock, TestimonialsSection, NewsletterSignup, Divider ✅
+- [x] Create `src/lib/puck/config.tsx` with component definitions + field schemas ✅
+- [x] Create `src/lib/puck/render.tsx` for SSR-safe `<Render>` ✅ (lazy PuckPage with Suspense)
 
 ### 5.2 Admin site editor
-- [ ] Build `/admin/blog/sites` page with site list + Puck editor per site
-- [ ] Save Puck JSON → `pages.blocks` via `$upsertPage` server function
-- [ ] Live preview panel
+- [x] Build `/admin/blog/sites` page with site list + Puck editor per site ✅
+- [x] Save Puck JSON → `pages.blocks` via `$upsertPage` server function ✅
+- [x] Live preview panel ✅ (Puck built-in preview mode)
 
 ### 5.3 Public rendering
-- [ ] Route for site pages: `/(blog)/[siteSlug]/[pageSlug]` or custom domain routing
-- [ ] `<Render config={puckConfig} data={page.blocks} />` for SSR output
-- [ ] Per-site theme tokens applied via CSS variables
+- [x] Route for site pages: `/(blog)/sites/$siteSlug/$pageSlug` ✅
+- [x] `<Render config={puckConfig} data={page.blocks} />` for SSR output ✅ (via PuckPage)
+- [x] Per-site theme tokens applied via CSS variables ✅ (--site-primary/--site-accent/--site-font)
 
 ---
 
@@ -381,13 +381,13 @@ Admin toggles use a reusable `<SwitchForm checked onSubmit name>` component — 
 - [~] Use in post detail page as the rich rendering path (MdxRenderer available; wire when content present)
 
 ### 7.3 isomorphic-git integration
-- [ ] Install `isomorphic-git` + `@isomorphic-git/lightning-fs`
-- [ ] Create `src/lib/inngest/cms.ts` Inngest function: triggered on `post.published`
+- [x] Install `isomorphic-git` + `@isomorphic-git/lightning-fs` ✅ (1.37.4 + 4.6.2)
+- [x] Create `blogGitPublishFunction` in `src/lib/inngest/cms.ts` triggered on `blog/post.published` ✅
   - Write MDX file to `content/posts/{slug}.mdx`
   - git add + commit with post metadata
   - git push to configured remote
-- [ ] Store `gitSha` + `gitPath` back on `posts` row
-- [ ] Site settings: configure `gitRepo` + `gitBranch` per site
+- [x] Store `gitSha` + `gitPath` back on `posts` row ✅ (already in schema; written after commit)
+- [x] Site settings: configure `gitRepo` + `gitBranch` per site ✅ (already in sites schema; read in git function)
 
 ---
 

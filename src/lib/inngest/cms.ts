@@ -163,10 +163,106 @@ export const blogSchedulePublishFunction = inngest.createFunction(
 	},
 );
 
+/**
+ * Git-backed Publishing — triggered on post.published event.
+ * Commits the post's MDX content to the site's configured git repository.
+ * Stores the resulting gitSha + gitPath back on the posts row.
+ */
+export const blogGitPublishFunction = inngest.createFunction(
+	{ id: "blog-git-publish", concurrency: { limit: 3 } },
+	{ event: "blog/post.published" },
+	async ({ event, step }) => {
+		const { postId } = event.data as { postId: string };
+
+		// Fetch post + site
+		const postRow = await step.run("fetch-post", async () => {
+			const row = await db.query.posts.findFirst({
+				where: eq(posts.id, postId),
+				with: { site: true },
+			});
+			if (!row) throw new Error(`Post ${postId} not found`);
+			return row;
+		});
+
+		const site = (postRow as any).site;
+		if (!site?.gitRepo) {
+			return { skipped: true, reason: "No gitRepo configured on site" };
+		}
+
+		const gitRepo: string = site.gitRepo;
+		const gitBranch: string = site.gitBranch ?? "main";
+		const mdxContent: string = postRow.content ?? "";
+		const filePath = `posts/${postRow.slug}.mdx`;
+
+		const { gitSha } = await step.run("commit-to-git", async () => {
+			// Dynamic imports keep the git libraries out of the main bundle
+			const git = (await import("isomorphic-git")).default;
+			const LightningFS = (await import("@isomorphic-git/lightning-fs")).default;
+
+			const dir = `/tmp/git-publish-${postId}`;
+			const fs = new LightningFS("git-publish");
+
+			// Clone (shallow) or init
+			try {
+				await git.clone({
+					fs,
+					http: (await import("isomorphic-git/http/node")).default,
+					dir,
+					url: gitRepo,
+					ref: gitBranch,
+					singleBranch: true,
+					depth: 1,
+				});
+			} catch {
+				await git.init({ fs, dir, defaultBranch: gitBranch });
+			}
+
+			// Write MDX file
+			await fs.promises.mkdir(`${dir}/posts`, { recursive: true }).catch(() => {});
+			await fs.promises.writeFile(`${dir}/${filePath}`, mdxContent);
+
+			// Stage + commit
+			await git.add({ fs, dir, filepath: filePath });
+			const sha = await git.commit({
+				fs,
+				dir,
+				message: `publish: ${postRow.slug} — ${new Date().toISOString()}`,
+				author: { name: "BlogCMS", email: "bot@blogcms.io" },
+			});
+
+			// Push (best-effort — requires token in gitRepo URL or env)
+			try {
+				await git.push({
+					fs,
+					http: (await import("isomorphic-git/http/node")).default,
+					dir,
+					remote: "origin",
+					ref: gitBranch,
+				});
+			} catch (pushErr) {
+				console.warn("Git push failed (non-fatal):", pushErr);
+			}
+
+			return { gitSha: sha };
+		});
+
+		// Store sha + path back on posts row
+		await step.run("update-post-git-meta", async () => {
+			await db
+				.update(posts)
+				.set({ gitSha, gitPath: filePath, updatedAt: new Date() })
+				.where(eq(posts.id, postId));
+		});
+
+		return { ok: true, postId, gitSha, gitPath: filePath };
+	},
+);
+
 export const cmsFunctions = [
 	cmsPublishedFunction,
 	cmsVersionCleanupFunction,
 	newsletterConfirmationFunction,
 	newsletterConfirmFunction,
 	blogSchedulePublishFunction,
+	blogGitPublishFunction,
 ] as const;

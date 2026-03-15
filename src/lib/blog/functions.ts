@@ -460,7 +460,20 @@ export const $upsertPost = createServerFn({ method: "POST" })
 					await db.insert(postTags).values(tagIds.map((tagId) => ({ postId: inserted.id, tagId })));
 				}
 
-				return { id: inserted.id };
+				// Fire git-backed publish event for new published posts
+			if (rest.status === "published") {
+				await inngest.send({
+					name: "blog/post.published",
+					data: {
+						postId: inserted.id,
+						userId: rest.authorId ?? "",
+						slug: rest.slug ?? "",
+						siteId: rest.siteId ?? undefined,
+					},
+				}).catch((err: unknown) => console.error("[Blog] Failed to send post.published event:", err));
+			}
+
+			return { id: inserted.id };
 			},
 			{ successMessage: "Post saved successfully" },
 		);
@@ -557,6 +570,19 @@ export const $transitionPostStatus = createServerFn({ method: "POST" })
 					timestamp: new Date().toISOString(),
 				},
 			}).catch((err: unknown) => console.error("[Blog] Failed to send audit event:", err));
+
+			// Fire git-backed publish event when transitioning to published
+			if (to === "published") {
+				await inngest.send({
+					name: "blog/post.published",
+					data: {
+						postId: data.data.id,
+						userId: session?.user?.id ?? "",
+						slug: post.slug,
+						siteId: post.siteId ?? undefined,
+					},
+				}).catch((err: unknown) => console.error("[Blog] Failed to send post.published event:", err));
+			}
 
 			return { id: data.data.id, from, to };
 		});

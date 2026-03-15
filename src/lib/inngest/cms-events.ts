@@ -73,3 +73,20 @@ export const sendCmsVersionCleanupEvent = makeEventSender(
 	"cms/version.cleanup",
 	cmsVersionCleanupSchema,
 );
+
+// =============================================================================
+// Blog Post Published Event
+// =============================================================================
+
+export const blogPostPublishedSchema = z.object({
+	postId: z.string(),
+	userId: z.string(),
+	slug: z.string(),
+	siteId: z.string().optional(),
+});
+export type BlogPostPublishedPayload = z.infer<typeof blogPostPublishedSchema>;
+
+export const sendBlogPostPublishedEvent = makeEventSender(
+	"blog/post.published",
+	blogPostPublishedSchema,
+);
