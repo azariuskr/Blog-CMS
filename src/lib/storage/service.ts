@@ -80,7 +80,7 @@ export function getPublicUrl(key: string): string {
 	const config = getStorageConfig();
 
 	// These are URL *paths* served by our app. When the app is hosted under a
-	// subpath (e.g. /template behind Traefik), we must prefix them.
+	// subpath (e.g. /blog behind Traefik), we must prefix them.
 	if (config.provider === "minio") {
 		return withBasePath(env.VITE_BASE_URL, `${STORAGE_API.FILES}/${key}`);
 	}
@@ -411,6 +411,33 @@ export async function getDownloadUrl(
 	}
 
 	const url = await storage.getPresignedUrl(userFile.storagePath, expiresIn);
+
+	return {
+		url,
+		expiresAt: new Date(Date.now() + expiresIn * 1000),
+	};
+}
+
+/**
+ * Admin: Get a presigned download URL for any file
+ */
+export async function getAdminDownloadUrl(
+	fileId: string,
+	expiresIn = 3600,
+): Promise<{ url: string; expiresAt: Date }> {
+	const storage = getStorage();
+
+	const [storedFile] = await db
+		.select()
+		.from(file)
+		.where(eq(file.id, fileId))
+		.limit(1);
+
+	if (!storedFile) {
+		throw new Error("File not found");
+	}
+
+	const url = await storage.getPresignedUrl(storedFile.storagePath, expiresIn);
 
 	return {
 		url,

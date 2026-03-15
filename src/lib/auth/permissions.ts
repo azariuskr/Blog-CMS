@@ -6,8 +6,12 @@ import {
 	Building2,
 	CreditCard,
 	FileText,
+	FolderOpen,
+	Globe,
 	HardDrive,
 	Home,
+	MessageCircle,
+	PenLine,
 	LayoutDashboard,
 	Lock,
 	Route,
@@ -16,6 +20,7 @@ import {
 	UserCog,
 	Users,
 	Wallet,
+	Mail,
 } from "lucide-react";
 import { type AppRole, ROLE_HIERARCHY, ROLES, ROUTES } from "@/constants";
 
@@ -55,16 +60,9 @@ export const statements = {
 	settings: ["read", "write"],
 	billing: ["read", "write"],
 	organization: ["read", "write"],
-	// E-commerce permissions
-	products: ["read", "write", "delete", "publish"],
-	variants: ["read", "write", "delete"],
-	inventory: ["read", "write", "adjust"],
-	orders: ["read", "write", "cancel", "refund", "fulfill"],
-	customers: ["read", "write", "export"],
-	coupons: ["read", "write", "delete"],
-	collections: ["read", "write", "delete"],
-	reviews: ["read", "write", "approve", "delete"],
-	shipping: ["read", "write", "configure"],
+	// Blog permissions
+	posts: ["create", "read", "update", "delete", "publish", "feature"],
+	comments_mod: ["read", "approve", "delete"],
 } as const;
 
 export const ac = createAccessControl(statements);
@@ -73,15 +71,17 @@ export const roles = {
 	user: ac.newRole({
 		user: ["get", "update"],
 		session: ["list", "revoke"],
-		// Note: users:read removed - regular users should not access admin user lists
+		// Regular users can create and edit their own posts
+		posts: ["create", "read", "update"],
 	}),
 	moderator: ac.newRole({
 		user: ["get", "update"],
 		session: ["list", "revoke"],
 		users: ["read", "ban"],
 		settings: ["read"],
-		// E-commerce: moderators can view and approve reviews
-		reviews: ["read", "approve"],
+		// Moderators can manage comments and approve posts
+		posts: ["create", "read", "update", "delete"],
+		comments_mod: ["read", "approve", "delete"],
 	}),
 	admin: ac.newRole({
 		user: ["create", "list", "get", "update", "ban", "set-role"],
@@ -100,16 +100,9 @@ export const roles = {
 		settings: ["read", "write"],
 		billing: ["read"],
 		organization: ["read"],
-		// E-commerce: admins can manage products, orders, inventory, coupons
-		products: ["read", "write", "publish"],
-		variants: ["read", "write"],
-		inventory: ["read", "write", "adjust"],
-		orders: ["read", "write", "fulfill"],
-		customers: ["read"],
-		coupons: ["read", "write"],
-		collections: ["read", "write"],
-		reviews: ["read", "write", "approve"],
-		shipping: ["read", "write"],
+		// Admins have full blog control except feature
+		posts: ["create", "read", "update", "delete", "publish"],
+		comments_mod: ["read", "approve", "delete"],
 	}),
 	superAdmin: ac.newRole({
 		user: [
@@ -145,16 +138,9 @@ export const roles = {
 		permissions: ["read", "write"],
 		routes: ["read", "write"],
 		organization: ["read", "write"],
-		// E-commerce: superAdmin has full access including delete, cancel, refund
-		products: ["read", "write", "delete", "publish"],
-		variants: ["read", "write", "delete"],
-		inventory: ["read", "write", "adjust"],
-		orders: ["read", "write", "cancel", "refund", "fulfill"],
-		customers: ["read", "write", "export"],
-		coupons: ["read", "write", "delete"],
-		collections: ["read", "write", "delete"],
-		reviews: ["read", "write", "approve", "delete"],
-		shipping: ["read", "write", "configure"],
+		// SuperAdmins have full blog control including feature
+		posts: ["create", "read", "update", "delete", "publish", "feature"],
+		comments_mod: ["read", "approve", "delete"],
 	}),
 } as const;
 
@@ -171,8 +157,6 @@ export const ROLE_GRANTS = {
 		session: ["list", "revoke"],
 		users: ["read", "ban"],
 		settings: ["read"],
-		// E-commerce: moderators can view and approve reviews
-		reviews: ["read", "approve"],
 	},
 	[ROLES.ADMIN]: {
 		user: ["create", "list", "get", "update", "ban", "set-role"],
@@ -191,16 +175,8 @@ export const ROLE_GRANTS = {
 		settings: ["read", "write"],
 		billing: ["read"],
 		organization: ["read"],
-		// E-commerce: admins can manage products, orders, inventory, coupons
-		products: ["read", "write", "publish"],
-		variants: ["read", "write"],
-		inventory: ["read", "write", "adjust"],
-		orders: ["read", "write", "fulfill"],
-		customers: ["read"],
-		coupons: ["read", "write"],
-		collections: ["read", "write"],
-		reviews: ["read", "write", "approve"],
-		shipping: ["read", "write"],
+		posts: ["create", "read", "update", "delete", "publish"],
+		comments_mod: ["read", "approve", "delete"],
 	},
 	[ROLES.SUPER_ADMIN]: {
 		user: [
@@ -236,16 +212,8 @@ export const ROLE_GRANTS = {
 		permissions: ["read", "write"],
 		routes: ["read", "write"],
 		organization: ["read", "write"],
-		// E-commerce: superAdmin has full access including delete, cancel, refund
-		products: ["read", "write", "delete", "publish"],
-		variants: ["read", "write", "delete"],
-		inventory: ["read", "write", "adjust"],
-		orders: ["read", "write", "cancel", "refund", "fulfill"],
-		customers: ["read", "write", "export"],
-		coupons: ["read", "write", "delete"],
-		collections: ["read", "write", "delete"],
-		reviews: ["read", "write", "approve", "delete"],
-		shipping: ["read", "write", "configure"],
+		posts: ["create", "read", "update", "delete", "publish", "feature"],
+		comments_mod: ["read", "approve", "delete"],
 	},
 } as const satisfies Record<AppRole, Record<string, readonly string[]>>;
 
@@ -474,6 +442,108 @@ export const routeConfig: Record<string, RouteConfig> = {
 		showInNav: true,
 		parent: ROUTES.ADMIN.RBAC.BASE,
 	},
+
+	// Blog
+	[ROUTES.ADMIN.BLOG.BASE]: {
+		title: "Blog",
+		icon: FileText,
+		description: "Blog management dashboard",
+		minRole: ROLES.ADMIN,
+		noIndex: true,
+		showInNav: true,
+		parent: ROUTES.ADMIN.BASE,
+	},
+	[ROUTES.ADMIN.BLOG.POSTS]: {
+		title: "Posts",
+		icon: PenLine,
+		description: "Manage blog posts",
+		minRole: ROLES.ADMIN,
+		noIndex: true,
+		showInNav: true,
+		parent: ROUTES.ADMIN.BLOG.BASE,
+	},
+	[ROUTES.ADMIN.BLOG.CATEGORIES]: {
+		title: "Categories",
+		icon: FolderOpen,
+		description: "Manage post categories",
+		minRole: ROLES.ADMIN,
+		noIndex: true,
+		showInNav: true,
+		parent: ROUTES.ADMIN.BLOG.BASE,
+	},
+	[ROUTES.ADMIN.BLOG.TAGS]: {
+		title: "Tags",
+		icon: BarChart3,
+		description: "Manage post tags",
+		minRole: ROLES.ADMIN,
+		noIndex: true,
+		showInNav: true,
+		parent: ROUTES.ADMIN.BLOG.BASE,
+	},
+	[ROUTES.ADMIN.BLOG.COMMENTS]: {
+		title: "Comments",
+		icon: MessageCircle,
+		description: "Moderate comments",
+		minRole: ROLES.ADMIN,
+		noIndex: true,
+		showInNav: true,
+		parent: ROUTES.ADMIN.BLOG.BASE,
+	},
+	[ROUTES.ADMIN.BLOG.MEDIA]: {
+		title: "Media",
+		icon: HardDrive,
+		description: "Manage blog media",
+		minRole: ROLES.ADMIN,
+		noIndex: true,
+		showInNav: true,
+		parent: ROUTES.ADMIN.BLOG.BASE,
+	},
+	[ROUTES.ADMIN.BLOG.AUTHORS]: {
+		title: "Authors",
+		icon: Users,
+		description: "Manage blog authors",
+		minRole: ROLES.ADMIN,
+		noIndex: true,
+		showInNav: true,
+		parent: ROUTES.ADMIN.BLOG.BASE,
+	},
+	[ROUTES.ADMIN.BLOG.ANALYTICS]: {
+		title: "Analytics",
+		icon: BarChart3,
+		description: "Blog performance analytics",
+		minRole: ROLES.ADMIN,
+		noIndex: true,
+		showInNav: true,
+		parent: ROUTES.ADMIN.BLOG.BASE,
+	},
+	[ROUTES.ADMIN.BLOG.NEWSLETTER]: {
+		title: "Newsletter",
+		icon: Mail,
+		description: "Newsletter subscribers and emails",
+		minRole: ROLES.ADMIN,
+		noIndex: true,
+		showInNav: true,
+		parent: ROUTES.ADMIN.BLOG.BASE,
+	},
+	[ROUTES.ADMIN.BLOG.SITES]: {
+		title: "Sites",
+		icon: Globe,
+		description: "Manage blog sites",
+		minRole: ROLES.SUPER_ADMIN,
+		noIndex: true,
+		showInNav: true,
+		parent: ROUTES.ADMIN.BLOG.BASE,
+	},
+
+	// Writer editor (accessible to all authenticated users)
+	[ROUTES.EDITOR.NEW]: {
+		title: "New Post",
+		icon: PenLine,
+		description: "Write a new blog post",
+		minRole: ROLES.USER,
+		noIndex: true,
+		showInNav: false,
+	},
 };
 
 export function hasMinimumRole(userRole: AppRole, minRole: AppRole): boolean {
@@ -563,24 +633,6 @@ export function getRoleCapabilities(role: AppRole) {
 		canManageRoutes: checkPermission(role, { routes: ["write"] }),
 		canManageSettings: checkPermission(role, { settings: ["write"] }),
 		canImpersonate: checkPermission(role, { user: ["impersonate"] }),
-		// E-commerce capabilities
-		canViewProducts: checkPermission(role, { products: ["read"] }),
-		canManageProducts: checkPermission(role, { products: ["write"] }),
-		canDeleteProducts: checkPermission(role, { products: ["delete"] }),
-		canViewOrders: checkPermission(role, { orders: ["read"] }),
-		canManageOrders: checkPermission(role, { orders: ["write"] }),
-		canFulfillOrders: checkPermission(role, { orders: ["fulfill"] }),
-		canCancelOrders: checkPermission(role, { orders: ["cancel"] }),
-		canRefundOrders: checkPermission(role, { orders: ["refund"] }),
-		canViewInventory: checkPermission(role, { inventory: ["read"] }),
-		canAdjustInventory: checkPermission(role, { inventory: ["adjust"] }),
-		canViewCustomers: checkPermission(role, { customers: ["read"] }),
-		canExportCustomers: checkPermission(role, { customers: ["export"] }),
-		canViewCoupons: checkPermission(role, { coupons: ["read"] }),
-		canManageCoupons: checkPermission(role, { coupons: ["write"] }),
-		canViewReviews: checkPermission(role, { reviews: ["read"] }),
-		canApproveReviews: checkPermission(role, { reviews: ["approve"] }),
-		canDeleteReviews: checkPermission(role, { reviews: ["delete"] }),
 	};
 }
 

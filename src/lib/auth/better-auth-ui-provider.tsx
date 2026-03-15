@@ -5,7 +5,7 @@ import { Link as RouterLink, useRouter } from "@tanstack/react-router";
 
 import { ROUTES, QUERY_KEYS, AUTH_ROUTE_VIEWS } from "@/constants";
 import { useIsMobile } from "@/hooks/use-mobile";
-import authClient from "@/lib/auth/auth-client";
+import authClient, { useActiveOrganization } from "@/lib/auth/auth-client";
 import { authQueryOptions } from "@/lib/auth/queries";
 import { uploadAvatar, deleteAvatar } from "@/lib/storage/avatar";
 import { env } from "@/env/client";
@@ -30,16 +30,28 @@ function getBasePath(): string {
 }
 
 function toRouterPath(path: string): string {
-  // Router already has basepath="/template" configured.
-  // If we pass /template/... into router.navigate/link it becomes /template/template/...
+  // Router already has a basepath configured.
+  // If we pass base-prefixed paths into router.navigate/link, the prefix is duplicated.
   return stripBasePath(env.VITE_BASE_URL, path);
+}
+
+function isExternalOrApiHref(href: string): boolean {
+  if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(href)) return true; // absolute URL / custom protocol
+  if (href.startsWith("//")) return true;
+
+  const normalized = toRouterPath(href);
+  return normalized.startsWith("/api/");
 }
 
 export function BetterAuthUiLink({ href, ref, ...props }: BetterAuthUiLinkProps) {
   const fixedHref = toRouterPath(href);
 
-  // Cast to `To` to allow Better Auth UI to pass API paths and external URLs
-  // that aren't in the typed FileRoutesByPath (e.g., /api/auth/passkey/*)
+  // Better Auth UI may emit non-router links (e.g. /api/auth/passkey/* or external URLs).
+  // Rendering those with RouterLink can trigger route-preload crashes.
+  if (isExternalOrApiHref(href)) {
+    return <a ref={ref} href={href} {...props} />;
+  }
+
   // biome-ignore lint/suspicious/noExplicitAny: Better Auth UI passes arbitrary paths
   return <RouterLink ref={ref} to={fixedHref as To} {...props} />;
 }
@@ -48,15 +60,24 @@ export function BetterAuthUiProviders({ children }: { children: React.ReactNode 
   const router = useRouter();
   const queryClient = router.options.context.queryClient;
   const isMobile = useIsMobile();
+  const { data: activeOrganization } = useActiveOrganization();
 
   return (
     <AuthQueryProvider sessionQueryOptions={authQueryOptions()}>
       <AuthUIProviderTanstack
         authClient={authClient}
         navigate={(href: string) => {
+          if (isExternalOrApiHref(href)) {
+            window.location.assign(href);
+            return;
+          }
           router.navigate({ to: toRouterPath(href) as To });
         }}
         replace={(href: string) => {
+          if (isExternalOrApiHref(href)) {
+            window.location.replace(href);
+            return;
+          }
           router.navigate({ to: toRouterPath(href) as To, replace: true });
         }}
         Link={BetterAuthUiLink}
@@ -87,6 +108,7 @@ export function BetterAuthUiProviders({ children }: { children: React.ReactNode 
           RESET_PASSWORD: AUTH_ROUTE_VIEWS.RESET_PASSWORD,
           MAGIC_LINK: AUTH_ROUTE_VIEWS.MAGIC_LINK,
           EMAIL_VERIFICATION: AUTH_ROUTE_VIEWS.VERIFY_EMAIL,
+          ACCEPT_INVITATION: AUTH_ROUTE_VIEWS.ACCEPT_INVITATION,
           TWO_FACTOR: AUTH_ROUTE_VIEWS.TWO_FACTOR,
           CALLBACK: AUTH_ROUTE_VIEWS.CALLBACK,
         }}
@@ -101,7 +123,13 @@ export function BetterAuthUiProviders({ children }: { children: React.ReactNode 
           viewPaths: {
             SETTINGS: "settings",
             SECURITY: "security",
+            ORGANIZATIONS: "organizations",
           },
+        }}
+        organization={{
+          basePath: "/org",
+          pathMode: "slug",
+          hideTeams: true,
         }}
         social={{ providers: ["google"] }}
         // freshAge: seconds since last auth action for session to be "fresh"

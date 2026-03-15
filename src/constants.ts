@@ -4,6 +4,7 @@ export const ROUTES = {
     SIGNUP: "/signup",
     LOGOUT: "/logout",
     DASHBOARD: "/dashboard",
+    DASHBOARD_ASSETS: "/dashboard/assets",
     TERMS: "/terms",
     PRIVACY: "/privacy",
     COOKIES: "/cookies",
@@ -15,8 +16,10 @@ export const ROUTES = {
         RESET_PASSWORD: "/auth/reset-password",
         MAGIC_LINK: "/auth/magic-link",
         VERIFY_EMAIL: "/auth/verify-email",
+        ACCEPT_INVITATION: "/auth/accept-invitation",
         CALLBACK: {
             VERIFY_EMAIL: "/auth/callback/verify-email",
+            ACCEPT_INVITATION: "/auth/callback/accept-invitation",
         },
     },
 
@@ -51,6 +54,37 @@ export const ROUTES = {
             ROUTES: "/admin/rbac/routes",
             PERMISSIONS: "/admin/rbac/permissions",
         },
+        BLOG: {
+            BASE: "/admin/blog",
+            POSTS: "/admin/blog/posts",
+            POST_NEW: "/admin/blog/posts/new",
+            POST_EDIT: (id: string) => `/admin/blog/posts/${id}/edit`,
+            CATEGORIES: "/admin/blog/categories",
+            TAGS: "/admin/blog/tags",
+            MEDIA: "/admin/blog/media",
+            COMMENTS: "/admin/blog/comments",
+            SITES: "/admin/blog/sites",
+            AUTHORS: "/admin/blog/authors",
+            ANALYTICS: "/admin/blog/analytics",
+            NEWSLETTER: "/admin/blog/newsletter",
+            SETTINGS: "/admin/blog/settings",
+        },
+    },
+
+    // Public blog routes
+    BLOG: {
+        HOME: "/",
+        POST: (slug: string) => `/${slug}`,
+        TAG: (tag: string) => `/blog/tag/${tag}`,
+        CATEGORY: (cat: string) => `/blog/category/${cat}`,
+        AUTHOR: (username: string) => `/@${username}`,
+        SEARCH: "/search",
+    },
+
+    // Editor
+    EDITOR: {
+        POST: (id: string) => `/editor/${id}`,
+        NEW: "/editor/new",
     },
 
     // User billing routes
@@ -72,6 +106,7 @@ export const AUTH_ROUTE_VIEWS = {
     RESET_PASSWORD: "reset-password",
     MAGIC_LINK: "magic-link",
     VERIFY_EMAIL: "verify-email",
+    ACCEPT_INVITATION: "accept-invitation",
     TWO_FACTOR: "two-factor",
     EMAIL_OTP: "email-otp",
     LOGOUT: "logout",
@@ -80,6 +115,7 @@ export const AUTH_ROUTE_VIEWS = {
 
 export const ACCOUNT_VIEWS = {
     SETTINGS: "settings",
+    PROFILE: "profile",
     SECURITY: "security",
     SESSIONS: "sessions",
     APPEARANCE: "appearance",
@@ -111,6 +147,12 @@ export const ACCOUNT_TABS: readonly AccountTabConfig[] = [
         path: ROUTES.ACCOUNT.SETTINGS,
     },
     {
+        id: ACCOUNT_VIEWS.PROFILE,
+        label: "Author Profile",
+        icon: User,
+        path: ROUTES.ACCOUNT.PROFILE,
+    },
+    {
         id: ACCOUNT_VIEWS.SECURITY,
         label: "Security",
         icon: Shield,
@@ -133,6 +175,12 @@ export const ACCOUNT_TABS: readonly AccountTabConfig[] = [
         label: "Notifications",
         icon: Bell,
         path: ROUTES.ACCOUNT.NOTIFICATIONS,
+    },
+    {
+        id: ACCOUNT_VIEWS.ORGANIZATIONS,
+        label: "Organizations",
+        icon: Building2,
+        path: ROUTES.ACCOUNT.ORGANIZATIONS,
     },
 ] as const;
 
@@ -214,6 +262,35 @@ export const QUERY_KEYS = {
         REVENUE_METRICS: ["billing", "revenue", "metrics"],
         WEBHOOK_EVENTS: ["billing", "webhook-events"],
         USER_PAYMENT_HISTORY: (userId: string) => ["billing", "user-payment-history", userId],
+    },
+    BLOG: {
+        POSTS: {
+            LIST: ["blog", "posts", "list"],
+            PAGINATED: (params?: Record<string, unknown>) => ["blog", "posts", "paginated", params],
+            PAGINATED_BASE: ["blog", "posts", "paginated"],
+            DETAIL: (slug: string) => ["blog", "posts", "detail", slug],
+            BY_ID: (id: string) => ["blog", "posts", "id", id],
+            FEATURED: ["blog", "posts", "featured"],
+            RECENT: ["blog", "posts", "recent"],
+        },
+        CATEGORIES: {
+            LIST: ["blog", "categories", "list"],
+        },
+        TAGS: {
+            LIST: ["blog", "tags", "list"],
+        },
+        COMMENTS: {
+            BY_POST: (postId: string) => ["blog", "comments", postId],
+        },
+        AUTHORS: {
+            PROFILE: (username: string) => ["blog", "authors", username],
+            LIST: ["blog", "authors", "list"],
+        },
+        SITES: {
+            LIST: ["blog", "sites", "list"],
+            DETAIL: (id: string) => ["blog", "sites", id],
+        },
+        STATS: ["blog", "stats"],
     },
     ROUTE_ACCESS: (route: string) => ["route-access", route],
     EMAIL_TEMPLATES: {
@@ -364,11 +441,13 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 
 import {
     Bell,
+    Building2,
     type LucideIcon,
     Monitor,
     Palette,
     Settings,
     Shield,
+    User,
     UserCog,
     Users,
     Wallet,

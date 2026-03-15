@@ -271,11 +271,13 @@ export const userAvatarUploadedFunction = inngest.createFunction(
 
 // Import billing functions
 import { billingFunctions } from "./billing";
-
+// Import CMS functions
+import { cmsFunctions } from "./cms";
 export const inngestFunctions = [
     userSignedUpFunction,
     userEmailVerifiedFunction,
     fileUploadedFunction,
     userAvatarUploadedFunction,
     ...billingFunctions,
+    ...cmsFunctions,
 ] as const;

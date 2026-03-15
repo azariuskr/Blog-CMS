@@ -8,6 +8,7 @@ import {
 	EditUserDialog,
 	UserCreateDialog,
 	UserDeleteDialog,
+	UserSessionsSheet,
 } from "@/components/admin/users/dialogs";
 import { createUsersColumns } from "@/components/admin/users/users-columns";
 import { UsersTable } from "@/components/admin/users/users-table";
@@ -18,6 +19,7 @@ import { useHasPermission, useSession } from "@/hooks/auth-hooks";
 import {
 	useBanUser,
 	useDeleteUser,
+	useImpersonateUser,
 	useStopImpersonation,
 	useUnbanUser,
 } from "@/hooks/user-actions";
@@ -65,8 +67,10 @@ export function Users({ search }: UsersViewProps) {
 	const canCreate = useHasPermission({ users: ["create"] });
 	const canWrite = useHasPermission({ users: ["write"] });
 	const canDelete = useHasPermission({ users: ["delete"] });
+	const canImpersonate = useHasPermission({ user: ["impersonate"] });
 
 	// Impersonation state
+	const impersonateMutation = useImpersonateUser();
 	const stopImpersonationMutation = useStopImpersonation();
 	const isImpersonating = Boolean(
 		(session as { session?: { impersonatedBy?: string } })?.session
@@ -85,15 +89,24 @@ export function Users({ search }: UsersViewProps) {
 			createUsersColumns({
 				canWrite,
 				canDelete,
+				canImpersonate,
 				onEdit: (user) => {
-					// Pass data directly to open() to ensure it's set atomically
 					open("editUser", user);
 				},
 				onDelete: (user) => {
 					open("confirmDelete", user);
 				},
+				onViewSessions: (user) => {
+					open("userSessions", user);
+				},
+				onImpersonate: async (user) => {
+					const result = await impersonateMutation.mutateAsync({ userId: user.id });
+					if (result?.ok) {
+						navigate({ to: ROUTES.ADMIN.BASE as string });
+					}
+				},
 			}),
-		[canWrite, canDelete, open],
+		[canWrite, canDelete, canImpersonate, open, impersonateMutation, navigate],
 	);
 
 	// Bulk action mutations
@@ -195,6 +208,7 @@ export function Users({ search }: UsersViewProps) {
 			<UserCreateDialog />
 			<EditUserDialog />
 			<UserDeleteDialog />
+			<UserSessionsSheet />
 		</PageContainer>
 	);
 }

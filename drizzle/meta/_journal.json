@@ -40,8 +40,36 @@
     {
       "idx": 5,
       "version": "7",
-      "when": 1771329158186,
-      "tag": "0005_wooden_klaw",
+      "when": 1773052454535,
+      "tag": "0005_yummy_mockingbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1773600000000,
+      "tag": "0006_premium_paywall",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1742083200000,
+      "tag": "0007_posts_fts",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1742083260000,
+      "tag": "0008_author_applications",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1742083320000,
+      "tag": "0009_drop_tenants",
       "breakpoints": true
     }
   ]

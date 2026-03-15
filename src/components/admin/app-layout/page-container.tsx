@@ -21,12 +21,13 @@ export function PageContainer({
 }: PageContainerProps) {
 	return (
 		<main
-			data-layout={fixed ? 'fixed' : 'auto'}
+			data-layout={fixed ? "fixed" : "auto"}
 			className={cn(
 				"flex flex-1 flex-col gap-4 p-4 md:p-6",
 				fixed && "grow overflow-hidden",
-				!fluid && "@7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl",
-				className
+				!fluid &&
+					"@7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl",
+				className,
 			)}
 		>
 			{(title || description || actions) && (

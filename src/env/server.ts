@@ -111,6 +111,8 @@ export const env = createEnv({
     REDIS_URL: z.string().default("redis://localhost:6379"),
     REDIS_PASSWORD: z.string().optional(),
     REDIS_DB: z.coerce.number().default(0),
+
+    BLOG_DATA_MODE: z.enum(["live", "mock", "hybrid"]).default("hybrid"),
   },
   runtimeEnv: process.env,
 });

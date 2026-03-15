@@ -507,3 +507,24 @@ export async function flushEcommerceCache(): Promise<void> {
     console.error("[Redis] Error flushing e-commerce cache:", error);
   }
 }
+
+/**
+ * Flush all CMS-related cache keys.
+ */
+export async function invalidateAllCmsCache(): Promise<void> {
+  try {
+    const client = await getRedisClient();
+    const patterns = ["cms:*", "blog:*", "content:*"];
+
+    for (const pattern of patterns) {
+      const keys = await client.keys(pattern);
+      if (keys.length > 0) {
+        await client.del(keys);
+      }
+    }
+
+    console.log("[Redis] CMS cache invalidated");
+  } catch (error) {
+    console.error("[Redis] Error invalidating CMS cache:", error);
+  }
+}

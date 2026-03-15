@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { ChevronRight, LayoutDashboard } from "lucide-react";
+import { Building2, ChevronRight, LayoutDashboard } from "lucide-react";
 import * as React from "react";
 import {
 	Collapsible,
@@ -21,7 +21,7 @@ import {
 	SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { ROUTES } from "@/constants";
-import { useRole, useHasCapability } from "@/hooks/auth-hooks";
+import { useHasCapability, useRole } from "@/hooks/auth-hooks";
 import {
 	buildNavigation,
 	isRouteActive,
@@ -50,8 +50,8 @@ export function AppSidebar() {
 	const navSections = mounted ? buildNavigation(role ?? undefined) : [];
 
 	// Header text based on admin access
-	const headerTitle = canAccessAdmin ? "Dashboard" : "Account";
-	const headerSubtitle = canAccessAdmin ? "Admin Panel" : "Your Settings";
+	const headerTitle = canAccessAdmin ? "Dashboard" : "Contributor";
+	const headerSubtitle = canAccessAdmin ? "Admin Panel" : "Writing Hub";
 
 	const variant = mounted ? layout.variant : "inset";
 	const collapsible = mounted ? layout.collapsible : "icon";
@@ -68,7 +68,9 @@ export function AppSidebar() {
 										<LayoutDashboard className="size-4" />
 									</div>
 									<div className="grid flex-1 text-left text-sm leading-tight">
-										<span className="truncate font-semibold">{headerTitle}</span>
+										<span className="truncate font-semibold">
+											{headerTitle}
+										</span>
 										<span className="truncate text-xs text-muted-foreground">
 											{headerSubtitle}
 										</span>
@@ -82,7 +84,9 @@ export function AppSidebar() {
 										<LayoutDashboard className="size-4" />
 									</div>
 									<div className="grid flex-1 text-left text-sm leading-tight">
-										<span className="truncate font-semibold">{headerTitle}</span>
+										<span className="truncate font-semibold">
+											{headerTitle}
+										</span>
 										<span className="truncate text-xs text-muted-foreground">
 											{headerSubtitle}
 										</span>
@@ -95,13 +99,34 @@ export function AppSidebar() {
 			</SidebarHeader>
 
 			<SidebarContent>
-				{mounted && navSections.map((section) => (
-					<NavSectionGroup
-						key={section.title}
-						section={section}
-						currentPath={currentPath}
-					/>
-				))}
+				{mounted &&
+					navSections.map((section) => (
+						<NavSectionGroup
+							key={section.title}
+							section={section}
+							currentPath={currentPath}
+						/>
+					))}
+
+				<SidebarGroup>
+					<SidebarGroupLabel>Organization</SidebarGroupLabel>
+					<SidebarMenu>
+						<SidebarMenuItem>
+							<Link to={ROUTES.ACCOUNT.ORGANIZATIONS}>
+								<SidebarMenuButton
+									isActive={isRouteActive(
+										currentPath,
+										ROUTES.ACCOUNT.ORGANIZATIONS,
+									)}
+									tooltip="Organizations"
+								>
+									<Building2 className="size-4" />
+									<span>Organizations</span>
+								</SidebarMenuButton>
+							</Link>
+						</SidebarMenuItem>
+					</SidebarMenu>
+				</SidebarGroup>
 			</SidebarContent>
 
 			<SidebarFooter>
@@ -156,47 +181,64 @@ function NavEntryItem({ item, currentPath }: NavEntryItemProps) {
 	}
 
 	if (item.type === "collapsible") {
-		const hasActiveChild = item.items.some((subItem) =>
-			isRouteActive(currentPath, subItem.path),
-		);
-		const Icon = item.icon;
-		const [open, setOpen] = React.useState(hasActiveChild);
-		React.useEffect(() => setOpen(hasActiveChild), [hasActiveChild]);
-		return (
-			<Collapsible open={open} onOpenChange={setOpen} className="group/collapsible">
-				<SidebarMenuItem>
-					<CollapsibleTrigger
-						render={
-							<SidebarMenuButton tooltip={item.title}>
-								{Icon && <Icon className="size-4" />}
-								<span>{item.title}</span>
-								<ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-							</SidebarMenuButton>
-						}
-					></CollapsibleTrigger>
-					<CollapsibleContent>
-						<SidebarMenuSub>
-							{item.items.map((subItem) => {
-								const isActive = isRouteActive(currentPath, subItem.path);
-								return (
-									<SidebarMenuSubItem key={subItem.path}>
-										<SidebarMenuSubButton
-											isActive={isActive}
-											render={<Link to={subItem.path} />}
-										>
-											<span>{subItem.title}</span>
-										</SidebarMenuSubButton>
-									</SidebarMenuSubItem>
-								);
-							})}
-						</SidebarMenuSub>
-					</CollapsibleContent>
-				</SidebarMenuItem>
-			</Collapsible>
-		);
+		return <CollapsibleNavItem item={item} currentPath={currentPath} />;
 	}
 
 	return null;
+}
+
+interface CollapsibleNavItemProps {
+	item: Extract<NavEntry, { type: "collapsible" }>;
+	currentPath: string;
+}
+
+function CollapsibleNavItem({ item, currentPath }: CollapsibleNavItemProps) {
+	const hasActiveChild = item.items.some((subItem) =>
+		isRouteActive(currentPath, subItem.path),
+	);
+	const Icon = item.icon;
+	const [open, setOpen] = React.useState(hasActiveChild);
+
+	React.useEffect(() => {
+		setOpen(hasActiveChild);
+	}, [hasActiveChild]);
+
+	return (
+		<Collapsible
+			open={open}
+			onOpenChange={setOpen}
+			className="group/collapsible"
+		>
+			<SidebarMenuItem>
+				<CollapsibleTrigger
+					render={
+						<SidebarMenuButton tooltip={item.title}>
+							{Icon && <Icon className="size-4" />}
+							<span>{item.title}</span>
+							<ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+						</SidebarMenuButton>
+					}
+				></CollapsibleTrigger>
+				<CollapsibleContent>
+					<SidebarMenuSub>
+						{item.items.map((subItem) => {
+							const isActive = isRouteActive(currentPath, subItem.path);
+							return (
+								<SidebarMenuSubItem key={subItem.path}>
+									<SidebarMenuSubButton
+										isActive={isActive}
+										render={<Link to={subItem.path} />}
+									>
+										<span>{subItem.title}</span>
+									</SidebarMenuSubButton>
+								</SidebarMenuSubItem>
+							);
+						})}
+					</SidebarMenuSub>
+				</CollapsibleContent>
+			</SidebarMenuItem>
+		</Collapsible>
+	);
 }
 
 function getItemKey(item: NavEntry): string {

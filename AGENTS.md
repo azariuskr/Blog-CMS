@@ -36,6 +36,16 @@
 ## Testing & Tooling
 - Use `pnpm test` (Vitest) for tests; lint/format with Biome (`pnpm lint`, `pnpm format`, `pnpm check`).
 
+## Documentation & Planning — Always-On Rule
+
+> **Every session that touches code MUST update the documentation it affects.**
+
+- **`PLAN.md`** — Mark tasks `[x]` as they complete, `[~]` while in progress, `[!]` if blocked. Add new tasks discovered during work. Update the **Current Status** table when a whole area shifts state.
+- **`README.md`** — Update architecture descriptions, schema tables, server function tables, and pattern examples whenever the corresponding code changes.
+- **`AGENTS.md`** — Add or update patterns, hooks, and checklists when new conventions are established.
+- Never close out a task without checking if any of the three files needs a line changed.
+- When a decision from the **Open Decisions** table in `PLAN.md` is settled, move it to a "Decided" row with the chosen option and rationale.
+
 ## Contribution Notes
 - Keep changes consistent with existing patterns; avoid inline comments unless necessary.
 - Prefer centralized constants/hooks/utilities over ad-hoc strings or duplicated logic.

@@ -1,500 +1,59 @@
-version: '3.8'
-
-# Configurable hostname for Traefik routing (set in .env or shell)
-# Default: localhost for local development
-x-hostname: &hostname ${TRAEFIK_HOST:-localhost}
+# Blog CMS — Web only
+# Uses shared infrastructure started by better-tanstart-template (postgres, redis, minio, mailhog, inngest).
+# Run: docker-compose up -d
+#
+# For standalone deployment (self-contained infrastructure):
+#   docker-compose -f docker-compose.yml -f docker-compose.infra.yml up -d
 
 services:
   #------------------------------------------------------------------------------
-  # Web (TanStack Start) - served behind Traefik at /template
+  # Blog CMS Web App — served behind Traefik at /blog
   #------------------------------------------------------------------------------
   web:
     build: .
-    container_name: better-tanstart-template-web
+    container_name: blog-cms-web
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     env_file:
       - .env.local
     environment:
-      NODE_ENV: development
-      # IMPORTANT: when accessed via Traefik/Tailscale, the app must not hardcode localhost
-      VITE_BASE_URL: https://${TRAEFIK_HOST:-localhost}/template
-      BETTER_AUTH_URL: https://${TRAEFIK_HOST:-localhost}/template
-      INNGEST_APP_URL: https://${TRAEFIK_HOST:-localhost}/template
+      NODE_ENV: production
 
-      # IMPORTANT (container networking): .env.local uses localhost, but inside Docker that means the web container itself.
-      # Override to service DNS names so auth/signup works.
-      DATABASE_URL: postgresql://admin:password@pgbouncer:6432/blog3?sslmode=disable&application_name=blog3&connect_timeout=10
-      USE_PGBOUNCER: "true"
-      REDIS_URL: redis://:SecureRedis123!@redis:6379/0
+      # Traefik/Tailscale public base URL
+      VITE_BASE_URL: https://${TRAEFIK_HOST:-localhost}/blog
+      BETTER_AUTH_URL: https://${TRAEFIK_HOST:-localhost}/blog
+      INNGEST_APP_URL: https://${TRAEFIK_HOST:-localhost}/blog
+
+      # Container-internal service hostnames (shared app-network from template project)
+      # blog_cms uses direct postgres (pgbouncer is configured for blog3 only)
+      DATABASE_URL: postgresql://admin:password@postgres:5432/blog_cms?sslmode=disable&application_name=blog_cms&connect_timeout=10
+      USE_PGBOUNCER: "false"
+      REDIS_URL: redis://:SecureRedis123!@redis:6379/1
       SMTP_HOST: mailhog
+      SMTP_PORT: 1025
       MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      INNGEST_BASE_URL: http://inngest_dev:8288
     networks:
-      - app-network
-      - proxy
+      - app-network   # shared network from template project (postgres, redis, minio, mailhog, inngest live here)
+      - proxy         # Traefik reverse proxy network
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy
-      - traefik.http.routers.tanstart-template.rule=Host(`${TRAEFIK_HOST:-localhost}`) && PathPrefix(`/template`)
-      - traefik.http.routers.tanstart-template.entrypoints=websecure
-      - traefik.http.routers.tanstart-template.tls=true
 
-      # Auth reset/verify links are currently generated at /auth/... (without /template).
-      # Redirect /auth/* -> /template/auth/* so the app (base=/template) can handle it.
-      - traefik.http.routers.tanstart-template-auth.rule=Host(`${TRAEFIK_HOST:-localhost}`) && PathPrefix(`/auth`)
-      - traefik.http.routers.tanstart-template-auth.entrypoints=websecure
-      - traefik.http.routers.tanstart-template-auth.tls=true
-      - traefik.http.routers.tanstart-template-auth.middlewares=auth-to-template
-      - traefik.http.middlewares.auth-to-template.redirectregex.regex=^https?://([^/]+)/auth(.*)
-      - traefik.http.middlewares.auth-to-template.redirectregex.replacement=https://$1/template/auth$2
-      - traefik.http.middlewares.auth-to-template.redirectregex.permanent=true
-
-      # No stripPrefix: Vite + TanStack Router are configured with base=/template
-      - traefik.http.services.tanstart-template.loadbalancer.server.port=3000
-
-  #------------------------------------------------------------------------------
-  # PostgreSQL 18
-  #------------------------------------------------------------------------------
-  postgres:
-    image: postgres:18-alpine
-    container_name: postgres_api
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C --data-checksums"
-    ports:
-      - '5432:5432'
-    restart: unless-stopped
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres-config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
-      - ./docker/postgres-config/init:/docker-entrypoint-initdb.d:ro
-      - type: tmpfs
-        target: /tmp
-        tmpfs:
-          size: 1G
-    command: >
-      postgres
-      -c config_file=/etc/postgresql/postgresql.conf
-    networks:
-      - app-network
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB}']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: '4'
-          memory: 8G
-        reservations:
-          cpus: '2'
-          memory: 4G
-    shm_size: 1g
-    security_opt:
-      - no-new-privileges:true
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-
-  #------------------------------------------------------------------------------
-  # PgBouncer - Connection Pooling
-  #------------------------------------------------------------------------------
-  pgbouncer:
-    image: pgbouncer/pgbouncer:latest
-    container_name: pgbouncer
-    environment:
-      DATABASES_HOST: postgres
-      DATABASES_PORT: 5432
-      DATABASES_USER: ${POSTGRES_USER}
-      DATABASES_PASSWORD: ${POSTGRES_PASSWORD}
-      DATABASES_DBNAME: ${POSTGRES_DB}
-      POOL_MODE: ${PGBOUNCER_POOL_MODE:-transaction}    # CHANGED: transaction mode for APIs
-      MAX_CLIENT_CONN: ${PGBOUNCER_MAX_CLIENT_CONN:-1000}
-      DEFAULT_POOL_SIZE: ${PGBOUNCER_DEFAULT_POOL_SIZE:-50}
-      MIN_POOL_SIZE: 10
-      RESERVE_POOL_SIZE: 10
-      SERVER_LIFETIME: 3600
-      SERVER_IDLE_TIMEOUT: 600
-      QUERY_WAIT_TIMEOUT: 120
-      MAX_DB_CONNECTIONS: 100
-      MAX_USER_CONNECTIONS: 100
-    volumes:
-        - ./docker/pgbouncer-config/pgbouncer.ini.template:/etc/pgbouncer-custom/pgbouncer.ini.template:ro
-        # - ./docker/pgbouncer-config/pgbouncer.ini:/etc/pgbouncer-custom/pgbouncer.ini:ro
-        - ./docker/pgbouncer-config/userlist.txt:/etc/pgbouncer-custom/userlist.txt:ro
-    # command: ["pgbouncer", "/etc/pgbouncer-custom/pgbouncer.ini"]
-    command: >
-      /bin/sh -c "
-        envsubst < /etc/pgbouncer-custom/pgbouncer.ini.template > /etc/pgbouncer-custom/pgbouncer.ini
-        && exec pgbouncer /etc/pgbouncer-custom/pgbouncer.ini
-      "
-    ports:
-      - '6432:6432'
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - app-network
-    healthcheck:
-      # /dev/tcp is a bash feature and not available in this image's /bin/sh
-      test: ['CMD-SHELL', 'nc -z 127.0.0.1 6432']
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-    restart: unless-stopped
-
-  #------------------------------------------------------------------------------
-  # Redis
-  #------------------------------------------------------------------------------
-  redis:
-    image: redis:7.4-alpine
-    container_name: redis_cache
-    command:
-      - redis-server
-      - --appendonly
-      - "yes"
-      - --appendfsync
-      - everysec
-      - --requirepass
-      - ${REDIS_PASSWORD}
-      - --maxmemory
-      - 2gb
-      - --maxmemory-policy
-      - allkeys-lru
-      - --tcp-keepalive
-      - "300"
-      - --timeout
-      - "0"
-      - --tcp-backlog
-      - "511"
-      - --databases
-      - "16"
-      - --save
-      - "900"
-      - "1"
-      - --save
-      - "300"
-      - "10"
-      - --save
-      - "60"
-      - "10000"
-      - --rdbcompression
-      - "yes"
-      - --rdbchecksum
-      - "yes"
-      - --stop-writes-on-bgsave-error
-      - "no"
-      - --lazyfree-lazy-eviction
-      - "yes"
-      - --lazyfree-lazy-expire
-      - "yes"
-      - --lazyfree-lazy-server-del
-      - "yes"
-      - --replica-lazy-flush
-      - "yes"
-      - --loglevel
-      - notice
-    ports:
-      - '6379:6379'
-    volumes:
-      - redis_data:/data
-      - type: tmpfs
-        target: /tmp
-        tmpfs:
-          size: 512M
-    networks:
-      - app-network
-    healthcheck:
-      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD}', 'ping']
-      interval: 10s
-      timeout: 3s
-      retries: 3
-      start_period: 10s
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 3G
-        reservations:
-          cpus: '1'
-          memory: 2G
-    security_opt:
-      - no-new-privileges:true
-    restart: unless-stopped
-
-  #------------------------------------------------------------------------------
-  # MinIO - S3-compatible Object Storage
-  #------------------------------------------------------------------------------
-  minio:
-    image: minio/minio:latest
-    container_name: minio_storage
-    ports:
-      - '9000:9000'
-      - '9001:9001'
-    volumes:
-      - minio_data:/data
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
-      # Keep defaults for auth flow stability; Traefik handles external routing
-    command: server /data --console-address ":9001"
-    networks:
-      - app-network
-      - proxy
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      # MinIO API via same MagicDNS host (no wildcard DNS needed)
-      - traefik.http.routers.bt-minio-api.rule=Host(`${TRAEFIK_HOST:-localhost}`) && PathPrefix(`/minio-api`)
-      - traefik.http.routers.bt-minio-api.entrypoints=websecure
-      - traefik.http.routers.bt-minio-api.tls=true
-      - traefik.http.routers.bt-minio-api.middlewares=bt-minio-api-rewrite
-      - traefik.http.routers.bt-minio-api.service=bt-minio-api
-      - traefik.http.middlewares.bt-minio-api-rewrite.replacepathregex.regex=^/minio-api/?(.*)
-      - traefik.http.middlewares.bt-minio-api-rewrite.replacepathregex.replacement=/$1
-      - traefik.http.services.bt-minio-api.loadbalancer.server.port=9000
-      # MinIO Console via same MagicDNS host
-      - traefik.http.routers.bt-minio-console.rule=Host(`${TRAEFIK_HOST:-localhost}`) && (Path(`/minio`) || PathPrefix(`/minio/`))
-      - traefik.http.routers.bt-minio-console.entrypoints=websecure
-      - traefik.http.routers.bt-minio-console.tls=true
-      - traefik.http.routers.bt-minio-console.middlewares=bt-minio-console-rewrite
-      - traefik.http.routers.bt-minio-console.service=bt-minio-console
-      - traefik.http.middlewares.bt-minio-console-rewrite.replacepathregex.regex=^/minio/?(.*)
-      - traefik.http.middlewares.bt-minio-console-rewrite.replacepathregex.replacement=/$1
-      - traefik.http.services.bt-minio-console.loadbalancer.server.port=9001
-      # Console backend API used by UI (UI calls absolute /api/v1/*)
-      - traefik.http.routers.bt-minio-console-api.rule=Host(`${TRAEFIK_HOST:-localhost}`) && PathPrefix(`/api/v1`)
-      - traefik.http.routers.bt-minio-console-api.entrypoints=websecure
-      - traefik.http.routers.bt-minio-console-api.tls=true
-      - traefik.http.routers.bt-minio-console-api.priority=300
-      - traefik.http.routers.bt-minio-console-api.service=bt-minio-console
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-    restart: unless-stopped
-
-  #------------------------------------------------------------------------------
-  # Inngest - Background Job Processing
-  #------------------------------------------------------------------------------
-  inngest:
-    image: inngest/inngest:latest
-    container_name: inngest_dev
-    ports:
-      - '8288:8288'
-    environment:
-      INNGEST_EVENT_KEY: ${INNGEST_EVENT_KEY:-inngest-event-key-dev}
-      INNGEST_HASH_KEY: ${INNGEST_HASH_KEY:-inngest-hash-key-dev}
-      INNGEST_SIGNING_KEY: ${INNGEST_SIGNING_KEY:-signkey-dev}
-      INNGEST_JWT_SECRET: ${INNGEST_JWT_SECRET:-inngest-jwt-secret-dev}
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - app-network
-      - proxy
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.inngest.rule=Host(`${TRAEFIK_HOST:-localhost}`) && PathPrefix(`/inngest`)
-      - traefik.http.routers.inngest.entrypoints=websecure
-      - traefik.http.routers.inngest.tls=true
-      - traefik.http.routers.inngest.middlewares=inngest-strip
-      - traefik.http.middlewares.inngest-strip.stripPrefix.prefixes=/inngest
-      - traefik.http.services.inngest.loadbalancer.server.port=8288
-    command: inngest dev -u http://host.docker.internal:3000/api/inngest/inngest
-    restart: unless-stopped
-
-  #------------------------------------------------------------------------------
-  # MailHog - Email Testing
-  #------------------------------------------------------------------------------
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: mailhog
-    ports:
-      - '1025:1025'  # SMTP port
-      - '8025:8025'  # Web UI port
-    networks:
-      - app-network
-      - proxy
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.mailhog.rule=Host(`${TRAEFIK_HOST:-localhost}`) && PathPrefix(`/mailhog`)
-      - traefik.http.routers.mailhog.entrypoints=websecure
-      - traefik.http.routers.mailhog.tls=true
-      - traefik.http.routers.mailhog.middlewares=mailhog-strip
-      - traefik.http.middlewares.mailhog-strip.stripPrefix.prefixes=/mailhog
-      - traefik.http.services.mailhog.loadbalancer.server.port=8025
-    restart: unless-stopped
-
-  #------------------------------------------------------------------------------
-  # Redis Commander - Optional Management UI
-  #------------------------------------------------------------------------------
-  redis-commander:
-    image: ghcr.io/joeferner/redis-commander:latest
-    container_name: redis_ui
-    environment:
-      REDIS_HOSTS: local:redis:6379:0:${REDIS_PASSWORD:-password}
-      HTTP_USER: ${REDIS_UI_USER:-admin}
-      HTTP_PASSWORD: ${REDIS_UI_PASSWORD:-password}
-    ports:
-      - '8081:8081'
-    depends_on:
-      - redis
-    networks:
-      - app-network
-      - proxy
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.redis-commander.rule=Host(`${TRAEFIK_HOST:-localhost}`) && PathPrefix(`/redis`)
-      - traefik.http.routers.redis-commander.entrypoints=websecure
-      - traefik.http.routers.redis-commander.tls=true
-      - traefik.http.routers.redis-commander.middlewares=redis-strip
-      - traefik.http.middlewares.redis-strip.stripPrefix.prefixes=/redis
-      - traefik.http.services.redis-commander.loadbalancer.server.port=8081
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-    restart: unless-stopped
-    profiles: ['tools']
-
-  #------------------------------------------------------------------------------
-  # PgAdmin - Optional Database UI
-  #------------------------------------------------------------------------------
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@local.dev}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
-
-      # Serve pgAdmin behind a subpath (/pgadmin) via reverse proxy
-      SCRIPT_NAME: /pgadmin
-      PGADMIN_ENABLE_PROXY_FIX: 'True'
-      # Note: PGADMIN_CONFIG_* values are injected as raw Python; strings must include quotes.
-      PGADMIN_CONFIG_SESSION_COOKIE_PATH: "'/pgadmin'"
-    ports:
-      - '5050:80'
-    # NOTE: user: "0:0" runs pgAdmin as root to avoid permission issues with
-    # the bind-mounted ./docker/data/pgadmin directory. For production, use a
-    # named volume instead (pgadmin_data) which doesn't have this issue.
-    # Alternative: run `sudo chown -R 5050:5050 ./docker/data/pgadmin` on host.
-    user: "0:0"
-    volumes:
-      - ./docker/data/pgadmin:/var/lib/pgadmin
-    depends_on:
-      - postgres
-    networks:
-      - app-network
-      - proxy
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=proxy
-      - traefik.http.routers.pgadmin.rule=Host(`${TRAEFIK_HOST:-localhost}`) && PathPrefix(`/pgadmin`)
-      - traefik.http.routers.pgadmin.entrypoints=websecure
-      - traefik.http.routers.pgadmin.tls=true
-      # pgAdmin is configured with SCRIPT_NAME=/pgadmin so no stripPrefix needed
-      - traefik.http.services.pgadmin.loadbalancer.server.port=80
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-    restart: unless-stopped
-    profiles: ['tools']
-
-  #------------------------------------------------------------------------------
-  # Prometheus Exporters - Optional Monitoring
-  #------------------------------------------------------------------------------
-  postgres-exporter:
-    image: prometheuscommunity/postgres-exporter:latest
-    container_name: postgres_metrics
-    environment:
-      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
-    ports:
-      - '9187:9187'
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - app-network
-    deploy:
-      resources:
-        limits:
-          cpus: '0.2'
-          memory: 128M
-    restart: unless-stopped
-    profiles: ['monitoring']
-
-  redis-exporter:
-    image: oliver006/redis_exporter:latest
-    container_name: redis_metrics
-    environment:
-      REDIS_ADDR: "redis://redis:6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
-    ports:
-      - '9121:9121'
-    depends_on:
-      - redis
-    networks:
-      - app-network
-    deploy:
-      resources:
-        limits:
-          cpus: '0.2'
-          memory: 128M
-    restart: unless-stopped
-    profiles: ['monitoring']
+      # Main blog router — serves /blog/*
+      - traefik.http.routers.blog-cms.rule=Host(`${TRAEFIK_HOST:-localhost}`) && PathPrefix(`/blog`)
+      - traefik.http.routers.blog-cms.entrypoints=websecure
+      - traefik.http.routers.blog-cms.tls=true
+      - traefik.http.services.blog-cms.loadbalancer.server.port=3000
 
 #------------------------------------------------------------------------------
-# NETWORKS
+# Networks — both are EXTERNAL (created by the template project)
 #------------------------------------------------------------------------------
 networks:
   app-network:
+    external: true
     name: app-network
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
 
   proxy:
     external: true
     name: proxy
-
-#------------------------------------------------------------------------------
-# VOLUMES
-#------------------------------------------------------------------------------
-volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-  minio_data:
-    driver: local
-  pgadmin_data:
-    driver: local

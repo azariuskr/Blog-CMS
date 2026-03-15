@@ -14,7 +14,7 @@ export const getRouter = () => {
 
   const router = createRouter({
     routeTree,
-    basepath: "/template",
+    basepath: "/blog",
     context: {
       ...rqContext,
       user: null,

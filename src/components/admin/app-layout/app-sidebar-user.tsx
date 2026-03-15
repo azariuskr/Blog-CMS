@@ -1,6 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { BadgeCheck, ChevronsUpDown, CreditCard, KeyRound, Shield, Sparkles, UserCircle } from "lucide-react";
+import {
+	BadgeCheck,
+	ChevronsUpDown,
+	CreditCard,
+	KeyRound,
+	Shield,
+	Sparkles,
+	UserCircle,
+} from "lucide-react";
 import * as React from "react";
+import { SignOutMenuItem } from "@/components/sign-out-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
@@ -17,10 +26,9 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from "@/components/ui/sidebar";
-import { ACCOUNT_VIEWS, ROUTES, getAccountRoute } from "@/constants";
-import { useUser, useCanAccessRoute } from "@/hooks/auth-hooks";
-import { SignOutMenuItem } from "@/components/sign-out-button";
-import { useBilling, useUpgrade, useBillingPortal } from "@/hooks/use-billing";
+import { ACCOUNT_VIEWS, getAccountRoute, ROUTES } from "@/constants";
+import { useCanAccessRoute, useUser } from "@/hooks/auth-hooks";
+import { useBilling, useBillingPortal, useUpgrade } from "@/hooks/use-billing";
 
 function useMounted() {
 	const [mounted, setMounted] = React.useState(false);
@@ -43,16 +51,23 @@ export function AppSidebarUser() {
 	const safeUser = mounted ? user : null;
 
 	// Show upgrade button only if billing enabled and user doesn't have paid subscription
-	const showUpgrade = mounted && isBillingEnabled && (!hasSubscription || currentPlan?.id === "free");
-	const showManageBilling = mounted && isBillingEnabled && hasSubscription && currentPlan?.id !== "free";
+	const showUpgrade =
+		mounted &&
+		isBillingEnabled &&
+		(!hasSubscription || currentPlan?.id === "free");
+	const showManageBilling =
+		mounted &&
+		isBillingEnabled &&
+		hasSubscription &&
+		currentPlan?.id !== "free";
 
 	const initials = safeUser?.name
 		? safeUser.name
-			.split(" ")
-			.map((n) => n[0])
-			.join("")
-			.toUpperCase()
-			.slice(0, 2)
+				.split(" ")
+				.map((n) => n[0])
+				.join("")
+				.toUpperCase()
+				.slice(0, 2)
 		: (safeUser?.email?.slice(0, 2).toUpperCase() ?? "U");
 
 	const triggerDisabled = !mounted || !safeUser;

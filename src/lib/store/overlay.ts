@@ -49,6 +49,7 @@ export type OverlayId =
     | "createVariant"
     | "editVariant"
     | "deleteVariant"
+    | "generateVariants"
     | null;
 
 export type OverlayType = "modal" | "drawer" | "sheet";
@@ -143,4 +144,5 @@ export const OVERLAY_CONFIG: Record<
     createVariant: { type: "drawer", side: "right" },
     editVariant: { type: "drawer", side: "right" },
     deleteVariant: { type: "modal" },
+    generateVariants: { type: "modal" },
 };

@@ -40,13 +40,18 @@ export const Route = createFileRoute("/api/storage/files/$")({
 					}
 				}
 
-				// If no valid signed token, require auth and verify ownership
+				// Media files (product images, category images etc.) are public
+				// — they are referenced in the storefront and must be accessible
+				// without authentication.
+				const isPublicMedia = key.startsWith("media/");
+
+				// If no valid signed token and not a public media file, require auth
 				const hasSignedToken =
 					!!token &&
 					!!expires &&
 					provider === "local" &&
 					storage instanceof LocalStorage;
-				if (!hasSignedToken) {
+				if (!hasSignedToken && !isPublicMedia) {
 					const session = await auth.api.getSession({
 						headers: request.headers,
 					});
@@ -79,7 +84,9 @@ export const Route = createFileRoute("/api/storage/files/$")({
 					headers: {
 						"Content-Type": result.contentType,
 						"Content-Length": result.size.toString(),
-						"Cache-Control": "private, max-age=3600",
+						"Cache-Control": isPublicMedia
+							? "public, max-age=86400, stale-while-revalidate=3600"
+							: "private, max-age=3600",
 					},
 				});
 			},

@@ -14,6 +14,7 @@ export const env = createEnv({
 
     // Billing Configuration
     VITE_BILLING_PROVIDER: z.enum(["stripe", "polar", "none"]).default("none"),
+    VITE_BLOG_DATA_MODE: z.enum(["live", "mock", "hybrid"]).default("hybrid"),
   },
   runtimeEnv: import.meta.env,
   emptyStringAsUndefined: true,

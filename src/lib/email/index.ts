@@ -426,6 +426,43 @@ async function generateEmailTemplate(
       </html>
     `,
 
+    "newsletter-confirmation": (data) => `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Confirm your newsletter subscription</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f9fafb; }
+          .container { max-width: 600px; margin: 0 auto; }
+          .header { background: linear-gradient(135deg, #0ea5e9, #06b6d4); color: white; padding: 32px 24px; text-align: center; }
+          .header h1 { margin: 0; font-size: 22px; }
+          .content { padding: 28px 24px; background: #ffffff; }
+          .button { display: inline-block; background: #0ea5e9; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+          .footer { text-align: center; padding: 20px; color: #888; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Confirm Your Subscription</h1>
+          </div>
+          <div class="content">
+            <p>Hi ${data.name || "there"},</p>
+            <p>Thanks for subscribing to our newsletter! Click the button below to confirm your email address and start receiving updates.</p>
+            <div style="text-align: center;">
+              <a href="${data.confirmUrl}" class="button">Confirm Subscription</a>
+            </div>
+            <p style="color: #888; font-size: 13px;">If you didn't subscribe, you can safely ignore this email.</p>
+          </div>
+          <div class="footer">
+            <p>You're receiving this because someone signed up with your email address.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+
     "credits-purchased": (data) => `
       <!DOCTYPE html>
       <html>

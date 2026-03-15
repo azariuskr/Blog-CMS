@@ -1,0 +1,287 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import {
+	MapPin,
+	Globe,
+	Twitter,
+	Github,
+	Linkedin,
+	Users,
+	FileText,
+	Eye,
+	Calendar,
+	Clock,
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { useAuthorProfile, usePublishedPosts, authorProfileQueryOptions } from "@/lib/blog/queries";
+import { useSession } from "@/lib/auth/auth-client";
+
+export const Route = createFileRoute("/(blog)/@$username/")({
+	loader: async ({ context, params }) => {
+		const username = params.username.replace(/^@/, "");
+		await context.queryClient.prefetchQuery(authorProfileQueryOptions(username));
+	},
+	component: AuthorProfilePage,
+});
+
+function AuthorProfilePage() {
+	const { username } = Route.useParams();
+	const { data: session } = useSession();
+	const userId = session?.user?.id;
+	const profileQuery = useAuthorProfile(username);
+	const profile = profileQuery.data?.data ?? null;
+	const toggleFollow = useToggleFollow();
+	const [isFollowing, setIsFollowing] = useState(false);
+
+	const postsQuery = usePublishedPosts({
+		authorId: profile?.userId ?? undefined,
+		limit: 10,
+	});
+	const authorPosts = postsQuery.data?.data?.items ?? [];
+
+	if (profileQuery.isLoading) {
+		return (
+			<div className="flex items-center justify-center min-h-screen">
+				<p className="text-[hsl(216,33%,68%)]">Loading profile…</p>
+			</div>
+		);
+	}
+
+	if (!profile && !profileQuery.isLoading) {
+		return (
+			<div className="flex flex-col items-center justify-center min-h-screen text-center">
+				<FileText className="w-12 h-12 text-[hsl(216,33%,68%)] mb-4" />
+				<p className="text-[hsl(216,33%,68%)] text-lg">Author not found</p>
+			</div>
+		);
+	}
+
+	const displayName = profile!.displayName ?? username;
+	const joinedLabel = profile!.createdAt
+		? new Date(profile!.createdAt).toLocaleDateString("en-US", {
+				year: "numeric",
+				month: "long",
+			})
+		: "";
+
+	return (
+		<div>
+			{/* Cover Banner */}
+			<div className="relative h-[300px] md:h-[380px] mt-[72px]">
+				{profile!.coverUrl ? (
+					<img
+						src={profile!.coverUrl}
+						alt={`${displayName}'s cover`}
+						className="w-full h-full object-cover"
+					/>
+				) : (
+					<div className="w-full h-full bg-gradient-to-br from-[hsl(199,89%,30%)] to-[hsl(222,47%,20%)]" />
+				)}
+				<div className="absolute inset-0 bg-gradient-to-t from-[hsl(222,47%,11%)] via-[hsl(222,47%,11%)]/40 to-transparent" />
+			</div>
+
+			{/* Profile section */}
+			<div className="container mx-auto px-4 max-w-[1140px]">
+				{/* Avatar + actions row */}
+				<div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 -mt-16 mb-8 relative z-10">
+					<Avatar className="w-28 h-28 border-4 border-[hsl(222,47%,11%)] ring-2 ring-[hsl(199,89%,49%)]">
+						{profile!.avatarUrl && (
+							<AvatarImage src={profile!.avatarUrl} alt={displayName} />
+						)}
+						<AvatarFallback className="bg-gradient-to-br from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] text-white text-3xl font-bold">
+							{displayName[0]}
+						</AvatarFallback>
+					</Avatar>
+					<div className="flex items-center gap-3">
+						<Button
+							className="bg-gradient-to-r from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] hover:opacity-90 text-white"
+							onClick={() => {
+								if (!userId || !profile?.userId) return;
+								setIsFollowing(!isFollowing);
+								toggleFollow.mutate({ followerId: userId, followingId: profile.userId });
+							}}
+							disabled={!userId || toggleFollow.isPending}
+						>
+							{isFollowing ? "Following" : "Follow"}
+						</Button>
+						<Button
+							variant="outline"
+							className="border-[hsl(216,33%,20%)] text-[hsl(216,33%,68%)] hover:bg-[hsl(216,33%,20%)]"
+						>
+							Message
+						</Button>
+					</div>
+				</div>
+
+				{/* Author info */}
+				<div className="mb-10">
+					<h1 className="text-3xl font-bold text-white mb-2">{displayName}</h1>
+					<p className="text-[hsl(216,33%,68%)] mb-2">@{username}</p>
+
+					{profile!.bio && (
+						<p className="text-[hsl(217,24%,59%)] max-w-2xl mb-5 leading-relaxed">
+							{profile!.bio}
+						</p>
+					)}
+
+					{/* Meta row */}
+					<div className="flex flex-wrap items-center gap-4 text-sm text-[hsl(216,33%,68%)] mb-5">
+						{profile!.location && (
+							<div className="flex items-center gap-1.5">
+								<MapPin className="w-4 h-4" />
+								{profile!.location}
+							</div>
+						)}
+						{profile!.website && (
+							<a
+								href={profile!.website}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="flex items-center gap-1.5 hover:text-[hsl(199,89%,49%)] transition-colors"
+							>
+								<Globe className="w-4 h-4" />
+								{profile!.website.replace(/^https?:\/\//, "")}
+							</a>
+						)}
+						{joinedLabel && (
+							<div className="flex items-center gap-1.5">
+								<Calendar className="w-4 h-4" />
+								Joined {joinedLabel}
+							</div>
+						)}
+					</div>
+
+					{/* Social links */}
+					<div className="flex items-center gap-3">
+						{profile!.twitterHandle && (
+							<a
+								href={`https://twitter.com/${profile!.twitterHandle}`}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="btn-icon"
+								aria-label="Twitter"
+							>
+								<Twitter className="w-4 h-4" />
+							</a>
+						)}
+						{profile!.githubHandle && (
+							<a
+								href={`https://github.com/${profile!.githubHandle}`}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="btn-icon"
+								aria-label="GitHub"
+							>
+								<Github className="w-4 h-4" />
+							</a>
+						)}
+						{profile!.linkedinHandle && (
+							<a
+								href={`https://linkedin.com/in/${profile!.linkedinHandle}`}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="btn-icon"
+								aria-label="LinkedIn"
+							>
+								<Linkedin className="w-4 h-4" />
+							</a>
+						)}
+					</div>
+				</div>
+
+				{/* Stats row */}
+				<div className="grid grid-cols-3 gap-6 p-6 navy-blue-blog-card rounded-2xl mb-12 max-w-sm">
+					<div className="text-center">
+						<div className="flex items-center justify-center gap-1.5 text-2xl font-bold text-white mb-1">
+							<FileText className="w-5 h-5 text-[hsl(199,89%,49%)]" />
+							{profile!.postCount ?? 0}
+						</div>
+						<p className="text-xs text-[hsl(216,33%,68%)]">Posts</p>
+					</div>
+					<div className="text-center border-x border-[hsl(216,33%,20%)]">
+						<div className="flex items-center justify-center gap-1.5 text-2xl font-bold text-white mb-1">
+							<Users className="w-5 h-5 text-[hsl(199,89%,49%)]" />
+							{(profile!.followersCount ?? 0).toLocaleString()}
+						</div>
+						<p className="text-xs text-[hsl(216,33%,68%)]">Followers</p>
+					</div>
+					<div className="text-center">
+						<div className="text-2xl font-bold text-white mb-1">
+							{profile!.followingCount ?? 0}
+						</div>
+						<p className="text-xs text-[hsl(216,33%,68%)]">Following</p>
+					</div>
+				</div>
+
+				{/* Posts grid */}
+				<div className="pb-20">
+					<h2 className="text-2xl font-bold text-white mb-8">
+						<span className="relative">
+							Latest Posts
+							<span className="absolute bottom-[-8px] left-0 w-20 h-[3px] bg-gradient-to-r from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)]" />
+						</span>
+					</h2>
+
+					<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+						{authorPosts.map((post) => (
+							<article
+								key={post.id}
+								className="navy-blue-blog-card rounded-2xl overflow-hidden transition-all hover:-translate-y-1"
+							>
+								<figure className="aspect-video overflow-hidden">
+									<img
+										src={post.featuredImageUrl ?? ""}
+										alt={post.title}
+										className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+										loading="lazy"
+									/>
+								</figure>
+								<div className="p-5">
+									<div className="flex items-center justify-between gap-4 mb-3">
+										<span className="navy-blue-blog-badge">
+											{post.category?.name ?? "Uncategorized"}
+										</span>
+										<div className="flex items-center gap-1 text-xs text-[hsl(217,17%,48%)]">
+											<Eye className="w-3.5 h-3.5" />
+											<span>{(post.viewCount ?? 0).toLocaleString()}</span>
+										</div>
+									</div>
+									<h3 className="text-[hsl(199,69%,84%)] font-semibold mb-3 text-lg hover:text-[hsl(199,89%,49%)] transition-colors line-clamp-2">
+										<Link to="/$slug" params={{ slug: post.slug }}>
+											{post.title}
+										</Link>
+									</h3>
+									<p className="text-[hsl(216,33%,68%)] text-sm mb-4 line-clamp-2">
+										{post.excerpt}
+									</p>
+									<div className="flex items-center justify-between text-xs text-[hsl(217,17%,48%)]">
+										<span>
+											{post.publishedAt
+												? new Date(post.publishedAt).toLocaleDateString("en-US", {
+														month: "short",
+														day: "numeric",
+														year: "numeric",
+													})
+												: ""}
+										</span>
+										<div className="flex items-center gap-1">
+											<Clock className="w-3.5 h-3.5" />
+										</div>
+									</div>
+								</div>
+							</article>
+						))}
+					</div>
+
+					{authorPosts.length === 0 && (
+						<div className="flex flex-col items-center justify-center py-20 text-center">
+							<FileText className="w-12 h-12 text-[hsl(216,33%,68%)] mb-4" />
+							<p className="text-[hsl(216,33%,68%)]">No posts yet</p>
+						</div>
+					)}
+				</div>
+			</div>
+		</div>
+	);
+}

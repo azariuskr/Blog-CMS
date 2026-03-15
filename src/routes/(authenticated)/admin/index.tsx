@@ -44,10 +44,10 @@ function AdminDashboardPage() {
 			color: "bg-violet-50 text-violet-600",
 		},
 		{
-			label: "CMS",
-			description: "Content & themes",
+			label: "Blog",
+			description: "Posts, authors & sites",
 			icon: FileText,
-			to: "/admin/cms",
+			to: ROUTES.ADMIN.BLOG.BASE,
 			color: "bg-amber-50 text-amber-600",
 		},
 		{

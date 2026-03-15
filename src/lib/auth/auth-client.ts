@@ -4,7 +4,8 @@ import {
   inferAdditionalFields,
   adminClient,
   magicLinkClient,
-  twoFactorClient
+  twoFactorClient,
+  organizationClient,
 } from "better-auth/client/plugins";
 import { passkeyClient } from "@better-auth/passkey/client";
 import { stripeClient } from "@better-auth/stripe/client";
@@ -44,6 +45,7 @@ const authClient = createAuthClient({
     // Polar billing client plugin (only when Polar is the provider)
     // Provides: checkout, customer.portal(), customer.state(), customer.subscriptions.list(), usage.ingest()
     ...(isPolarEnabled ? [polarClient()] : []),
+    organizationClient(),
   ],
 });
 
@@ -59,6 +61,9 @@ export const {
   passkey,
   deleteUser,
   admin,
+  organization,
+  useListOrganizations,
+  useActiveOrganization,
 } = authClient;
 
 // Export subscription methods when Stripe is enabled

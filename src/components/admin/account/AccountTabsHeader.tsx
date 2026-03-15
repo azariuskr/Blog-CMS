@@ -10,20 +10,15 @@ type Tab = {
 
 type Props = {
 	tabs: readonly Tab[];
-	onTabChange: (path: string) => void;
 };
 
-export function AccountTabsHeader({ tabs, onTabChange }: Props) {
+export function AccountTabsHeader({ tabs }: Props) {
 	return (
 		<TabsList>
 			{tabs.map((tab) => {
 				const Icon = tab.icon;
 				return (
-					<TabsTrigger
-						key={tab.id}
-						value={tab.id}
-						onClick={() => onTabChange(tab.path)}
-					>
+					<TabsTrigger key={tab.id} value={tab.id}>
 						<Icon className="mr-2 h-4 w-4" />
 						{tab.label}
 					</TabsTrigger>

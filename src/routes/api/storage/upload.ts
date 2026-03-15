@@ -93,9 +93,9 @@ export const Route = createFileRoute("/api/storage/upload")({
 					finalPath = storagePath.replace(/\.\w+$/, ".webp");
 				}
 
-				// Process media images with Sharp (optimize for web)
+				// Process media/attachment images with Sharp (optimize for web)
 				if (
-					category === STORAGE_PATHS.MEDIA &&
+					(category === STORAGE_PATHS.MEDIA || category === STORAGE_PATHS.ATTACHMENT) &&
 					mimeType.startsWith("image/")
 				) {
 					if (!isAllowedImageType(mimeType)) {

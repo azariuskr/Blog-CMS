@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { authQueryOptions } from "@/lib/auth/queries";
 import { Link } from "@tanstack/react-router";
-import { LayoutDashboard } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { ALLOW_WHEN_SIGNED_IN, ROUTES } from "@/constants";
 
 export const Route = createFileRoute("/(auth-pages)")({
@@ -12,6 +12,9 @@ export const Route = createFileRoute("/(auth-pages)")({
       `${ALLOW_WHEN_SIGNED_IN.SIGN_OUT}`,
       `${ALLOW_WHEN_SIGNED_IN.TWO_FACTOR_AUTH}`,
       `${ALLOW_WHEN_SIGNED_IN.SIGN_OUT_AUTH}`,
+      `${ROUTES.AUTH.CALLBACK.VERIFY_EMAIL}`,
+      `${ROUTES.AUTH.CALLBACK.ACCEPT_INVITATION}`,
+      `${ROUTES.AUTH.ACCEPT_INVITATION}`,
     ]);
 
     const user = await context.queryClient.ensureQueryData({
@@ -19,8 +22,30 @@ export const Route = createFileRoute("/(auth-pages)")({
       revalidateIfStale: true,
     });
 
-    if (user && !allowWhenSignedIn.has(location.pathname)) {
-      throw redirect({ to: ROUTES.DASHBOARD });
+    const rawPath = location.pathname;
+    if (
+      rawPath.includes("/auth/callback/accept-invitation") ||
+      rawPath.includes("/auth/callback/verify-email") ||
+      rawPath.includes("/auth/accept-invitation")
+    ) {
+      return { redirectUrl: ROUTES.DASHBOARD };
+    }
+
+    const normalizedPath = rawPath.replace(/\/$/, "");
+    const isAllowedWhenSignedIn = Array.from(allowWhenSignedIn).some((p) => {
+      const normalizedAllowed = p.replace(/\/$/, "");
+      return (
+        normalizedPath === normalizedAllowed ||
+        normalizedPath.endsWith(normalizedAllowed)
+      );
+    });
+
+    const isInvitationOrVerifyCallback =
+      /\/auth\/callback\/(verify-email|accept-invitation)$/.test(normalizedPath) ||
+      /\/auth\/accept-invitation$/.test(normalizedPath);
+
+    if (user && !isAllowedWhenSignedIn && !isInvitationOrVerifyCallback) {
+      throw redirect({ to: ROUTES.HOME });
     }
 
     return { redirectUrl: ROUTES.DASHBOARD };
@@ -41,8 +66,8 @@ function RouteComponent() {
             to={ROUTES.HOME}
             className="flex items-center gap-2 text-lg font-bold text-foreground transition-colors hover:opacity-80"
           >
-            <LayoutDashboard className="h-5 w-5 text-primary" />
-            <span>Template</span>
+            <BookOpen className="h-5 w-5 text-primary" />
+            <span>BlogCMS</span>
           </Link>
           <Link
             to={ROUTES.HOME}

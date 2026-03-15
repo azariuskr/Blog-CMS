@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Build
+        run: pnpm build
+
+      - name: Route smoke
+        run: pnpm ci:route-smoke
+
+      - name: Auth redirect sanity
+        run: pnpm ci:auth-redirect
+
+      - name: Token contract guard (no hardcoded colors)
+        run: pnpm ci:no-hardcoded-colors

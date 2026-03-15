@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, UserCheck2, MonitorSmartphone } from "lucide-react";
 import { DataTableColumnHeader } from "@/components/admin/data-table";
 import {
 	type ActionMenuGroup,
@@ -16,14 +16,17 @@ import type { UserRowModel } from "@/types/user";
 interface ColumnContext {
 	canWrite: boolean;
 	canDelete: boolean;
+	canImpersonate: boolean;
 	onEdit: (user: UserRowModel) => void;
 	onDelete: (user: UserRowModel) => void;
+	onImpersonate: (user: UserRowModel) => void;
+	onViewSessions: (user: UserRowModel) => void;
 }
 
 export function createUsersColumns(
 	context: ColumnContext,
 ): ColumnDef<UserRowModel>[] {
-	const { canWrite, canDelete, onEdit, onDelete } = context;
+	const { canWrite, canDelete, canImpersonate, onEdit, onDelete, onImpersonate, onViewSessions } = context;
 
 	return [
 		{
@@ -162,6 +165,20 @@ export function createUsersColumns(
 											icon: Pencil,
 											onClick: () => onEdit(user),
 											disabled: isSuperAdmin,
+										},
+									]
+								: []),
+							{
+								label: "Sessions",
+								icon: MonitorSmartphone,
+								onClick: () => onViewSessions(user),
+							},
+							...(canImpersonate && !isSuperAdmin
+								? [
+										{
+											label: "Impersonate",
+											icon: UserCheck2,
+											onClick: () => onImpersonate(user),
 										},
 									]
 								: []),

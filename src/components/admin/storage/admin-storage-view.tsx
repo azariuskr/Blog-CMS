@@ -1,4 +1,10 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
+	ChevronLeft,
+	ChevronRight,
+	ChevronsLeft,
+	ChevronsRight,
+	Copy,
 	File,
 	FileIcon,
 	FileText,
@@ -9,10 +15,11 @@ import {
 	Loader2,
 	Search,
 	Trash2,
-	Upload,
 	User,
 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { MultiFileUpload } from "@/components/File";
 import { ThrottledImage } from "@/components/shared/ThrottledImage";
 import {
 	AlertDialog,
@@ -35,7 +42,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ProgressBar } from "@/components/ui/progress";
 import {
 	Select,
 	SelectContent,
@@ -52,12 +58,19 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { STORAGE_API } from "@/constants";
+import { env } from "@/env/client";
 import { useAction } from "@/hooks/use-action";
-import { useFileUpload } from "@/hooks/use-file-upload";
-import { $adminDeleteFile } from "@/lib/storage/server";
 import { useAdminFiles } from "@/lib/storage/queries";
+import { $adminDeleteFile } from "@/lib/storage/server";
+import type { FileCategory } from "@/lib/storage/types";
 import { formatFileSize } from "@/lib/storage/utils";
-import { formatDate } from "@/lib/utils";
+import { withBasePath } from "@/lib/url/with-base-path";
+import { formatDate, getPageNumbers } from "@/lib/utils";
+
+// ============================================================================
+// Helpers
+// ============================================================================
 
 function getFileIcon(mimeType: string) {
 	if (mimeType.startsWith("image/")) return Image;
@@ -101,15 +114,33 @@ const CATEGORY_TABS = [
 	{ value: "attachment", label: "Attachments", icon: HardDrive },
 ] as const;
 
-export function AdminStorageView() {
-	const inputRef = useRef<HTMLInputElement>(null);
-	const { upload, isUploading, progress } = useFileUpload("media");
+function getUploadCategoryForTab(tab: string): FileCategory {
+	if (tab === "media" || tab === "document" || tab === "attachment") {
+		return tab as FileCategory;
+	}
+	return "media";
+}
 
+// ============================================================================
+// Component
+// ============================================================================
+
+export function AdminStorageView() {
+	const queryClient = useQueryClient();
+
+	// Table state
 	const [category, setCategory] = useState<string>("all");
 	const [search, setSearch] = useState("");
 	const [searchInput, setSearchInput] = useState("");
 	const [page, setPage] = useState(1);
 	const [limit, setLimit] = useState(20);
+
+	// Derived: which bucket uploads go into based on active tab
+	const uploadCategory = getUploadCategoryForTab(category);
+
+	// -------------------------------------------------------------------------
+	// Queries
+	// -------------------------------------------------------------------------
 
 	const filesQuery = useAdminFiles({
 		page,
@@ -119,18 +150,28 @@ export function AdminStorageView() {
 	});
 
 	const deleteFileMutation = useAction(
-		async (vars: { fileId: string }) =>
-			$adminDeleteFile({ data: vars }),
+		async (vars: { fileId: string }) => $adminDeleteFile({ data: vars }),
 		{
 			invalidate: [["admin", "files"]],
 			showToast: true,
 		},
 	);
 
+	const handleStorageUploadSuccess = () => {
+		queryClient.invalidateQueries({ queryKey: ["admin", "files"] });
+	};
+
+	// -------------------------------------------------------------------------
+	// Table helpers
+	// -------------------------------------------------------------------------
+
 	const paged = filesQuery.data?.ok ? filesQuery.data.data : null;
 	const files = paged?.items ?? [];
 	const totalPages = paged?.totalPages ?? 1;
 	const totalFiles = paged?.total ?? 0;
+	const pageNumbers = getPageNumbers(page, Math.max(1, totalPages));
+	const canPreviousPage = page > 1;
+	const canNextPage = page < Math.max(1, totalPages);
 
 	const rows = useMemo(
 		() =>
@@ -142,13 +183,6 @@ export function AdminStorageView() {
 		[files],
 	);
 
-	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
-		upload(file);
-		e.target.value = "";
-	};
-
 	const handleSearch = () => {
 		setSearch(searchInput);
 		setPage(1);
@@ -159,54 +193,76 @@ export function AdminStorageView() {
 		setPage(1);
 	};
 
+	const handleCopyFileUrl = async (
+		storageUrl?: string | null,
+		storagePath?: string,
+	) => {
+		const fallbackPath = storagePath
+			? withBasePath(env.VITE_BASE_URL, `${STORAGE_API.FILES}/${storagePath}`)
+			: null;
+		const rawUrl = storageUrl ?? fallbackPath;
+
+		if (!rawUrl) {
+			toast.error("File URL is not available");
+			return;
+		}
+
+		const finalUrl = rawUrl.startsWith("http")
+			? rawUrl
+			: `${window.location.origin}${rawUrl}`;
+
+		try {
+			await navigator.clipboard.writeText(finalUrl);
+			toast.success("File URL copied");
+		} catch {
+			toast.error(
+				"Clipboard access failed. Copying is blocked by the browser.",
+			);
+		}
+	};
+
+	// -------------------------------------------------------------------------
+	// Render
+	// -------------------------------------------------------------------------
+
 	return (
-		<div className="space-y-6">
+		<div className="space-y-4">
 			<Tabs value={category} onValueChange={handleCategoryChange}>
-				<div className="flex items-center justify-between gap-4">
-					<TabsList>
-						{CATEGORY_TABS.map((tab) => (
-							<TabsTrigger key={tab.value} value={tab.value}>
-								<tab.icon className="mr-2 h-4 w-4" />
-								{tab.label}
-							</TabsTrigger>
-						))}
-					</TabsList>
+				<TabsList>
+					{CATEGORY_TABS.map((tab) => (
+						<TabsTrigger key={tab.value} value={tab.value}>
+							<tab.icon className="mr-2 h-4 w-4" />
+							{tab.label}
+						</TabsTrigger>
+					))}
+				</TabsList>
 
-					<div className="flex items-center gap-2">
-						<input
-							ref={inputRef}
-							type="file"
-							onChange={handleFileSelect}
-							className="hidden"
-						/>
-						<Button
-							onClick={() => inputRef.current?.click()}
-							disabled={isUploading}
-						>
-							{isUploading ? (
-								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-									Uploading...
-								</>
-							) : (
-								<>
-									<Upload className="mr-2 h-4 w-4" />
-									Upload File
-								</>
-							)}
-						</Button>
-					</div>
-				</div>
-
-				{isUploading && (
-					<div className="mt-4">
-						<ProgressBar value={progress} />
-					</div>
-				)}
-
-				{/* All categories share the same content, filtered server-side */}
 				{CATEGORY_TABS.map((tab) => (
-					<TabsContent key={tab.value} value={tab.value}>
+					<TabsContent key={tab.value} value={tab.value} className="space-y-4">
+						{/* ── Upload Zone ── */}
+						<Card>
+							<CardHeader className="pb-3">
+								<CardTitle className="text-base">Upload Files</CardTitle>
+								<CardDescription>
+									Images will be automatically optimized to WebP before saving.
+									Files upload to the{" "}
+									<Badge variant="outline" className="text-xs">
+										{uploadCategory}
+									</Badge>{" "}
+									bucket.
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<MultiFileUpload
+									category={uploadCategory}
+									accept="image/*,video/*,application/pdf,text/plain,text/csv"
+									selectLabel="Select files"
+									uploadLabel="Upload selected"
+									onUploadSuccess={handleStorageUploadSuccess}
+								/>
+							</CardContent>
+						</Card>
+						{/* ── Files Table ── */}
 						<Card>
 							<CardHeader>
 								<div className="flex items-center justify-between">
@@ -305,47 +361,64 @@ export function AdminStorageView() {
 																{f.createdAtLabel}
 															</TableCell>
 															<TableCell className="text-right">
-																<AlertDialog>
-																	<AlertDialogTrigger
-																		render={
-																			<Button
-																				variant="ghost"
-																				size="icon"
-																				className="text-destructive hover:text-destructive"
-																				disabled={deleteFileMutation.isPending}
-																			>
-																				<Trash2 className="h-4 w-4" />
-																			</Button>
+																<div className="flex items-center justify-end gap-1">
+																	<Button
+																		variant="ghost"
+																		size="icon"
+																		onClick={() =>
+																			handleCopyFileUrl(
+																				f.storageUrl,
+																				f.storagePath,
+																			)
 																		}
-																	/>
-																	<AlertDialogContent>
-																		<AlertDialogHeader>
-																			<AlertDialogTitle>
-																				Delete File
-																			</AlertDialogTitle>
-																			<AlertDialogDescription>
-																				Are you sure you want to delete "
-																				{f.originalName}"? This will remove it
-																				from storage permanently.
-																			</AlertDialogDescription>
-																		</AlertDialogHeader>
-																		<AlertDialogFooter>
-																			<AlertDialogCancel>
-																				Cancel
-																			</AlertDialogCancel>
-																			<AlertDialogAction
-																				onClick={() =>
-																					deleteFileMutation.mutate({
-																						fileId: f.id,
-																					})
-																				}
-																				className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-																			>
-																				Delete
-																			</AlertDialogAction>
-																		</AlertDialogFooter>
-																	</AlertDialogContent>
-																</AlertDialog>
+																		title="Copy file URL"
+																	>
+																		<Copy className="h-4 w-4" />
+																	</Button>
+																	<AlertDialog>
+																		<AlertDialogTrigger
+																			render={
+																				<Button
+																					variant="ghost"
+																					size="icon"
+																					className="text-destructive hover:text-destructive"
+																					disabled={
+																						deleteFileMutation.isPending
+																					}
+																				>
+																					<Trash2 className="h-4 w-4" />
+																				</Button>
+																			}
+																		/>
+																		<AlertDialogContent>
+																			<AlertDialogHeader>
+																				<AlertDialogTitle>
+																					Delete File
+																				</AlertDialogTitle>
+																				<AlertDialogDescription>
+																					Are you sure you want to delete "
+																					{f.originalName}"? This will remove it
+																					from storage permanently.
+																				</AlertDialogDescription>
+																			</AlertDialogHeader>
+																			<AlertDialogFooter>
+																				<AlertDialogCancel>
+																					Cancel
+																				</AlertDialogCancel>
+																				<AlertDialogAction
+																					onClick={() =>
+																						deleteFileMutation.mutate({
+																							fileId: f.id,
+																						})
+																					}
+																					className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+																				>
+																					Delete
+																				</AlertDialogAction>
+																			</AlertDialogFooter>
+																		</AlertDialogContent>
+																	</AlertDialog>
+																</div>
 															</TableCell>
 														</TableRow>
 													);
@@ -354,89 +427,122 @@ export function AdminStorageView() {
 										</Table>
 
 										{/* Pagination */}
-										<div className="flex items-center justify-between gap-4">
-											<div className="flex items-center gap-2">
-												<span className="text-sm text-muted-foreground">
-													Rows per page
-												</span>
-												<Select
-													value={String(limit)}
-													onValueChange={(value) => {
-														const newLimit = Number(value);
-														const offset = (page - 1) * limit;
-														const nextPage =
-															Math.floor(offset / newLimit) + 1;
-														const nextTotalPages = Math.max(
-															1,
-															Math.ceil(totalFiles / newLimit),
-														);
-														setLimit(newLimit);
-														setPage(
-															Math.min(
-																nextTotalPages,
-																Math.max(1, nextPage),
-															),
-														);
-													}}
-												>
-													<SelectTrigger className="h-8 w-20">
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent>
-														{[10, 20, 50, 100].map((size) => (
-															<SelectItem
-																key={size}
-																value={String(size)}
-															>
-																{size}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-											</div>
+										<div className="flex items-center justify-between px-2">
+											<div className="flex w-full items-center justify-between gap-4 sm:gap-6 lg:gap-8">
+												<div className="flex items-center gap-2">
+													<p className="hidden text-sm font-medium sm:block">
+														Rows per page
+													</p>
 
-											<div className="flex items-center gap-2 text-sm">
-												<span className="text-muted-foreground">
-													Page {page} of {Math.max(1, totalPages)}
-												</span>
-												<Button
-													variant="outline"
-													size="sm"
-													onClick={() => setPage(1)}
-													disabled={page <= 1}
-												>
-													First
-												</Button>
-												<Button
-													variant="outline"
-													size="sm"
-													onClick={() =>
-														setPage((p) => Math.max(1, p - 1))
-													}
-													disabled={page <= 1}
-												>
-													Prev
-												</Button>
-												<Button
-													variant="outline"
-													size="sm"
-													onClick={() =>
-														setPage((p) =>
-															Math.min(totalPages, p + 1),
-														)
-													}
-													disabled={page >= totalPages}
-												>
-													Next
-												</Button>
-												<Button
-													variant="outline"
-													size="sm"
-													onClick={() => setPage(totalPages)}
-													disabled={page >= totalPages}
-												>
-													Last
-												</Button>
+													<Select
+														value={String(limit)}
+														onValueChange={(value) => {
+															const newLimit = Number(value);
+															const offset = (page - 1) * limit;
+															const nextPage =
+																Math.floor(offset / newLimit) + 1;
+															const nextTotalPages = Math.max(
+																1,
+																Math.ceil(totalFiles / newLimit),
+															);
+															setLimit(newLimit);
+															setPage(
+																Math.min(nextTotalPages, Math.max(1, nextPage)),
+															);
+														}}
+													>
+														<SelectTrigger className="h-8 w-17.5">
+															<SelectValue />
+														</SelectTrigger>
+														<SelectContent>
+															{[10, 20, 50, 100].map((size) => (
+																<SelectItem key={size} value={String(size)}>
+																	{size}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												</div>
+
+												<div className="flex items-center gap-6 lg:gap-8">
+													<div className="flex items-center justify-center text-sm font-medium">
+														Page {page} of {Math.max(1, totalPages)}
+													</div>
+
+													<div className="flex items-center gap-2">
+														<Button
+															variant="outline"
+															className="h-8 w-8 p-0"
+															onClick={() => setPage(1)}
+															disabled={!canPreviousPage}
+														>
+															<ChevronsLeft className="h-4 w-4" />
+														</Button>
+														<Button
+															variant="outline"
+															className="h-8 w-8 p-0"
+															onClick={() => setPage((p) => Math.max(1, p - 1))}
+															disabled={!canPreviousPage}
+														>
+															<ChevronLeft className="h-4 w-4" />
+														</Button>
+
+														{pageNumbers.map((pageNumber, index) => {
+															if (pageNumber === "...") {
+																const prevPage = String(
+																	pageNumbers[index - 1] ?? "start",
+																);
+																const nextPage = String(
+																	pageNumbers[index + 1] ?? "end",
+																);
+																return (
+																	<span
+																		key={`ellipsis-${prevPage}-${nextPage}`}
+																		className="px-1 text-sm text-muted-foreground"
+																	>
+																		...
+																	</span>
+																);
+															}
+
+															if (typeof pageNumber !== "number") {
+																return null;
+															}
+
+															return (
+																<Button
+																	key={pageNumber}
+																	variant={
+																		page === pageNumber ? "default" : "outline"
+																	}
+																	className="hidden h-8 min-w-8 px-2 md:flex"
+																	onClick={() => setPage(pageNumber)}
+																>
+																	{pageNumber}
+																</Button>
+															);
+														})}
+
+														<Button
+															variant="outline"
+															className="h-8 w-8 p-0"
+															onClick={() =>
+																setPage((p) => Math.min(totalPages, p + 1))
+															}
+															disabled={!canNextPage}
+														>
+															<ChevronRight className="h-4 w-4" />
+														</Button>
+														<Button
+															variant="outline"
+															className="hidden h-8 w-8 p-0 lg:flex"
+															onClick={() => setPage(Math.max(1, totalPages))}
+															disabled={!canNextPage}
+														>
+															<ChevronsRight className="h-4 w-4" />
+														</Button>
+													</div>
+												</div>
 											</div>
 										</div>
 									</div>

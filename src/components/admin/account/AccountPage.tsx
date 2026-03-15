@@ -10,23 +10,29 @@ type Props = {
 };
 
 export function AccountPage({ currentTab, onTabChange }: Props) {
+	const activeTab =
+		ACCOUNT_TABS.find((t) => t.id === currentTab) ?? ACCOUNT_TABS[0];
+	const ActivePanel =
+		ACCOUNT_TAB_PANELS[activeTab.id as keyof typeof ACCOUNT_TAB_PANELS];
+
 	return (
 		<PageContainer
 			title="Account"
 			description="Manage your account settings and preferences"
 		>
-			<Tabs value={currentTab} className="space-y-4">
-				<AccountTabsHeader tabs={ACCOUNT_TABS} onTabChange={onTabChange} />
+			<Tabs
+				value={activeTab.id}
+				onValueChange={(tabId) => {
+					const tab = ACCOUNT_TABS.find((t) => t.id === tabId);
+					if (tab) onTabChange(tab.path);
+				}}
+				className="space-y-4"
+			>
+				<AccountTabsHeader tabs={ACCOUNT_TABS} />
 
-				{ACCOUNT_TABS.map((tab) => {
-					const Panel =
-						ACCOUNT_TAB_PANELS[tab.id as keyof typeof ACCOUNT_TAB_PANELS];
-					return (
-						<TabsContent key={tab.id} value={tab.id} className="space-y-4">
-							{Panel ? <Panel /> : null}
-						</TabsContent>
-					);
-				})}
+				<TabsContent value={activeTab.id} className="space-y-4">
+					{ActivePanel ? <ActivePanel /> : null}
+				</TabsContent>
 			</Tabs>
 		</PageContainer>
 	);
