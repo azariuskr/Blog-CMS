@@ -33,6 +33,14 @@ function patchTanstackClientEnv(): import('vite').Plugin {
 const config = defineConfig({
   // When served behind Traefik at /template
   base: '/blog/',
+  ssr: {
+    // Prevent isomorphic-git (Node.js-only) from leaking into client bundle
+    external: ['isomorphic-git', '@isomorphic-git/lightning-fs'],
+    noExternal: [],
+  },
+  optimizeDeps: {
+    exclude: ['isomorphic-git', '@isomorphic-git/lightning-fs'],
+  },
   server: {
     host: '0.0.0.0',
     // Allow all hosts when running in Docker behind reverse proxy
