@@ -1,12 +1,14 @@
 import { config as loadEnv } from "dotenv";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
 	authorProfiles,
 	categories,
+	comments,
 	postTags,
 	posts,
+	reactions,
 	tags,
 	sites,
 	user,
@@ -14,7 +16,9 @@ import {
 import {
 	BLOG_SEED_AUTHORS,
 	BLOG_SEED_CATEGORIES,
+	BLOG_SEED_COMMENTS,
 	BLOG_SEED_POSTS,
+	BLOG_SEED_REACTIONS,
 	BLOG_SEED_TAGS,
 } from "../src/lib/blog/seed-data";
 
@@ -26,8 +30,8 @@ if (!databaseUrl) {
 	throw new Error("DATABASE_URL is required");
 }
 
-const sql = postgres(databaseUrl);
-const db = drizzle({ client: sql, schema: { user, authorProfiles, categories, tags, posts, postTags, sites } });
+const sql_client = postgres(databaseUrl);
+const db = drizzle({ client: sql_client, schema: { user, authorProfiles, categories, tags, posts, postTags, sites, comments, reactions } });
 
 const DEFAULT_SITE_ID = "f1843afa-81d3-4b51-aaf4-72a9345ed302";
 
@@ -59,21 +63,7 @@ async function run() {
 	const uploadAssets = process.env.BLOG_SEED_UPLOAD_ASSETS !== "false";
 	console.log(`[seed-blog] starting (uploadAssets=${uploadAssets})`);
 
-	const owner = BLOG_SEED_AUTHORS[0];
-	await db
-		.insert(user)
-		.values({
-			id: owner.id,
-			name: owner.name,
-			email: owner.email,
-			emailVerified: true,
-			role: "admin",
-		})
-		.onConflictDoUpdate({
-			target: user.id,
-			set: { name: owner.name, email: owner.email, role: "admin" },
-		});
-
+	// ── Site ────────────────────────────────────────────────────────────────
 	await db
 		.insert(sites)
 		.values({
@@ -88,7 +78,9 @@ async function run() {
 			target: sites.subdomain,
 			set: { name: "Main Blog", description: "Seeded blog site", status: "active" },
 		});
+	console.log("[seed-blog] site ok");
 
+	// ── Authors ─────────────────────────────────────────────────────────────
 	for (const author of BLOG_SEED_AUTHORS) {
 		const avatarUrl = await maybeUploadAsset(
 			author.avatarUrl,
@@ -104,11 +96,11 @@ async function run() {
 				email: author.email,
 				emailVerified: true,
 				image: avatarUrl,
-				role: "user",
+				role: author.role ?? "user",
 			})
 			.onConflictDoUpdate({
 				target: user.id,
-				set: { name: author.name, email: author.email, image: avatarUrl },
+				set: { name: author.name, email: author.email, image: avatarUrl, role: author.role ?? "user" },
 			});
 
 		await db
@@ -119,6 +111,10 @@ async function run() {
 				displayName: author.name,
 				bio: author.bio,
 				avatarUrl,
+				twitterHandle: author.twitterHandle ?? null,
+				githubHandle: author.githubHandle ?? null,
+				website: author.website ?? null,
+				applicationStatus: "approved",
 			})
 			.onConflictDoUpdate({
 				target: authorProfiles.username,
@@ -127,24 +123,28 @@ async function run() {
 					bio: author.bio,
 					avatarUrl,
 					userId: author.id,
+					twitterHandle: author.twitterHandle ?? null,
+					githubHandle: author.githubHandle ?? null,
+					website: author.website ?? null,
+					applicationStatus: "approved",
 				},
 			});
 	}
+	console.log(`[seed-blog] authors ok (${BLOG_SEED_AUTHORS.length})`);
 
+	// ── Categories ──────────────────────────────────────────────────────────
 	for (const category of BLOG_SEED_CATEGORIES) {
 		await db
 			.insert(categories)
 			.values({ ...category, siteId: DEFAULT_SITE_ID })
 			.onConflictDoUpdate({
 				target: [categories.slug, categories.siteId],
-				set: {
-					name: category.name,
-					description: category.description,
-					color: category.color,
-				},
+				set: { name: category.name, description: category.description, color: category.color },
 			});
 	}
+	console.log(`[seed-blog] categories ok (${BLOG_SEED_CATEGORIES.length})`);
 
+	// ── Tags ────────────────────────────────────────────────────────────────
 	for (const tag of BLOG_SEED_TAGS) {
 		await db
 			.insert(tags)
@@ -154,7 +154,9 @@ async function run() {
 				set: { name: tag.name },
 			});
 	}
+	console.log(`[seed-blog] tags ok (${BLOG_SEED_TAGS.length})`);
 
+	// ── Posts ───────────────────────────────────────────────────────────────
 	for (const post of BLOG_SEED_POSTS) {
 		const featuredImageUrl = await maybeUploadAsset(
 			post.featuredImageUrl,
@@ -177,6 +179,7 @@ async function run() {
 				status: post.status,
 				isFeatured: post.isFeatured ?? false,
 				viewCount: post.viewCount ?? 0,
+				readTimeMinutes: post.readTimeMinutes ?? Math.ceil(post.blocks.length * 0.6),
 				categoryId: post.categoryId,
 				publishedAt: new Date(post.publishedAt),
 			})
@@ -191,30 +194,101 @@ async function run() {
 					status: post.status,
 					isFeatured: post.isFeatured ?? false,
 					viewCount: post.viewCount ?? 0,
+					readTimeMinutes: post.readTimeMinutes ?? Math.ceil(post.blocks.length * 0.6),
 					categoryId: post.categoryId,
 					publishedAt: new Date(post.publishedAt),
 				},
 			});
 
+		// Post tags — insert only if missing (no conflict target on composite PK)
 		for (const tagId of post.tagIds) {
 			const existing = await db
 				.select({ postId: postTags.postId })
 				.from(postTags)
 				.where(and(eq(postTags.postId, post.id), eq(postTags.tagId, tagId)))
 				.limit(1);
-
 			if (existing.length === 0) {
 				await db.insert(postTags).values({ postId: post.id, tagId });
 			}
 		}
 	}
+	console.log(`[seed-blog] posts ok (${BLOG_SEED_POSTS.length})`);
 
-	console.log("[seed-blog] done");
-	await sql.end();
+	// ── Comments ────────────────────────────────────────────────────────────
+	for (const comment of BLOG_SEED_COMMENTS) {
+		await db
+			.insert(comments)
+			.values({
+				id: comment.id,
+				postId: comment.postId,
+				authorId: comment.authorId,
+				content: comment.content,
+				status: comment.status,
+			})
+			.onConflictDoNothing({ target: comments.id });
+	}
+	console.log(`[seed-blog] comments ok (${BLOG_SEED_COMMENTS.length})`);
+
+	// ── Reactions ───────────────────────────────────────────────────────────
+	for (const reaction of BLOG_SEED_REACTIONS) {
+		await db
+			.insert(reactions)
+			.values({
+				postId: reaction.postId,
+				userId: reaction.userId,
+				type: reaction.type,
+			})
+			.onConflictDoNothing();   // unique on (post_id, user_id, type)
+	}
+	console.log(`[seed-blog] reactions ok (${BLOG_SEED_REACTIONS.length})`);
+
+	// ── Sync denormalised counts ─────────────────────────────────────────────
+	// likeCount: count of reaction rows per post
+	await sql_client`
+		UPDATE posts p
+		SET    like_count = sub.cnt
+		FROM   (
+		  SELECT post_id, COUNT(*) AS cnt
+		  FROM   reactions
+		  WHERE  type = 'like'
+		  GROUP  BY post_id
+		) sub
+		WHERE p.id = sub.post_id
+	`;
+
+	// commentCount: count of approved comments per post
+	await sql_client`
+		UPDATE posts p
+		SET    comment_count = sub.cnt
+		FROM   (
+		  SELECT post_id, COUNT(*) AS cnt
+		  FROM   comments
+		  WHERE  status = 'approved'
+		  GROUP  BY post_id
+		) sub
+		WHERE p.id = sub.post_id
+	`;
+
+	// postCount on author profiles
+	await sql_client`
+		UPDATE author_profiles ap
+		SET    post_count = sub.cnt
+		FROM   (
+		  SELECT author_id, COUNT(*) AS cnt
+		  FROM   posts
+		  WHERE  status = 'published'
+		  GROUP  BY author_id
+		) sub
+		WHERE ap.user_id = sub.author_id
+	`;
+
+	console.log("[seed-blog] counts synced");
+	console.log("[seed-blog] done ✓");
+	await sql_client.end();
 }
 
 run().catch(async (error) => {
 	console.error("[seed-blog] failed", error);
-	await sql.end();
+	await sql_client.end();
 	process.exit(1);
 });
