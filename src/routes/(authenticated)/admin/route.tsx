@@ -12,7 +12,7 @@ export const Route = createFileRoute("/(authenticated)/admin")({
 		const path = location.pathname;
 		const role = auth.user.role as AppRole;
 		if (!canAccessRoute(path, role)) {
-			throw redirect({ to: "/403" });
+			throw redirect({ to: "/403" as string });
 		}
 	},
 	component: RouteComponent,

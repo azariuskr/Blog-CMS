@@ -164,7 +164,7 @@ export function Users({ search }: UsersViewProps) {
 	const handleStopImpersonation = useCallback(async () => {
 		const result = await stopImpersonationMutation.mutateAsync();
 		if (result.ok) {
-			navigate({ to: ROUTES.ADMIN.USERS });
+			navigate({ to: ROUTES.ADMIN.USERS as string });
 		}
 	}, [stopImpersonationMutation, navigate]);
 

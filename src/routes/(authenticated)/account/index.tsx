@@ -4,8 +4,8 @@ import { ROUTES, ACCOUNT_VIEWS } from "@/constants";
 export const Route = createFileRoute("/(authenticated)/account/")({
   beforeLoad: () => {
     throw redirect({
-      to: `${ROUTES.ACCOUNT.BASE}/$accountView`,
-      params: { accountView: `${ACCOUNT_VIEWS.SETTINGS}` },
+      to: `${ROUTES.ACCOUNT.BASE}/$accountView` as string,
+      params: { accountView: `${ACCOUNT_VIEWS.SETTINGS}` } as any,
       replace: true
     });
   },

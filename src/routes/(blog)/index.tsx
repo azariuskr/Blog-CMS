@@ -39,7 +39,7 @@ function BlogHomePage() {
 
 	// Featured posts (shown in hero/featured section)
 	const featuredQuery = usePublishedPosts({ isFeatured: true, limit: 3 });
-	const featuredPosts = featuredQuery.data?.data?.items ?? [];
+	const featuredPosts = (featuredQuery.data as any)?.data?.items ?? [];
 
 	// Recent posts (infinite / load-more)
 	const recentQuery = useInfinitePublishedPosts({ limit: 6 });
@@ -47,11 +47,11 @@ function BlogHomePage() {
 
 	// Popular posts (by view count)
 	const popularQuery = usePublishedPosts({ sortBy: "viewCount", limit: 5 });
-	const popularPosts = popularQuery.data?.data?.items ?? [];
+	const popularPosts = (popularQuery.data as any)?.data?.items ?? [];
 
 	// Hot topics (categories)
 	const topicsQuery = usePublicCategories();
-	const topics = topicsQuery.data?.data ?? [];
+	const topics = (topicsQuery.data as any)?.data ?? [];
 
 	const subscribeNewsletter = useSubscribeNewsletter();
 	const [newsletterEmail, setNewsletterEmail] = useState("");
@@ -171,13 +171,13 @@ function BlogHomePage() {
 										transform: `translateX(-${currentSlide * (100 / sliderItems + 5)}%)`,
 									}}
 								>
-									{topics.map((topic, index) => (
+									{topics.map((topic: any, index: any) => (
 										<li
 											key={topic.id}
 											className="min-w-full sm:min-w-[calc(33.33%-13.33px)]"
 										>
 											<Link
-												to="/topics"
+												to={"/topics" as string}
 												className="block relative group"
 											>
 												<figure className="aspect-[507/618] rounded-lg overflow-hidden bg-prussian-blue">
@@ -235,7 +235,7 @@ function BlogHomePage() {
 						</div>
 					) : (
 						<div className="flex flex-wrap gap-8">
-							{featuredPosts.map((post, index) => (
+							{featuredPosts.map((post: any, index: any) => (
 								<div
 									key={post.id}
 									className={`navy-blue-blog-card p-5 rounded-2xl transition-transform hover:-translate-y-1 ${
@@ -281,7 +281,7 @@ function BlogHomePage() {
 									<h3
 										className={`headline-3 text-columbia-blue mb-4 hover:text-carolina-blue transition-colors ${index >= 2 ? "text-xl" : ""}`}
 									>
-										<Link to="/$slug" params={{ slug: post.slug }}>
+										<Link to={"/$slug" as string} params={{ slug: post.slug } as any}>
 											{post.title}
 										</Link>
 									</h3>
@@ -296,8 +296,8 @@ function BlogHomePage() {
 											<span>{Math.max(1, Math.round((post.excerpt?.split(" ").length ?? 200) / 200))} min read</span>
 										</div>
 										<Link
-											to="/$slug"
-											params={{ slug: post.slug }}
+											to={"/$slug" as string}
+											params={{ slug: post.slug } as any}
 											className="text-carolina-blue font-medium hover:underline"
 										>
 											Read More
@@ -354,7 +354,7 @@ function BlogHomePage() {
 												<span className="navy-blue-blog-badge mb-4">{post.category.name}</span>
 											)}
 											<h3 className="headline-3 text-columbia-blue mb-4 hover:text-carolina-blue transition-colors text-xl mt-2">
-												<Link to="/$slug" params={{ slug: post.slug }}>
+												<Link to={"/$slug" as string} params={{ slug: post.slug } as any}>
 													{post.title}
 												</Link>
 											</h3>
@@ -416,7 +416,7 @@ function BlogHomePage() {
 								</h3>
 
 								<div className="space-y-5">
-									{popularPosts.map((post) => (
+									{popularPosts.map((post: any) => (
 										<article key={post.id} className="flex items-start gap-3">
 											<Avatar className="w-14 h-14 flex-shrink-0">
 												<AvatarImage src={post.author?.avatarUrl ?? undefined} alt={post.title} />
@@ -424,7 +424,7 @@ function BlogHomePage() {
 											</Avatar>
 											<div className="flex-1 border-b border-prussian-blue pb-5">
 												<h4 className="text-columbia-blue font-medium mb-3 hover:text-carolina-blue transition-colors text-sm">
-													<Link to="/$slug" params={{ slug: post.slug }}>
+													<Link to={"/$slug" as string} params={{ slug: post.slug } as any}>
 														{post.title}
 													</Link>
 												</h4>

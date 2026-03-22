@@ -130,21 +130,21 @@ function AdminBlogDashboard() {
 	const tagsQuery = useTags();
 
 	const posts = useMemo(
-		() => postsQuery.data?.data?.items ?? [],
-		[postsQuery.data?.data?.items],
+		() => (postsQuery.data as any)?.data?.items ?? [],
+		[(postsQuery.data as any)?.data?.items],
 	);
-	const authors = authorsQuery.data?.data?.items ?? [];
-	const comments = commentsQuery.data?.data?.items ?? [];
-	const tags = tagsQuery.data?.data ?? [];
+	const authors = (authorsQuery.data as any)?.data?.items ?? [];
+	const comments = (commentsQuery.data as any)?.data?.items ?? [];
+	const tags = (tagsQuery.data as any)?.data ?? [];
 
 	const statsCards = useMemo(() => {
 		const totalPosts = posts.length;
 		const publishedPosts = posts.filter(
-			(post) => post.status === "published",
+			(post: any) => post.status === "published",
 		).length;
-		const draftPosts = posts.filter((post) => post.status === "draft").length;
+		const draftPosts = posts.filter((post: any) => post.status === "draft").length;
 		const totalViews = posts.reduce(
-			(sum, post) => sum + (post.viewCount ?? 0),
+			(sum: any, post: any) => sum + (post.viewCount ?? 0),
 			0,
 		);
 
@@ -217,8 +217,8 @@ function AdminBlogDashboard() {
 					<h2 className="text-lg font-semibold tracking-tight">
 						Quick Actions
 					</h2>
-					<Button asChild>
-						<Link to={ROUTES.ADMIN.BLOG.POST_NEW}>
+					<Button {...{asChild: true} as any}>
+						<Link to={ROUTES.ADMIN.BLOG.POST_NEW as string}>
 							<Plus className="mr-2 h-4 w-4" />
 							New Post
 						</Link>
@@ -228,7 +228,7 @@ function AdminBlogDashboard() {
 					{quickActions.map((action) => (
 						<Link
 							key={action.label}
-							to={action.to}
+							to={action.to as string}
 							className="group flex items-center gap-4 rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
 						>
 							<div
@@ -250,8 +250,8 @@ function AdminBlogDashboard() {
 			<div>
 				<div className="mb-4 flex items-center justify-between">
 					<h2 className="text-lg font-semibold tracking-tight">Recent Posts</h2>
-					<Button variant="outline" size="sm" asChild>
-						<Link to={ROUTES.ADMIN.BLOG.POSTS}>View all</Link>
+					<Button variant="outline" size="sm" {...{asChild: true} as any}>
+						<Link to={ROUTES.ADMIN.BLOG.POSTS as string}>View all</Link>
 					</Button>
 				</div>
 
@@ -266,8 +266,8 @@ function AdminBlogDashboard() {
 						<CardContent className="flex flex-col items-center justify-center py-16">
 							<FileText className="h-12 w-12 text-muted-foreground mb-4" />
 							<p className="text-muted-foreground text-sm mb-4">No posts yet</p>
-							<Button asChild>
-								<Link to={ROUTES.ADMIN.BLOG.POST_NEW}>
+							<Button {...{asChild: true} as any}>
+								<Link to={ROUTES.ADMIN.BLOG.POST_NEW as string}>
 									<Plus className="mr-2 h-4 w-4" />
 									Create your first post
 								</Link>
@@ -277,7 +277,7 @@ function AdminBlogDashboard() {
 				) : (
 					<Card>
 						<div className="divide-y">
-							{recentPosts.map((post) => {
+							{recentPosts.map((post: any) => {
 								const status =
 									statusConfig[post.status as keyof typeof statusConfig] ??
 									statusConfig.draft;
@@ -301,8 +301,8 @@ function AdminBlogDashboard() {
 												<Eye className="w-3 h-3" />
 												{(post.viewCount ?? 0).toLocaleString()}
 											</div>
-											<Button variant="ghost" size="sm" asChild>
-												<Link to={ROUTES.ADMIN.BLOG.POST_EDIT(post.id)}>
+											<Button variant="ghost" size="sm" {...{asChild: true} as any}>
+												<Link to={ROUTES.ADMIN.BLOG.POST_EDIT(post.id) as string}>
 													Edit
 												</Link>
 											</Button>
@@ -331,7 +331,7 @@ function AdminBlogDashboard() {
 						<div className="rounded-lg bg-muted/30 p-4">
 							<p className="text-muted-foreground">Comments</p>
 							<p className="text-xl font-semibold">
-								{commentsQuery.data?.data?.total ?? comments.length}
+								{(commentsQuery.data as any)?.data?.total ?? comments.length}
 							</p>
 						</div>
 						<div className="rounded-lg bg-muted/30 p-4">
@@ -342,7 +342,7 @@ function AdminBlogDashboard() {
 							<p className="text-muted-foreground">Archived</p>
 							<p className="text-xl font-semibold flex items-center gap-2">
 								<Archive className="h-4 w-4 text-muted-foreground" />
-								{posts.filter((post) => post.status === "archived").length}
+								{posts.filter((post: any) => post.status === "archived").length}
 							</p>
 						</div>
 					</div>

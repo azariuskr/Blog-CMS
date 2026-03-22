@@ -37,15 +37,15 @@ function AdminTagsPage() {
 	const deleteTag = useDeleteTag();
 
 	const filtered = useMemo(() => {
-		const items = tagsQuery.data?.data ?? [];
+		const items = (tagsQuery.data as any)?.data ?? [];
 		const term = search.trim().toLowerCase();
 		if (!term) return items;
 		return items.filter(
-			(t) =>
+			(t: any) =>
 				t.name.toLowerCase().includes(term) ||
 				t.slug.toLowerCase().includes(term),
 		);
-	}, [search, tagsQuery.data?.data]);
+	}, [search, (tagsQuery.data as any)?.data]);
 
 	const sorted = useMemo(
 		() => [...filtered].sort((a, b) => (b.postCount ?? 0) - (a.postCount ?? 0)),
@@ -53,7 +53,7 @@ function AdminTagsPage() {
 	);
 	const maxCount = Math.max(
 		1,
-		...(tagsQuery.data?.data ?? []).map((t) => t.postCount ?? 0),
+		...((tagsQuery.data as any)?.data ?? []).map((t: any) => t.postCount ?? 0),
 	);
 
 	function tagSize(count: number): string {

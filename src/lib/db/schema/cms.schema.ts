@@ -70,6 +70,12 @@ export const blockTypeEnum = pgEnum("block_type", [
 	"table",
 ]);
 
+export const postVisibilityEnum = pgEnum("post_visibility", [
+	"public",
+	"external",
+	"both",
+]);
+
 // ─── Sites ──────────────────────────────────────────────────────────────────
 
 export const sites = pgTable(
@@ -262,6 +268,7 @@ export const posts = pgTable(
 		featuredImageUrl: text("featured_image_url"),
 		featuredImageAlt: text("featured_image_alt"),
 		status: postStatusEnum("status").notNull().default("draft"),
+		visibility: postVisibilityEnum("visibility").notNull().default("public"),
 		isPinned: boolean("is_pinned").notNull().default(false),
 		isFeatured: boolean("is_featured").notNull().default(false),
 		isPremium: boolean("is_premium").notNull().default(false),
@@ -296,6 +303,7 @@ export const posts = pgTable(
 		index("posts_status_idx").on(t.status),
 		index("posts_published_at_idx").on(t.publishedAt),
 		uniqueIndex("posts_slug_site_idx").on(t.slug, t.siteId),
+		index("posts_site_visibility_idx").on(t.siteId, t.visibility, t.status, t.publishedAt),
 	],
 );
 
@@ -533,6 +541,60 @@ export const newsletterSubscribers = pgTable(
 	],
 );
 
+// ─── API Keys (Headless CMS) ─────────────────────────────────────────────────
+
+export const apiKeys = pgTable(
+	"api_keys",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		name: text("name").notNull(),
+		keyHash: text("key_hash").notNull().unique(),
+		keyPrefix: varchar("key_prefix", { length: 12 }).notNull(),
+		siteId: uuid("site_id")
+			.notNull()
+			.references(() => sites.id, { onDelete: "cascade" }),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+		rateLimitRpm: integer("rate_limit_rpm").notNull().default(60),
+		allowedOrigins: text("allowed_origins").array(),
+		lastUsedAt: timestamp("last_used_at"),
+		expiresAt: timestamp("expires_at"),
+		revokedAt: timestamp("revoked_at"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(t) => [
+		index("api_keys_site_idx").on(t.siteId),
+	],
+);
+
+export const apiWebhooks = pgTable(
+	"api_webhooks",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		apiKeyId: uuid("api_key_id")
+			.notNull()
+			.references(() => apiKeys.id, { onDelete: "cascade" }),
+		url: text("url").notNull(),
+		secret: text("secret").notNull(),
+		events: text("events")
+			.array()
+			.notNull()
+			.default(["post.published", "post.updated", "post.deleted"]),
+		isActive: boolean("is_active").notNull().default(true),
+		lastFiredAt: timestamp("last_fired_at"),
+		lastStatusCode: integer("last_status_code"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(t) => [
+		index("api_webhooks_key_idx").on(t.apiKeyId),
+	],
+);
+
 // ─── Relations ───────────────────────────────────────────────────────────────
 
 export const sitesRelations = relations(sites, ({ one, many }) => ({
@@ -546,6 +608,7 @@ export const sitesRelations = relations(sites, ({ one, many }) => ({
 	categories: many(categories),
 	tags: many(tags),
 	media: many(media),
+	apiKeys: many(apiKeys),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
@@ -588,6 +651,16 @@ export const authorProfilesRelations = relations(
 	}),
 );
 
+export const apiKeysRelations = relations(apiKeys, ({ one, many }) => ({
+	site: one(sites, { fields: [apiKeys.siteId], references: [sites.id] }),
+	createdByUser: one(user, { fields: [apiKeys.createdBy], references: [user.id] }),
+	webhooks: many(apiWebhooks),
+}));
+
+export const apiWebhooksRelations = relations(apiWebhooks, ({ one }) => ({
+	apiKey: one(apiKeys, { fields: [apiWebhooks.apiKeyId], references: [apiKeys.id] }),
+}));
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export type Site = typeof sites.$inferSelect;
@@ -604,6 +677,11 @@ export type Follow = typeof follows.$inferSelect;
 export type Media = typeof media.$inferSelect;
 export type AuthorProfile = typeof authorProfiles.$inferSelect;
 export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type NewApiKey = typeof apiKeys.$inferInsert;
+export type ApiWebhook = typeof apiWebhooks.$inferSelect;
+export type NewApiWebhook = typeof apiWebhooks.$inferInsert;
+export type PostVisibility = (typeof postVisibilityEnum.enumValues)[number];
 
 export type PostStatus = (typeof postStatusEnum.enumValues)[number];
 export type ReactionType = (typeof reactionTypeEnum.enumValues)[number];

@@ -11,7 +11,7 @@ export const Route = createFileRoute("/(blog)/topics")({
 
 function TopicsPage() {
 	const query = usePublicCategories();
-	const categories = query.data?.data ?? [];
+	const categories = (query.data as any)?.data ?? [];
 
 	// Mark first 3 as trending, rest go to "All Topics"
 	const trending = categories.slice(0, 3);
@@ -60,11 +60,11 @@ function TopicsPage() {
 							</div>
 
 							<div className="grid sm:grid-cols-3 gap-5 mb-16">
-								{trending.map((category) => (
+								{trending.map((category: any) => (
 									<Link
 										key={category.id}
-										to="/search"
-										search={{ category: category.slug }}
+										to={"/search" as string}
+										search={{ category: category.slug } as any}
 										className="block relative group overflow-hidden rounded-2xl"
 									>
 										<figure
@@ -102,11 +102,11 @@ function TopicsPage() {
 						<>
 							<h2 className="text-xl font-bold text-white mb-8">All Topics</h2>
 							<div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-								{all.map((category) => (
+								{all.map((category: any) => (
 									<Link
 										key={category.id}
-										to="/search"
-										search={{ category: category.slug }}
+										to={"/search" as string}
+										search={{ category: category.slug } as any}
 										className="navy-blue-blog-card p-5 rounded-2xl group hover:-translate-y-1 transition-transform block"
 									>
 										<figure

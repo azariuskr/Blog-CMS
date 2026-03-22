@@ -15,15 +15,15 @@ export const Route = createFileRoute("/(blog)/search")({
 
 function BlogSearchPage() {
 	const navigate = useNavigate();
-	const { q, tag, category } = Route.useSearch();
+	const { q, tag, category } = Route.useSearch() as any;
 	const [inputValue, setInputValue] = useState(q ?? "");
 
 	// Debounce URL update
 	useEffect(() => {
 		const id = setTimeout(() => {
 			navigate({
-				to: "/search",
-				search: { q: inputValue || undefined, tag, category },
+				to: "/search" as string,
+				search: { q: inputValue || undefined, tag, category } as any,
 				replace: true,
 			})
 		}, 300);
@@ -36,10 +36,10 @@ function BlogSearchPage() {
 		tagSlug: tag || undefined,
 		limit: 20,
 	});
-	const results = resultsQuery.data?.data?.items ?? [];
+	const results = (resultsQuery.data as any)?.data?.items ?? [];
 
 	const topicsQuery = usePublicCategories();
-	const topics = topicsQuery.data?.data ?? [];
+	const topics = (topicsQuery.data as any)?.data ?? [];
 
 	const hasFilters = !!q || !!tag || !!category;
 
@@ -77,11 +77,11 @@ function BlogSearchPage() {
 						<div className="mt-6">
 							<p className="text-sm text-wild-blue-yonder mb-3">Browse Topics</p>
 							<div className="flex flex-wrap gap-2">
-								{topics.map((t) => (
+								{topics.map((t: any) => (
 									<Link
 										key={t.id}
-										to="/search"
-										search={{ category: t.slug }}
+										to={"/search" as string}
+										search={{ category: t.slug } as any}
 										className="navy-blue-blog-badge hover:bg-carolina-blue transition-colors"
 									>
 										{t.name}
@@ -103,8 +103,8 @@ function BlogSearchPage() {
 							<span className="text-sm text-wild-blue-yonder">Filtering by:</span>
 							{q && (
 								<Link
-									to="/search"
-									search={{ q: undefined, tag, category }}
+									to={"/search" as string}
+									search={{ q: undefined, tag, category } as any}
 									className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-carolina-blue/20 text-carolina-blue text-sm border border-carolina-blue/40 hover:bg-carolina-blue/30 transition-colors"
 								>
 									"{q}" <X className="w-3 h-3" />
@@ -112,8 +112,8 @@ function BlogSearchPage() {
 							)}
 							{tag && (
 								<Link
-									to="/search"
-									search={{ q, tag: undefined, category }}
+									to={"/search" as string}
+									search={{ q, tag: undefined, category } as any}
 									className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-carolina-blue/20 text-carolina-blue text-sm border border-carolina-blue/40 hover:bg-carolina-blue/30 transition-colors"
 								>
 									#{tag} <X className="w-3 h-3" />
@@ -121,8 +121,8 @@ function BlogSearchPage() {
 							)}
 							{category && (
 								<Link
-									to="/search"
-									search={{ q, tag, category: undefined }}
+									to={"/search" as string}
+									search={{ q, tag, category: undefined } as any}
 									className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-carolina-blue/20 text-carolina-blue text-sm border border-carolina-blue/40 hover:bg-carolina-blue/30 transition-colors"
 								>
 									{category} <X className="w-3 h-3" />
@@ -164,7 +164,7 @@ function BlogSearchPage() {
 							</p>
 							{hasFilters && (
 								<Link
-									to="/search"
+									to={"/search" as string}
 									className="mt-6 navy-blue-blog-btn px-6 py-2 rounded-full inline-flex items-center gap-2 text-sm"
 								>
 									Clear all filters
@@ -176,7 +176,7 @@ function BlogSearchPage() {
 					{/* Results list */}
 					{results.length > 0 && (
 						<div className="space-y-5">
-							{results.map((post) => (
+							{results.map((post: any) => (
 								<article
 									key={post.id}
 									className="navy-blue-blog-card rounded-2xl overflow-hidden sm:flex gap-0 hover:-translate-y-0.5 transition-transform"
@@ -200,7 +200,7 @@ function BlogSearchPage() {
 											)}
 										</div>
 										<h2 className="text-columbia-blue font-bold text-lg mb-2 hover:text-carolina-blue transition-colors line-clamp-2">
-											<Link to="/$slug" params={{ slug: post.slug }}>
+											<Link to={"/$slug" as string} params={{ slug: post.slug } as any}>
 												{post.title}
 											</Link>
 										</h2>

@@ -72,7 +72,7 @@ function ContributorDashboard() {
 							</div>
 						</div>
 						<Link
-							to="/dashboard/become-author"
+							to={"/dashboard/become-author" as string}
 							className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[hsl(199,89%,49%)] text-white text-sm font-medium hover:bg-[hsl(199,89%,42%)] transition-colors whitespace-nowrap flex-shrink-0"
 						>
 							Apply Now <ArrowRight className="h-4 w-4" />

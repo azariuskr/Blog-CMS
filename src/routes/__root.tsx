@@ -71,7 +71,7 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: { readonly children: React.ReactNode }) {
-	const [isClient, setIsClient] = useState(false);
+	const [, setIsClient] = useState(false);
 
 	useEffect(() => {
 		setIsClient(true);

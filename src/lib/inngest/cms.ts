@@ -5,6 +5,7 @@ import { invalidateAllCmsCache } from "@/lib/cache/redis";
 import { sendEmail } from "@/lib/email";
 import { env } from "@/env/server";
 import { inngest } from "./client";
+import { getActiveWebhooksForSite, deliverWebhook } from "@/lib/api-keys/webhooks";
 
 /**
  * CMS Profile Published — runs after publishing a CMS profile.
@@ -218,7 +219,7 @@ export const blogGitPublishFunction = inngest.createFunction(
 			}
 
 			// Write MDX file
-			await fs.promises.mkdir(`${dir}/posts`, { recursive: true }).catch(() => {});
+			await fs.promises.mkdir(`${dir}/posts`, { recursive: true } as any).catch(() => {});
 			await fs.promises.writeFile(`${dir}/${filePath}`, mdxContent);
 
 			// Stage + commit
@@ -258,6 +259,47 @@ export const blogGitPublishFunction = inngest.createFunction(
 	},
 );
 
+/**
+ * Blog Post Webhook Delivery — fires webhooks to external app endpoints
+ * when a post is published, updated, or deleted.
+ */
+export const blogPostWebhookFunction = inngest.createFunction(
+	{ id: "blog-post-webhook", retries: 3 },
+	{ event: "blog/post.webhook" },
+	async ({ event, step }) => {
+		const { siteId, postId, postSlug, postTitle, eventType, publishedAt } = event.data as {
+			siteId: string;
+			postId: string;
+			postSlug: string;
+			postTitle: string;
+			eventType: string;
+			publishedAt?: string;
+		};
+
+		const webhooks = await step.run("get-active-webhooks", async () => {
+			return getActiveWebhooksForSite(siteId, eventType);
+		});
+
+		if (webhooks.length === 0) return { delivered: 0 };
+
+		const results = await Promise.all(
+			webhooks.map((webhook) =>
+				step.run(`deliver-${webhook.id}`, async () =>
+					deliverWebhook(webhook, eventType, {
+						siteId,
+						post: { id: postId, slug: postSlug, title: postTitle, publishedAt },
+					}),
+				),
+			),
+		);
+
+		return {
+			delivered: results.filter((r) => r.success).length,
+			total: results.length,
+		};
+	},
+);
+
 export const cmsFunctions = [
 	cmsPublishedFunction,
 	cmsVersionCleanupFunction,
@@ -265,4 +307,5 @@ export const cmsFunctions = [
 	newsletterConfirmFunction,
 	blogSchedulePublishFunction,
 	blogGitPublishFunction,
+	blogPostWebhookFunction,
 ] as const;

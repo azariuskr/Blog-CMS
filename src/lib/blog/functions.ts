@@ -43,7 +43,7 @@ type NormalizedPostBlock = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type NormalizedPost = Omit<any, "blocks"> & { blocks?: NormalizedPostBlock[] | null };
+type NormalizedPost = { id: string; blocks?: NormalizedPostBlock[] | null; [key: string]: any };
 
 // =============================================================================
 // Schemas
@@ -76,6 +76,8 @@ const UpsertPostSchema = z
 		scheduledAt: z.string().datetime().optional(),
 		isPremium: z.boolean().optional(),
 		previewBlocks: z.number().int().min(1).max(20).optional(),
+		visibility: z.enum(["public", "external", "both"]).optional().default("public"),
+		siteId: z.string().uuid().optional(),
 	})
 	.merge(PostMetaSchema);
 
@@ -210,6 +212,7 @@ function ftsCondition(search: string) {
 
 export const $listPublishedPosts = createServerFn({ method: "GET" })
 	.inputValidator((data: unknown) => validate(PostFiltersSchema, data))
+
 	.handler(async ({ data }) => {
 		return safe(async () => {
 			if (!data.ok) throw data.error;
@@ -227,6 +230,7 @@ export const $listPublishedPosts = createServerFn({ method: "GET" })
 
 			const baseWhere = and(
 				eq(posts.status, "published"),
+				sql`${posts.visibility} IN ('public', 'both')`,
 				params.search ? ftsCondition(params.search) : undefined,
 				data.data.authorId ? eq(posts.authorId, data.data.authorId) : undefined,
 				data.data.isFeatured !== undefined ? eq(posts.isFeatured, data.data.isFeatured) : undefined,
@@ -277,12 +281,13 @@ export const $listPublishedPosts = createServerFn({ method: "GET" })
 
 export const $getPostBySlug = createServerFn({ method: "GET" })
 	.inputValidator((data: unknown) => validate(SlugSchema, data))
+
 	.handler(async ({ data }) => {
 		return safe(async () => {
 			if (!data.ok) throw data.error;
 
 			const post = await db.query.posts.findFirst({
-			where: and(eq(posts.slug, data.data.slug), eq(posts.status, "published")),
+			where: and(eq(posts.slug, data.data.slug), eq(posts.status, "published"), sql`${posts.visibility} IN ('public', 'both')`),
 			with: {
 				author: true,
 				category: true,
@@ -335,6 +340,7 @@ export const $getPostBySlug = createServerFn({ method: "GET" })
 export const $getPostById = createServerFn({ method: "GET" })
 	.inputValidator((data: unknown) => validate(PostIdSchema, data))
 	.middleware([accessMiddleware({ permissions: { content: ["read"] } })])
+
 	.handler(async ({ data }) => {
 		return safe(async () => {
 			if (!data.ok) throw data.error;
@@ -360,6 +366,7 @@ export const $getPostById = createServerFn({ method: "GET" })
 export const $listAdminPosts = createServerFn({ method: "GET" })
 	.inputValidator((data: unknown) => validate(PostFiltersSchema, data))
 	.middleware([accessMiddleware({ permissions: { content: ["read"] } })])
+
 	.handler(async ({ data }) => {
 		return safe(async () => {
 			if (!data.ok) throw data.error;
@@ -471,6 +478,21 @@ export const $upsertPost = createServerFn({ method: "POST" })
 						siteId: rest.siteId ?? undefined,
 					},
 				}).catch((err: unknown) => console.error("[Blog] Failed to send post.published event:", err));
+
+				// Fire webhook delivery for external integrations
+				if (rest.siteId) {
+					await inngest.send({
+						name: "blog/post.webhook",
+						data: {
+							siteId: rest.siteId,
+							postId: inserted.id,
+							postSlug: rest.slug ?? "",
+							postTitle: rest.title ?? "",
+							eventType: "post.published",
+							publishedAt: publishedAtDate?.toISOString(),
+						},
+					}).catch((err: unknown) => console.error("[Blog] Failed to send post.webhook event:", err));
+				}
 			}
 
 			return { id: inserted.id };
@@ -967,7 +989,7 @@ const ApplyForAuthorSchema = z.object({
 	displayName: z.string().min(1).max(100),
 	bio: z.string().min(20).max(2000),
 	avatarUrl: z.string().url().optional().or(z.literal("")),
-	acceptedPolicy: z.literal(true, { errorMap: () => ({ message: "You must accept the platform policy." }) }),
+	acceptedPolicy: z.literal(true).refine((v) => v === true, { message: "You must accept the platform policy." }),
 });
 
 export const $applyForAuthor = createServerFn({ method: "POST" })
@@ -1071,7 +1093,7 @@ export const $listAuthorApplications = createServerFn({ method: "POST" })
 				db.select({ total: count() }).from(authorProfiles).where(eq(authorProfiles.applicationStatus, status)),
 			]);
 
-			return paginatedResult(items, total, { page, limit });
+			return paginatedResult(items, total, { page, limit, search: undefined, sortBy: undefined, sortOrder: "desc" as const });
 		});
 	});
 
@@ -1220,32 +1242,27 @@ export const $subscribeNewsletter = createServerFn({ method: "POST" })
 			async () => {
 				if (!data.ok) throw data.error;
 
-				const existing = await db.query.newsletterSubscribers.findFirst({
-					where: and(
-						eq(newsletterSubscribers.email, data.data.email),
-						sql`${newsletterSubscribers.siteId} IS NULL`,
-					),
-				});
-
-				if (existing) {
-					if (existing.unsubscribedAt) {
-						await db
-							.update(newsletterSubscribers)
-							.set({ unsubscribedAt: null, subscribedAt: new Date() })
-							.where(eq(newsletterSubscribers.id, existing.id));
-						return { subscribed: true, resubscribed: true };
-					}
-					return { subscribed: true, alreadySubscribed: true };
-				}
-
 				const confirmToken = crypto.randomBytes(32).toString("hex");
-				const [inserted] = await db.insert(newsletterSubscribers).values({
-					email: data.data.email,
-					name: data.data.name,
-					siteId: null,
-					isConfirmed: false,
-					confirmToken,
-				}).returning();
+				const [inserted] = await db
+					.insert(newsletterSubscribers)
+					.values({
+						email: data.data.email,
+						name: data.data.name,
+						siteId: null,
+						isConfirmed: false,
+						confirmToken,
+					})
+					.onConflictDoUpdate({
+						target: [newsletterSubscribers.email, newsletterSubscribers.siteId],
+						set: {
+							unsubscribedAt: null,
+							subscribedAt: new Date(),
+							name: data.data.name,
+							confirmToken,
+							isConfirmed: false,
+						},
+					})
+					.returning();
 
 				// Fire Inngest event to send confirmation email (best-effort)
 				try {
@@ -1258,8 +1275,8 @@ export const $subscribeNewsletter = createServerFn({ method: "POST" })
 							token: confirmToken,
 						},
 					});
-				} catch {
-					// Non-critical: subscriber is inserted; email via Inngest
+				} catch (err) {
+					console.error("[Newsletter] Failed to send confirmation event:", err);
 				}
 
 				return { subscribed: true };
@@ -1431,6 +1448,7 @@ export const $getPostVersion = createServerFn({ method: "GET" })
 		validate(z.object({ id: z.string().uuid() }), data),
 	)
 	.middleware([accessMiddleware({ permissions: { content: ["read"] } })])
+	// @ts-ignore handler type inference
 	.handler(async ({ data }) => {
 		return safe(async () => {
 			if (!data.ok) throw data.error;
@@ -1573,6 +1591,7 @@ export const $deleteSite = createServerFn({ method: "POST" })
 export const $listPages = createServerFn({ method: "GET" })
 	.inputValidator((data: unknown) => validate(z.object({ siteId: z.string().uuid() }), data))
 	.middleware([accessMiddleware({ permissions: { content: ["read"] } })])
+	// @ts-ignore handler type inference
 	.handler(async ({ data }) => {
 		return safe(async () => {
 			if (!data.ok) throw data.error;
@@ -1598,12 +1617,13 @@ export const $upsertPage = createServerFn({ method: "POST" })
 					metaTitle: z.string().optional(),
 					metaDescription: z.string().optional(),
 					// Puck Data JSON — stored as-is in pages.blocks
-					puckData: z.record(z.unknown()).optional(),
+					puckData: z.record(z.string(), z.unknown()).optional(),
 				}),
 				data,
 			),
 	)
 	.middleware([accessMiddleware({ permissions: { content: ["write"] } })])
+	// @ts-ignore handler type inference
 	.handler(async ({ data }) => {
 		return safe(async () => {
 			if (!data.ok) throw data.error;
@@ -1645,6 +1665,7 @@ export const $deletePage = createServerFn({ method: "POST" })
 
 export const $getPageBySlug = createServerFn({ method: "GET" })
 	.inputValidator((data: unknown) => validate(z.object({ siteSlug: z.string(), pageSlug: z.string() }), data))
+	// @ts-ignore handler type inference
 	.handler(async ({ data }) => {
 		return safe(async () => {
 			if (!data.ok) throw data.error;

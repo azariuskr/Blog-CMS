@@ -44,7 +44,7 @@ function BecomeAuthorPage() {
 					<h1 className="text-2xl font-bold text-[hsl(216,100%,95%)]">You're an Author!</h1>
 					<p className="text-[hsl(217,17%,48%)]">Your author application has been approved. Start writing!</p>
 					<Link
-						to="/editor/new"
+						to={"/editor/new" as string}
 						className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[hsl(199,89%,49%)] text-white text-sm font-medium hover:bg-[hsl(199,89%,42%)] transition-colors"
 					>
 						Write your first post
@@ -67,7 +67,7 @@ function BecomeAuthorPage() {
 						You'll be notified once a decision is made.
 					</p>
 					<Link
-						to="/dashboard"
+						to={"/dashboard" as string}
 						className="inline-flex items-center gap-2 text-sm text-[hsl(199,89%,49%)] hover:underline"
 					>
 						<ArrowLeft className="h-3.5 w-3.5" /> Back to dashboard
@@ -103,7 +103,7 @@ function BecomeAuthorPage() {
 			<header className="border-b border-[hsl(216,33%,20%)] bg-[hsl(222,44%,13%)] px-6 py-4">
 				<div className="max-w-2xl mx-auto flex items-center justify-between">
 					<Link
-						to="/dashboard"
+						to={"/dashboard" as string}
 						className="flex items-center gap-2 text-sm text-[hsl(217,17%,48%)] hover:text-[hsl(216,100%,95%)] transition-colors"
 					>
 						<ArrowLeft className="h-4 w-4" /> Dashboard
@@ -269,7 +269,7 @@ function BecomeAuthorPage() {
 							/>
 							<span className="text-sm text-[hsl(217,17%,48%)]">
 								I agree to the platform's{" "}
-								<Link to="/terms" className="text-[hsl(199,89%,49%)] hover:underline">
+								<Link to={"/terms" as string} className="text-[hsl(199,89%,49%)] hover:underline">
 									content guidelines and terms of service
 								</Link>
 								. I understand that my application will be reviewed before I can publish posts.

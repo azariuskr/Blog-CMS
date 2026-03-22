@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Loader2, CreditCard, AlertCircle, ExternalLink } from "lucide-react";
 import {
   Dialog,

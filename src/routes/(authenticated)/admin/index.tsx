@@ -101,7 +101,7 @@ function AdminDashboardPage() {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">
-							{userStatsLoading ? "..." : (userStats?.bannedCount ?? 0)}
+							{userStatsLoading ? "..." : ((userStats as any)?.bannedCount ?? 0)}
 						</div>
 						<p className="text-xs text-muted-foreground">Suspended accounts</p>
 					</CardContent>

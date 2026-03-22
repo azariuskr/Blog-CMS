@@ -34,7 +34,7 @@ export function UserSessionsSheet() {
 	const revokeSession = useRevokeSession();
 	const revokeAll = useRevokeAllUserSessions();
 
-	const sessions = sessionsQuery.data?.ok ? (sessionsQuery.data.data as any[]) ?? [] : [];
+	const sessions = sessionsQuery.data?.ok ? ((sessionsQuery.data as any).data as any[]) ?? [] : [];
 
 	if (!open || !user) return null;
 

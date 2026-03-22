@@ -334,7 +334,7 @@ function BlogPostPage() {
 	const toggleReaction = useToggleReaction();
 	const toggleBookmark = useToggleBookmark();
 	const createComment = useCreateComment();
-	const resolvedPostForCategory = postQuery.data?.ok ? postQuery.data.data : null;
+	const resolvedPostForCategory = postQuery.data?.ok ? (postQuery.data as any).data : null;
 	const relatedPostsQuery = usePublishedPosts({
 		categorySlug: resolvedPostForCategory?.category?.slug ?? undefined,
 		limit: 3,
@@ -359,7 +359,7 @@ function BlogPostPage() {
 		},
 	};
 
-	const resolvedPost = postQuery.data?.ok ? unwrap(postQuery.data) : null;
+	const resolvedPost = postQuery.data?.ok ? unwrap(postQuery.data) as any : null;
 	const fallbackPost = fallbackPostBySlug[slug];
 	const post = resolvedPost
 		?? (fallbackPost
@@ -384,7 +384,7 @@ function BlogPostPage() {
 			? rawBlocks
 			: String(post?.content ?? "")
 					.split(/\n\n+/)
-					.map((chunk, i) => chunk.trim())
+					.map((chunk, _i) => chunk.trim())
 					.filter(Boolean)
 					.map((chunk, i) => ({
 						id: `legacy-${i}`,
@@ -695,7 +695,7 @@ function BlogPostPage() {
 										<div className="flex-1">
 											<h3 className="text-xl font-bold text-white mb-1">Written by {displayName}</h3>
 											{profile?.username && (
-												<Link to="/@$username" params={{ username: profile.username }} className="text-xs text-carolina-blue hover:underline block mb-3">
+												<Link to={"/@$username" as string} params={{ username: profile.username } as any} className="text-xs text-carolina-blue hover:underline block mb-3">
 													@{profile.username}
 												</Link>
 											)}
@@ -901,8 +901,8 @@ function BlogPostPage() {
 										{relatedPosts.slice(0, 3).map((related: any) => (
 											<Link
 												key={related.id}
-												to="/$slug"
-												params={{ slug: related.slug }}
+												to={"/$slug" as string}
+												params={{ slug: related.slug } as any}
 												className="flex gap-4 p-4 rounded-xl border border-prussian-blue hover:border-carolina-blue/50 bg-prussian-blue/20 hover:bg-prussian-blue/40 transition-all group"
 											>
 												{related.featuredImageUrl && (

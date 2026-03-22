@@ -62,7 +62,7 @@ export function AppSidebar() {
 				<SidebarMenu>
 					<SidebarMenuItem>
 						{canAccessAdmin ? (
-							<Link to={ROUTES.DASHBOARD}>
+							<Link to={ROUTES.DASHBOARD as string}>
 								<SidebarMenuButton size="lg">
 									<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
 										<LayoutDashboard className="size-4" />
@@ -78,7 +78,7 @@ export function AppSidebar() {
 								</SidebarMenuButton>
 							</Link>
 						) : (
-							<Link to={ROUTES.ACCOUNT.BASE}>
+							<Link to={ROUTES.ACCOUNT.BASE as string}>
 								<SidebarMenuButton size="lg">
 									<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
 										<LayoutDashboard className="size-4" />
@@ -112,7 +112,7 @@ export function AppSidebar() {
 					<SidebarGroupLabel>Organization</SidebarGroupLabel>
 					<SidebarMenu>
 						<SidebarMenuItem>
-							<Link to={ROUTES.ACCOUNT.ORGANIZATIONS}>
+							<Link to={ROUTES.ACCOUNT.ORGANIZATIONS as string}>
 								<SidebarMenuButton
 									isActive={isRouteActive(
 										currentPath,
@@ -170,7 +170,7 @@ function NavEntryItem({ item, currentPath }: NavEntryItemProps) {
 
 		return (
 			<SidebarMenuItem>
-				<Link to={item.path}>
+				<Link to={item.path as string}>
 					<SidebarMenuButton isActive={isActive} tooltip={item.title}>
 						{Icon && <Icon className="size-4" />}
 						<span>{item.title}</span>
@@ -227,7 +227,7 @@ function CollapsibleNavItem({ item, currentPath }: CollapsibleNavItemProps) {
 								<SidebarMenuSubItem key={subItem.path}>
 									<SidebarMenuSubButton
 										isActive={isActive}
-										render={<Link to={subItem.path} />}
+										render={<Link to={subItem.path as string} />}
 									>
 										<span>{subItem.title}</span>
 									</SidebarMenuSubButton>

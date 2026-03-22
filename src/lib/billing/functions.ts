@@ -422,7 +422,7 @@ const CancelSubscriptionSchema = z.object({
 export const $cancelSubscription = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => CancelSubscriptionSchema.parse(data))
   .handler(async ({ data }) => {
-    const authUser = await getAuthenticatedUser();
+    await getAuthenticatedUser();
     const provider = getBillingProvider();
     const cancelAtEnd = data.cancelAtPeriodEnd ?? true;
 
@@ -1512,7 +1512,7 @@ export const $getBillingStats = createServerFn({ method: "GET" })
       if (provider === "stripe" && isStripeEnabled() && stripeClient) {
         try {
           // Get customer count from Stripe
-          const customers = await stripeClient.customers.list({ limit: 1 });
+          await stripeClient.customers.list({ limit: 1 });
           // Note: This is just the first page count, for accurate total use customers.total_count if available
           // or implement proper pagination/webhooks
 

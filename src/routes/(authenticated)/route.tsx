@@ -23,7 +23,7 @@ export const Route = createFileRoute("/(authenticated)")({
     // Only enforce routeConfig-based access for routes that declare protection.
     const cfg = getRouteConfig(path);
     if ((cfg?.minRole || cfg?.permissions) && !canAccessRoute(path, role)) {
-      throw redirect({ to: "/403" });
+      throw redirect({ to: "/403" as string });
     }
   },
   component: AuthenticatedLayout,

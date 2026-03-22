@@ -92,7 +92,7 @@ function ApplicationStatus({ status }: { status: string }) {
 					<p className="text-wild-blue-yonder leading-relaxed">{cfg.message}</p>
 					{status === "approved" && (
 						<Link
-							to={ROUTES.EDITOR.NEW}
+							to={ROUTES.EDITOR.NEW as string}
 							className="navy-blue-blog-btn inline-flex items-center gap-2 px-5 py-2.5 rounded-xl mt-5 text-sm"
 						>
 							<PenLine className="w-4 h-4" />
@@ -155,7 +155,7 @@ function AuthorOnboardingPage() {
 	});
 	const [errors, setErrors] = useState<Record<string, string>>({});
 
-	const existingApplication = applicationQuery.data?.data as
+	const existingApplication = (applicationQuery.data as any)?.data as
 		| { status: string; username: string; displayName: string }
 		| null
 		| undefined;
@@ -223,7 +223,7 @@ function AuthorOnboardingPage() {
 			<section className="pt-[180px] pb-[60px] relative">
 				<div className="container mx-auto px-4 max-w-[720px]">
 					<Link
-						to="/authors"
+						to={"/authors" as string}
 						className="inline-flex items-center gap-1.5 text-sm text-wild-blue-yonder hover:text-carolina-blue transition-colors mb-8"
 					>
 						<ArrowLeft className="w-4 h-4" />

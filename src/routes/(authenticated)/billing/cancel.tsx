@@ -29,10 +29,10 @@ function BillingCancelPage() {
               You can try upgrading again at any time.
             </p>
             <div className="flex flex-col gap-2 pt-4">
-              <Link to="/billing">
+              <Link to={"/billing" as string}>
                 <Button className="w-full">Back to Billing</Button>
               </Link>
-              <Link to={ROUTES.DASHBOARD}>
+              <Link to={ROUTES.DASHBOARD as string}>
                 <Button variant="outline" className="w-full">
                   Go to Dashboard
                 </Button>

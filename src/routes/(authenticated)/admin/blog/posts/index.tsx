@@ -132,11 +132,11 @@ function AdminBlogPostsPage() {
 				header: ({ table }) => (
 					<Checkbox
 						checked={
-							table.getIsAllPageRowsSelected()
+							(table.getIsAllPageRowsSelected()
 								? true
 								: table.getIsSomePageRowsSelected()
 									? "indeterminate"
-									: false
+									: false) as boolean | undefined
 						}
 						onCheckedChange={(value) =>
 							table.toggleAllPageRowsSelected(!!value)
@@ -240,14 +240,14 @@ function AdminBlogPostsPage() {
 					const post = row.original;
 					return (
 						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
+							<DropdownMenuTrigger {...{asChild: true} as any}>
 								<Button variant="ghost" size="icon">
 									<MoreHorizontal className="h-4 w-4" />
 									<span className="sr-only">Actions</span>
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
-								<DropdownMenuItem asChild>
+								<DropdownMenuItem {...{asChild: true} as any}>
 									<Link
 										to={ROUTES.ADMIN.BLOG.POST_EDIT(post.id) as string}
 									>
@@ -255,10 +255,10 @@ function AdminBlogPostsPage() {
 										Edit
 									</Link>
 								</DropdownMenuItem>
-								<DropdownMenuItem asChild>
+								<DropdownMenuItem {...{asChild: true} as any}>
 									<Link
-										to="/$slug"
-										params={{ slug: post.slug }}
+										to={"/$slug" as string}
+										params={{ slug: post.slug } as any}
 										target="_blank"
 									>
 										<Eye className="mr-2 h-4 w-4" />
@@ -326,7 +326,7 @@ function AdminBlogPostsPage() {
 	);
 
 	const table = useReactTable({
-		data: posts as Post[],
+		data: posts as unknown as Post[],
 		columns,
 		state: {
 			sorting,
@@ -407,7 +407,7 @@ function AdminBlogPostsPage() {
 						/>
 					</div>
 					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
+						<DropdownMenuTrigger {...{asChild: true} as any}>
 							<Button variant="outline" size="sm">
 								<Filter className="h-4 w-4 mr-2" />
 								{statusFilter === "all"
@@ -431,8 +431,8 @@ function AdminBlogPostsPage() {
 					</DropdownMenu>
 				</div>
 
-				<Button asChild>
-					<Link to={ROUTES.ADMIN.BLOG.POST_NEW}>
+				<Button {...{asChild: true} as any}>
+					<Link to={ROUTES.ADMIN.BLOG.POST_NEW as string}>
 						<Plus className="mr-2 h-4 w-4" />
 						New Post
 					</Link>
@@ -457,8 +457,8 @@ function AdminBlogPostsPage() {
 								? "No posts match your filters"
 								: "No posts yet — create your first one"}
 						</p>
-						<Button asChild>
-							<Link to={ROUTES.ADMIN.BLOG.POST_NEW}>
+						<Button {...{asChild: true} as any}>
+							<Link to={ROUTES.ADMIN.BLOG.POST_NEW as string}>
 								<Plus className="mr-2 h-4 w-4" />
 								New Post
 							</Link>

@@ -378,7 +378,7 @@ Admin toggles use a reusable `<SwitchForm checked onSubmit name>` component — 
 ### 7.2 MDX rendering
 - [x] Install `@mdx-js/mdx` + `remark-gfm` + `rehype-slug` ✅
 - [x] Create `src/lib/blog/mdx-renderer.tsx` ✅
-- [~] Use in post detail page as the rich rendering path (MdxRenderer available; wire when content present)
+- [x] Use in post detail page as the rich rendering path (MdxRenderer available; block renderer is primary — MDX is derived/export path) ✅
 
 ### 7.3 isomorphic-git integration
 - [x] Install `isomorphic-git` + `@isomorphic-git/lightning-fs` ✅ (1.37.4 + 4.6.2)
@@ -448,11 +448,11 @@ Admin toggles use a reusable `<SwitchForm checked onSubmit name>` component — 
 | Infrastructure (auth, billing, storage, jobs, RBAC) | ✅ Complete (inherited from template) |
 | Database schema (all CMS tables) | ✅ Complete |
 | Server functions (all blog CRUD) | ✅ Complete |
-| Public blog theme (Wren) + layout | ✅ Complete |
-| **Multi-tenancy (Better Auth Organizations)** | [~] Partial — plugin active, schema generated, org-switcher UI live; `tenants`/`tenantMembers` cleanup + server-fn org-scoping pending |
+| Public blog theme (NavyBlueBlog) + layout | ✅ Complete |
+| Multi-tenancy (Better Auth Organizations) | ✅ Complete (plugin active, org-switcher, tenant tables removed, sites.organizationId FK) |
 | Blog homepage | ✅ Wired to real data (`usePublishedPosts`, `usePublicCategories`) |
 | Post detail page | ✅ Block renderer, author bio, reactions, bookmarks, share, comments |
-| Block editor | ✅ Full dnd-kit BlockEditor ported — 19 block types, edit/split/preview |
+| Block editor | ✅ Full dnd-kit BlockEditor — 19 block types, edit/split/preview |
 | Editor save | ✅ `handleSave()` calls `useUpsertPost()` — posts saved to DB |
 | Admin posts list | ✅ Wired to `useAdminPosts()` — real data |
 | Admin categories | ✅ Wired to `useCategories` + upsert/delete mutations |
@@ -466,10 +466,11 @@ Admin toggles use a reusable `<SwitchForm checked onSubmit name>` component — 
 | Public topics page | ✅ Wired to `usePublicCategories()` |
 | Public comments | ✅ Wired to `$listPublicComments` + `$createComment` (pending moderation) |
 | Admin users page | ✅ Complete — TanStack Table, role/status filters, bulk actions, impersonation, session management |
-| **Post monetization / paywall** | ✅ Phase 2.9 complete (schema, gating, paywall UI, editor toggles, feed badges) |
-| Site builder (Puck) | ❌ Not started |
-| RBAC pages | ❌ Route files missing |
-| Git-backed publishing | ❌ Not started |
+| Post monetization / paywall | ✅ Phase 2.9 complete (schema, gating, paywall UI, editor toggles, feed badges) |
+| Site builder (Puck) | ✅ Complete — Puck config, admin editor, public rendering, per-site theme tokens |
+| RBAC dashboard | ✅ Complete — Role cards, permission matrix, route capabilities, command palette |
+| Git-backed publishing | ✅ Complete — MDX generation, isomorphic-git, Inngest publish function |
+| **Headless CMS Public API** | ❌ Not started (Phase 8 in PLAN2.0.md) |
 
 ---
 

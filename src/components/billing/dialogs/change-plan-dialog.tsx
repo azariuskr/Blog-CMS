@@ -19,7 +19,8 @@ import {
   usePreviewProration,
   useChangeSubscription,
 } from "@/hooks/use-billing";
-import { formatPrice } from "@/lib/billing/plans";
+// formatPrice available if needed
+
 
 interface ChangePlanDialogData {
   targetPlanId: string;

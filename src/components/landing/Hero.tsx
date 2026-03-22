@@ -57,7 +57,7 @@ export const Hero = () => {
                     <SignedIn>
                         {canAccessAdmin ? (
                             <Button
-                                onClick={() => navigate({ to: ROUTES.DASHBOARD })}
+                                onClick={() => navigate({ to: ROUTES.DASHBOARD as string })}
                                 size="lg"
                                 className="h-12 px-8 text-base bg-secondary text-secondary-foreground hover:bg-secondary/80"
                             >
@@ -65,7 +65,7 @@ export const Hero = () => {
                             </Button>
                         ) : (
                             <Button
-                                onClick={() => navigate({ to: ROUTES.ACCOUNT.BASE })}
+                                onClick={() => navigate({ to: ROUTES.ACCOUNT.BASE as string })}
                                 size="lg"
                                 className="h-12 px-8 text-base bg-secondary text-secondary-foreground hover:bg-secondary/80"
                             >

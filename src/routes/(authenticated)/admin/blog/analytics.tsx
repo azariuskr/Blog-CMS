@@ -93,8 +93,8 @@ function BlogAnalyticsPage() {
 										</span>
 										<div className="flex-1 min-w-0">
 											<Link
-												to="/$slug"
-												params={{ slug: post.slug }}
+												to={"/$slug" as string}
+												params={{ slug: post.slug } as any}
 												className="text-sm font-medium line-clamp-1 hover:underline"
 											>
 												{post.title}

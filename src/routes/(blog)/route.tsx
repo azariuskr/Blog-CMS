@@ -110,14 +110,14 @@ function BlogHeader() {
 					{user ? (
 						<>
 							<Link
-								to={ROUTES.EDITOR.NEW}
+								to={ROUTES.EDITOR.NEW as string}
 								className="navy-blue-blog-btn px-4 py-2 rounded-md text-sm flex items-center gap-2"
 							>
 								<PenLine className="w-4 h-4" />
 								Write
 							</Link>
 							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
+								<DropdownMenuTrigger {...{asChild: true} as any}>
 									<button
 										type="button"
 										className="h-10 w-10 rounded-full overflow-hidden border-2 border-carolina-blue"
@@ -147,18 +147,18 @@ function BlogHeader() {
 										<User className="mr-2 h-4 w-4" />
 										Profile
 									</DropdownMenuItem>
-									<DropdownMenuItem asChild>
+									<DropdownMenuItem {...{asChild: true} as any}>
 										<Link
-											to={ROUTES.ADMIN.BLOG.POSTS}
+											to={ROUTES.ADMIN.BLOG.POSTS as string}
 											className="flex items-center text-alice-blue cursor-pointer"
 										>
 											<FileText className="mr-2 h-4 w-4" />
 											My Posts
 										</Link>
 									</DropdownMenuItem>
-									<DropdownMenuItem asChild>
+									<DropdownMenuItem {...{asChild: true} as any}>
 										<Link
-											to={ROUTES.ACCOUNT.BASE}
+											to={ROUTES.ACCOUNT.BASE as string}
 											className="flex items-center text-alice-blue cursor-pointer"
 										>
 											<Settings className="mr-2 h-4 w-4" />
@@ -166,7 +166,7 @@ function BlogHeader() {
 										</Link>
 									</DropdownMenuItem>
 									<DropdownMenuSeparator className="bg-prussian-blue" />
-									<DropdownMenuItem asChild>
+									<DropdownMenuItem {...{asChild: true} as any}>
 										<Link
 											to={ROUTES.LOGOUT}
 											className="flex items-center text-alice-blue cursor-pointer"
@@ -230,14 +230,14 @@ function BlogHeader() {
 				{user ? (
 					<div className="space-y-2">
 						<Link
-							to={ROUTES.EDITOR.NEW}
+							to={ROUTES.EDITOR.NEW as string}
 							onClick={() => setMobileMenuOpen(false)}
 							className="block py-2 text-alice-blue hover:text-carolina-blue"
 						>
 							Write
 						</Link>
 						<Link
-							to={ROUTES.ACCOUNT.BASE}
+							to={ROUTES.ACCOUNT.BASE as string}
 							onClick={() => setMobileMenuOpen(false)}
 							className="block py-2 text-alice-blue hover:text-carolina-blue"
 						>
