@@ -11,16 +11,38 @@ import {
 	Eye,
 	Calendar,
 	Clock,
+	BookMarked,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useAuthorProfile, usePublishedPosts, authorProfileQueryOptions, useToggleFollow } from "@/lib/blog/queries";
+import { useAuthorProfile, usePublishedPosts, authorProfileQueryOptions, useToggleFollow, usePublicReadingListsByUser } from "@/lib/blog/queries";
 import { useSession } from "@/lib/auth/auth-client";
+import { siteConfig } from "@/lib/seo/siteConfig";
 
 export const Route = createFileRoute("/(blog)/@$username/")({
 	loader: async ({ context, params }) => {
 		const username = params.username.replace(/^@/, "");
 		await context.queryClient.prefetchQuery(authorProfileQueryOptions(username));
+	},
+	head: ({ params }) => {
+		const username = params.username.replace(/^@/, "");
+		const fullTitle = `@${username} | ${siteConfig.name}`;
+		const profileUrl = `${siteConfig.url}/@${username}`;
+		return {
+			meta: [
+				{ title: fullTitle },
+				{ name: "description", content: `${username}'s profile on ${siteConfig.name}` },
+				{ property: "og:type", content: "profile" },
+				{ property: "og:site_name", content: siteConfig.name },
+				{ property: "og:title", content: fullTitle },
+				{ property: "og:description", content: `${username}'s profile on ${siteConfig.name}` },
+				{ property: "og:url", content: profileUrl },
+				{ property: "og:image", content: siteConfig.ogImage },
+				{ name: "twitter:card", content: "summary" },
+				{ name: "twitter:site", content: siteConfig.twitterHandle },
+				{ name: "twitter:title", content: fullTitle },
+			],
+		};
 	},
 	component: AuthorProfilePage,
 });
@@ -33,6 +55,9 @@ function AuthorProfilePage() {
 	const profile = (profileQuery.data as any)?.data ?? null;
 	const toggleFollow = useToggleFollow();
 	const [isFollowing, setIsFollowing] = useState(false);
+	const [profileTab, setProfileTab] = useState<"posts" | "lists">("posts");
+	const publicListsQuery = usePublicReadingListsByUser(profile?.userId);
+	const publicLists = (publicListsQuery.data as any)?.ok ? ((publicListsQuery.data as any).data as any[]) : [];
 
 	const postsQuery = usePublishedPosts({
 		authorId: profile?.userId ?? undefined,
@@ -214,71 +239,121 @@ function AuthorProfilePage() {
 					</div>
 				</div>
 
-				{/* Posts grid */}
+				{/* Tabs */}
 				<div className="pb-20">
-					<h2 className="text-2xl font-bold text-white mb-8">
-						<span className="relative">
-							Latest Posts
-							<span className="absolute bottom-[-8px] left-0 w-20 h-[3px] bg-gradient-to-r from-carolina-blue to-blog-teal" />
-						</span>
-					</h2>
-
-					<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-						{authorPosts.map((post: any) => (
-							<article
-								key={post.id}
-								className="navy-blue-blog-card rounded-2xl overflow-hidden transition-all hover:-translate-y-1"
-							>
-								<figure className="aspect-video overflow-hidden">
-									<img
-										src={post.featuredImageUrl ?? ""}
-										alt={post.title}
-										className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-										loading="lazy"
-									/>
-								</figure>
-								<div className="p-5">
-									<div className="flex items-center justify-between gap-4 mb-3">
-										<span className="navy-blue-blog-badge">
-											{post.category?.name ?? "Uncategorized"}
-										</span>
-										<div className="flex items-center gap-1 text-xs text-slate-gray">
-											<Eye className="w-3.5 h-3.5" />
-											<span>{(post.viewCount ?? 0).toLocaleString()}</span>
-										</div>
-									</div>
-									<h3 className="text-columbia-blue font-semibold mb-3 text-lg hover:text-carolina-blue transition-colors line-clamp-2">
-										<Link to={"/$slug" as string} params={{ slug: post.slug } as any}>
-											{post.title}
-										</Link>
-									</h3>
-									<p className="text-wild-blue-yonder text-sm mb-4 line-clamp-2">
-										{post.excerpt}
-									</p>
-									<div className="flex items-center justify-between text-xs text-slate-gray">
-										<span>
-											{post.publishedAt
-												? new Date(post.publishedAt).toLocaleDateString("en-US", {
-														month: "short",
-														day: "numeric",
-														year: "numeric",
-													})
-												: ""}
-										</span>
-										<div className="flex items-center gap-1">
-											<Clock className="w-3.5 h-3.5" />
-										</div>
-									</div>
-								</div>
-							</article>
-						))}
+					<div className="flex items-center gap-1 mb-8 border-b border-prussian-blue">
+						<button
+							type="button"
+							onClick={() => setProfileTab("posts")}
+							className={`pb-2.5 px-1 text-sm font-medium border-b-2 transition-colors -mb-px ${profileTab === "posts" ? "border-carolina-blue text-carolina-blue" : "border-transparent text-wild-blue-yonder hover:text-alice-blue"}`}
+						>
+							Posts
+						</button>
+						<button
+							type="button"
+							onClick={() => setProfileTab("lists")}
+							className={`pb-2.5 px-1 text-sm font-medium border-b-2 transition-colors -mb-px ${profileTab === "lists" ? "border-carolina-blue text-carolina-blue" : "border-transparent text-wild-blue-yonder hover:text-alice-blue"}`}
+						>
+							Lists
+						</button>
 					</div>
 
-					{authorPosts.length === 0 && (
-						<div className="flex flex-col items-center justify-center py-20 text-center">
-							<FileText className="w-12 h-12 text-wild-blue-yonder mb-4" />
-							<p className="text-wild-blue-yonder">No posts yet</p>
-						</div>
+					{profileTab === "posts" && (
+						<>
+							<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+								{authorPosts.map((post: any) => (
+									<article
+										key={post.id}
+										className="navy-blue-blog-card rounded-2xl overflow-hidden transition-all hover:-translate-y-1"
+									>
+										<figure className="aspect-video overflow-hidden">
+											<img
+												src={post.featuredImageUrl ?? ""}
+												alt={post.title}
+												className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+												loading="lazy"
+											/>
+										</figure>
+										<div className="p-5">
+											<div className="flex items-center justify-between gap-4 mb-3">
+												<span className="navy-blue-blog-badge">
+													{post.category?.name ?? "Uncategorized"}
+												</span>
+												<div className="flex items-center gap-1 text-xs text-slate-gray">
+													<Eye className="w-3.5 h-3.5" />
+													<span>{(post.viewCount ?? 0).toLocaleString()}</span>
+												</div>
+											</div>
+											<h3 className="text-columbia-blue font-semibold mb-3 text-lg hover:text-carolina-blue transition-colors line-clamp-2">
+												<Link to={"/$slug" as string} params={{ slug: post.slug } as any}>
+													{post.title}
+												</Link>
+											</h3>
+											<p className="text-wild-blue-yonder text-sm mb-4 line-clamp-2">
+												{post.excerpt}
+											</p>
+											<div className="flex items-center justify-between text-xs text-slate-gray">
+												<span>
+													{post.publishedAt
+														? new Date(post.publishedAt).toLocaleDateString("en-US", {
+																month: "short",
+																day: "numeric",
+																year: "numeric",
+															})
+														: ""}
+												</span>
+												<div className="flex items-center gap-1">
+													<Clock className="w-3.5 h-3.5" />
+												</div>
+											</div>
+										</div>
+									</article>
+								))}
+							</div>
+							{authorPosts.length === 0 && (
+								<div className="flex flex-col items-center justify-center py-20 text-center">
+									<FileText className="w-12 h-12 text-wild-blue-yonder mb-4" />
+									<p className="text-wild-blue-yonder">No posts yet</p>
+								</div>
+							)}
+						</>
+					)}
+
+					{profileTab === "lists" && (
+						<>
+							{publicLists.length === 0 ? (
+								<div className="flex flex-col items-center justify-center py-20 text-center">
+									<BookMarked className="w-12 h-12 text-wild-blue-yonder mb-4" />
+									<p className="text-wild-blue-yonder">No public lists yet</p>
+								</div>
+							) : (
+								<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+									{publicLists.map((list: any) => (
+										<Link
+											key={list.id}
+											to={"/reading-lists/$listId" as string}
+											params={{ listId: list.id } as any}
+											className="navy-blue-blog-card rounded-2xl p-5 flex flex-col gap-3 hover:-translate-y-1 transition-all"
+										>
+											<div className="flex items-start justify-between gap-2">
+												<h3 className="text-columbia-blue font-semibold text-lg line-clamp-2 hover:text-carolina-blue transition-colors">
+													{list.name}
+												</h3>
+												<BookMarked className="w-5 h-5 text-carolina-blue shrink-0 mt-0.5" />
+											</div>
+											{list.description && (
+												<p className="text-wild-blue-yonder text-sm line-clamp-2">
+													{list.description}
+												</p>
+											)}
+											<p className="text-xs text-slate-gray mt-auto">
+												{list.postCount ?? 0} post{(list.postCount ?? 0) !== 1 ? "s" : ""}
+											</p>
+										</Link>
+									))}
+								</div>
+							)}
+						</>
 					)}
 				</div>
 			</div>

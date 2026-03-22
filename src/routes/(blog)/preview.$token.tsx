@@ -63,7 +63,7 @@ function PostBlocksRenderer({ blocks }: { blocks: BlogBlock[] }) {
 					return <ShikiCodeBlock key={block.id} code={block.content} lang={lang} />;
 				}
 				if (block.type === "diagram") {
-					return <MermaidBlock key={block.id} chart={block.content} />;
+					return <MermaidBlock key={block.id} code={block.content} id={block.id} />;
 				}
 				if (block.type === "ul" || block.type === "ol" || block.type === "list" || block.type === "task-list") {
 					const items = block.content.split("\n").filter(Boolean);

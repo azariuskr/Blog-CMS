@@ -22,7 +22,7 @@ import {
 	Linkedin,
 } from "lucide-react";
 import { toast } from "sonner";
-import { usePostBySlug, usePublishedPosts, usePublicComments, useCreateComment, useToggleReaction, useToggleBookmark, useAddToReadingList, postBySlugQueryOptions, publicCommentsQueryOptions } from "@/lib/blog/queries";
+import { usePostBySlug, usePublishedPosts, usePublicComments, useCreateComment, useToggleReaction, useToggleBookmark, useAddToReadingList, useMyReadingLists, postBySlugQueryOptions, publicCommentsQueryOptions } from "@/lib/blog/queries";
 import { PaywallCard } from "@/components/blog/PaywallCard";
 import { useSession } from "@/lib/auth/auth-client";
 import { unwrap } from "@/lib/result";
@@ -326,6 +326,8 @@ function BlogPostPage() {
 	const [commentText, setCommentText] = useState("");
 	const [isLiked, setIsLiked] = useState(false);
 	const [isBookmarked, setIsBookmarked] = useState(false);
+	const [showListPicker, setShowListPicker] = useState(false);
+	const listPickerRef = useRef<HTMLDivElement>(null);
 	const [readingProgress, setReadingProgress] = useState(0);
 	const [showToc, setShowToc] = useState(false);
 	const [showBackToTop, setShowBackToTop] = useState(false);
@@ -334,6 +336,8 @@ function BlogPostPage() {
 	const toggleReaction = useToggleReaction();
 	const toggleBookmark = useToggleBookmark();
 	const addToReadingList = useAddToReadingList();
+	const readingListsQuery = useMyReadingLists();
+	const myLists = readingListsQuery.data?.ok ? (readingListsQuery.data.data as any[]) : [];
 	const createComment = useCreateComment();
 	const resolvedPostForCategory = postQuery.data?.ok ? (postQuery.data as any).data : null;
 	const relatedPostsQuery = usePublishedPosts({
@@ -430,6 +434,16 @@ function BlogPostPage() {
 		setReplyToId(null);
 		toast.success("Reply submitted for review!");
 	};
+
+	useEffect(() => {
+		const handleClickOutside = (e: MouseEvent) => {
+			if (listPickerRef.current && !listPickerRef.current.contains(e.target as Node)) {
+				setShowListPicker(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, []);
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -601,19 +615,46 @@ function BlogPostPage() {
 								>
 									<Heart className={`w-5 h-5 ${isLiked ? "fill-current" : ""}`} />
 								</Button>
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={() => {
-										if (!userId || !post?.id) { toast.error("Sign in to bookmark posts"); return; }
-										setIsBookmarked(!isBookmarked);
-										toggleBookmark.mutate({ postId: post.id, userId });
-										if (!isBookmarked) addToReadingList.mutate({ postId: post.id });
-									}}
-									className={`rounded-full ${isBookmarked ? "text-carolina-blue bg-carolina-blue/10" : "text-wild-blue-yonder hover:text-carolina-blue"}`}
-								>
-									<Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-current" : ""}`} />
-								</Button>
+								<div className="relative" ref={listPickerRef}>
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={() => {
+											if (!userId || !post?.id) { toast.error("Sign in to bookmark posts"); return; }
+											setShowListPicker((p) => !p);
+										}}
+										className={`rounded-full ${isBookmarked ? "text-carolina-blue bg-carolina-blue/10" : "text-wild-blue-yonder hover:text-carolina-blue"}`}
+									>
+										<Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-current" : ""}`} />
+									</Button>
+									{showListPicker && (
+										<div className="absolute right-0 top-full mt-1 z-50 w-52 bg-oxford-blue border border-prussian-blue rounded-xl shadow-xl p-2">
+											<p className="text-[10px] text-slate-gray uppercase tracking-wide px-2 pb-1">Save to list</p>
+											{myLists.length === 0 ? (
+												<p className="text-xs text-slate-gray px-2 py-1">No lists yet. Create one in your account.</p>
+											) : (
+												myLists.map((list: any) => (
+													<button
+														key={list.id}
+														type="button"
+														onClick={() => {
+															if (!post?.id) return;
+															addToReadingList.mutate({ postId: post.id, listId: list.id });
+															setIsBookmarked(true);
+															toggleBookmark.mutate({ postId: post.id, userId: userId! });
+															setShowListPicker(false);
+															toast.success(`Saved to "${list.name}"`);
+														}}
+														className="w-full text-left px-2 py-1.5 text-sm text-alice-blue hover:bg-prussian-blue/40 rounded-md transition-colors"
+													>
+														{list.name}
+														{list.isDefault && <span className="ml-1 text-[10px] text-slate-gray">(default)</span>}
+													</button>
+												))
+											)}
+										</div>
+									)}
+								</div>
 								<Button
 									variant="ghost"
 									size="icon"

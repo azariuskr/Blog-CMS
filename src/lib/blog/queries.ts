@@ -53,6 +53,11 @@ import {
 	$createReadingList,
 	$getReadingListPosts,
 	$addToReadingList,
+	$toggleMute,
+	$getMutedUsers,
+	$getUserInterests,
+	$setUserInterests,
+	$getPublicReadingListsByUser,
 } from "./functions";
 
 // =============================================================================
@@ -285,6 +290,7 @@ interface InfinitePostsParams {
 	isFeatured?: boolean;
 	sortBy?: "publishedAt" | "updatedAt" | "title" | "viewCount";
 	followedByUserId?: string;
+	excludeMutedFor?: string;
 }
 
 export function useInfinitePublishedPosts(params: InfinitePostsParams = {}) {
@@ -302,6 +308,7 @@ export function useInfinitePublishedPosts(params: InfinitePostsParams = {}) {
 					isFeatured: params.isFeatured,
 					sortBy: params.sortBy,
 					followedByUserId: params.followedByUserId,
+					excludeMutedFor: params.excludeMutedFor,
 				},
 			}),
 		initialPageParam: undefined as string | undefined,
@@ -804,5 +811,50 @@ export function useAddToReadingList() {
 			qc.invalidateQueries({ queryKey: ["reading-lists"] });
 			qc.invalidateQueries({ queryKey: ["blog", "bookmarks"] });
 		},
+	});
+}
+
+// =============================================================================
+// Mute / Ignore
+// =============================================================================
+
+export function useMutedUsers() {
+	return useQuery({
+		queryKey: ["muted-users"],
+		queryFn: () => $getMutedUsers({ data: {} }),
+	});
+}
+
+export function useToggleMute() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (mutedUserId: string) => $toggleMute({ data: { mutedUserId } }),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["muted-users"] });
+			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.POSTS.PAGINATED({}) });
+		},
+	});
+}
+
+export function useUserInterests() {
+	return useQuery({
+		queryKey: ["user-interests"],
+		queryFn: () => $getUserInterests({ data: {} }),
+	});
+}
+
+export function useSetUserInterests() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (categoryIds: string[]) => $setUserInterests({ data: { categoryIds } }),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ["user-interests"] }),
+	});
+}
+
+export function usePublicReadingListsByUser(userId?: string) {
+	return useQuery({
+		queryKey: ["public-reading-lists", userId],
+		queryFn: () => $getPublicReadingListsByUser({ data: { userId: userId! } }),
+		enabled: !!userId,
 	});
 }

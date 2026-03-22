@@ -718,6 +718,48 @@ export const apiWebhooksRelations = relations(apiWebhooks, ({ one }) => ({
 	apiKey: one(apiKeys, { fields: [apiWebhooks.apiKeyId], references: [apiKeys.id] }),
 }));
 
+export const userMutes = pgTable(
+	"user_mutes",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		mutedUserId: text("muted_user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(t) => [
+		uniqueIndex("user_mutes_uk").on(t.userId, t.mutedUserId),
+		index("user_mutes_user_idx").on(t.userId),
+	],
+);
+
+export const userMutesRelations = relations(userMutes, ({ one }) => ({
+	user: one(user, { fields: [userMutes.userId], references: [user.id] }),
+	mutedUser: one(user, { fields: [userMutes.mutedUserId], references: [user.id], relationName: "muted_user" }),
+}));
+
+export const userInterests = pgTable(
+	"user_interests",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+		categoryId: uuid("category_id").notNull().references(() => categories.id, { onDelete: "cascade" }),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(t) => [
+		uniqueIndex("user_interests_unique_idx").on(t.userId, t.categoryId),
+		index("user_interests_user_idx").on(t.userId),
+	],
+);
+
+export const userInterestsRelations = relations(userInterests, ({ one }) => ({
+	user: one(user, { fields: [userInterests.userId], references: [user.id] }),
+	category: one(categories, { fields: [userInterests.categoryId], references: [categories.id] }),
+}));
+
 export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
 	post: one(posts, { fields: [bookmarks.postId], references: [posts.id] }),
 	user: one(user, { fields: [bookmarks.userId], references: [user.id] }),
@@ -750,6 +792,8 @@ export type Reaction = typeof reactions.$inferSelect;
 export type Bookmark = typeof bookmarks.$inferSelect;
 export type Follow = typeof follows.$inferSelect;
 export type ReadingList = typeof readingLists.$inferSelect;
+export type UserMute = typeof userMutes.$inferSelect;
+export type UserInterest = typeof userInterests.$inferSelect;
 export type NewReadingList = typeof readingLists.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;

@@ -11,7 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { BetterAuthUiProviders } from "@/lib/auth/better-auth-ui-provider";
 import { type AuthQueryResult, authQueryOptions } from "@/lib/auth/queries";
 import { ImageLoadQueueProvider } from "@/lib/performance/image-load-queue";
-import { GlobalSEO, OrganizationStructuredData } from "@/lib/seo";
+import { GlobalSEO, OrganizationStructuredData, siteConfig } from "@/lib/seo";
 import { appActions, appStore } from "@/lib/store/app";
 import appCss from "../styles/index.css?url";
 
@@ -27,16 +27,23 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	},
 	head: () => ({
 		meta: [
-			{
-				charSet: "utf-8",
-			},
-			{
-				name: "viewport",
-				content: "width=device-width, initial-scale=1",
-			},
-			{
-				title: "TanStack Start Starter",
-			},
+			{ charSet: "utf-8" },
+			{ name: "viewport", content: "width=device-width, initial-scale=1" },
+			{ title: siteConfig.title },
+			{ name: "description", content: siteConfig.description },
+			{ name: "robots", content: siteConfig.defaultRobots },
+			{ property: "og:type", content: "website" },
+			{ property: "og:site_name", content: siteConfig.name },
+			{ property: "og:title", content: siteConfig.title },
+			{ property: "og:description", content: siteConfig.description },
+			{ property: "og:image", content: siteConfig.ogImage },
+			{ property: "og:url", content: siteConfig.url },
+			{ property: "og:locale", content: siteConfig.locale },
+			{ name: "twitter:card", content: "summary_large_image" },
+			{ name: "twitter:site", content: siteConfig.twitterHandle },
+			{ name: "twitter:title", content: siteConfig.title },
+			{ name: "twitter:description", content: siteConfig.description },
+			{ name: "twitter:image", content: siteConfig.ogImage },
 		],
 		links: [
 			{

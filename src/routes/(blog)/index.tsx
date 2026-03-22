@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ArrowLeft, Clock, Eye, Loader2 } from "lucide-react";
+import { ArrowRight, ArrowLeft, Clock, Eye, Loader2, VolumeX } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { usePublishedPosts, useInfinitePublishedPosts, usePublicCategories, useSubscribeNewsletter, useAuthors, useToggleFollow } from "@/lib/blog/queries";
+import { usePublishedPosts, useInfinitePublishedPosts, usePublicCategories, useSubscribeNewsletter, useAuthors, useToggleFollow, useToggleMute } from "@/lib/blog/queries";
 import { useSession } from "@/lib/auth/auth-client";
 import { publishedPostsQueryOptions, publicCategoriesQueryOptions } from "@/lib/blog/queries";
 import { toast } from "sonner";
@@ -45,10 +45,11 @@ function BlogHomePage() {
 	const featuredQuery = usePublishedPosts({ isFeatured: true, limit: 3 });
 	const featuredPosts = (featuredQuery.data as any)?.data?.items ?? [];
 
-	// Recent posts (infinite / load-more) — tab-aware
+	// Recent posts (infinite / load-more) — tab-aware, mute-filtered
 	const recentQuery = useInfinitePublishedPosts({
 		limit: 6,
 		followedByUserId: feedTab === "following" && userId ? userId : undefined,
+		excludeMutedFor: userId ?? undefined,
 	});
 	const recentPosts = recentQuery.data?.pages.flatMap((p) => (p?.ok ? (p.data as any).items : [])) ?? [];
 
@@ -67,6 +68,7 @@ function BlogHomePage() {
 	const authorsQuery = useAuthors(1);
 	const allAuthors = (authorsQuery.data as any)?.ok ? (authorsQuery.data as any).data?.items ?? [] : [];
 	const toggleFollow = useToggleFollow();
+	const toggleMute = useToggleMute();
 	// Show up to 3 authors (exclude self)
 	const suggestedAuthors = allAuthors.filter((a: any) => a.id !== userId).slice(0, 3);
 
@@ -427,6 +429,18 @@ function BlogHomePage() {
 													<Eye className="w-4 h-4" />
 													<span>{post.viewCount?.toLocaleString() ?? "0"}</span>
 												</div>
+												{userId && (post as any).author?.id && (post as any).author.id !== userId && (
+													<button
+														type="button"
+														onClick={() => toggleMute.mutate((post as any).author.id)}
+														disabled={toggleMute.isPending}
+														title="Mute this author"
+														className="ml-auto flex items-center gap-1 text-xs text-slate-gray hover:text-red-400 transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100"
+													>
+														<VolumeX className="w-3.5 h-3.5" />
+														<span>Mute</span>
+													</button>
+												)}
 											</div>
 										</div>
 									</article>

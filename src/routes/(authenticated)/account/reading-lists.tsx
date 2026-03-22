@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { BookMarked, Plus, Eye, Calendar, Loader2 } from "lucide-react";
 import { useMyReadingLists, useReadingListPosts, useCreateReadingList } from "@/lib/blog/queries";
-import { ROUTES } from "@/constants";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/(authenticated)/account/reading-lists")({
@@ -12,14 +11,14 @@ export const Route = createFileRoute("/(authenticated)/account/reading-lists")({
 function ReadingListsPage() {
 	const listsQuery = useMyReadingLists();
 	const createList = useCreateReadingList();
-	const lists = listsQuery.data?.ok ? (listsQuery.data.data as any[]) : [];
+	const lists = (listsQuery.data as any)?.ok ? ((listsQuery.data as any).data as any[]) : [];
 	const [selectedListId, setSelectedListId] = useState<string | null>(null);
 	const [showCreate, setShowCreate] = useState(false);
 	const [newListName, setNewListName] = useState("");
 
 	const selectedList = lists.find((l) => l.id === selectedListId) ?? lists[0] ?? null;
 	const postsQuery = useReadingListPosts(selectedList?.id);
-	const posts = postsQuery.data?.ok ? (postsQuery.data.data as any)?.items ?? [] : [];
+	const posts = (postsQuery.data as any)?.ok ? ((postsQuery.data as any).data as any)?.items ?? [] : [];
 
 	const handleCreate = async () => {
 		if (!newListName.trim()) return;

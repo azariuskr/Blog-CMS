@@ -10,6 +10,15 @@ import {
 	TrendingUp,
 	Users,
 } from "lucide-react";
+import {
+	BarChart,
+	Bar,
+	XAxis,
+	YAxis,
+	Tooltip,
+	ResponsiveContainer,
+	Cell,
+} from "recharts";
 import { useDashboardUserStats } from "@/lib/auth/queries";
 import { useBlogStats } from "@/lib/blog/queries";
 import { ROUTES } from "@/constants";
@@ -126,7 +135,48 @@ function AdminDashboardPage() {
 				))}
 			</div>
 
-			{/* Top Posts + Top Categories */}
+			{/* Views Chart */}
+		<Card>
+			<CardHeader className="pb-2">
+				<CardTitle className="text-base flex items-center gap-2">
+					<TrendingUp className="w-4 h-4 text-primary" />
+					Top Posts by Views
+				</CardTitle>
+				<CardDescription>View distribution across your top published posts</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{statsQuery.isLoading ? (
+					<div className="h-48 flex items-center justify-center text-muted-foreground text-sm animate-pulse">Loading chart…</div>
+				) : !stats?.topPosts.length ? (
+					<div className="h-48 flex items-center justify-center text-muted-foreground text-sm">No data yet — publish your first post.</div>
+				) : (
+					<ResponsiveContainer width="100%" height={200}>
+						<BarChart
+							data={stats.topPosts.map((p) => ({
+								name: p.title.length > 22 ? p.title.slice(0, 22) + "…" : p.title,
+								views: p.viewCount,
+							}))}
+							margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
+						>
+							<XAxis dataKey="name" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+							<YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} tickFormatter={(v) => fmt(v)} width={36} />
+							<Tooltip
+								contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+								cursor={{ fill: "hsl(var(--muted))" }}
+								formatter={(value: number) => [fmt(value), "Views"]}
+							/>
+							<Bar dataKey="views" radius={[4, 4, 0, 0]} maxBarSize={52}>
+								{stats.topPosts.map((_, i) => (
+									<Cell key={i} fill={i === 0 ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.4)"} />
+								))}
+							</Bar>
+						</BarChart>
+					</ResponsiveContainer>
+				)}
+			</CardContent>
+		</Card>
+
+		{/* Top Posts + Top Categories */}
 			<div className="grid lg:grid-cols-2 gap-6">
 				{/* Top Posts */}
 				<Card>

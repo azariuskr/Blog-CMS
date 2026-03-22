@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { and, asc, count, desc, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, lt, notInArray, sql } from "drizzle-orm";
 import { accessMiddleware } from "@/lib/auth/middleware";
 import { getSession, normalizePagination, paginatedResult } from "@/lib/auth/server";
 import { db } from "@/lib/db";
@@ -22,6 +22,8 @@ import {
 	newsletterSubscribers,
 	notifications,
 	readingLists,
+	userMutes,
+	userInterests,
 } from "@/lib/db/schema/cms.schema";
 import { user } from "@/lib/db/schema/auth.schema";
 import { POST_SCHEMA_VERSION, PostBlockSchema, PostContentSchema, PostMetaSchema } from "@/lib/blog/content-schema";
@@ -64,6 +66,7 @@ const PostFiltersSchema = z.object({
 	sortBy: z.enum(["publishedAt", "updatedAt", "title", "viewCount"]).optional(),
 	sortOrder: z.enum(["asc", "desc"]).optional(),
 	followedByUserId: z.string().optional(),
+	excludeMutedFor: z.string().optional(),
 });
 
 const UpsertPostSchema = z
@@ -241,6 +244,16 @@ export const $listPublishedPosts = createServerFn({ method: "GET" })
 				followedAuthorIds = rows.map((r) => r.followingId);
 			}
 
+			// Exclude muted authors
+			let mutedAuthorIds: string[] = [];
+			if (data.data.excludeMutedFor) {
+				const muteRows = await db.query.userMutes.findMany({
+					where: eq(userMutes.userId, data.data.excludeMutedFor),
+					columns: { mutedUserId: true },
+				});
+				mutedAuthorIds = muteRows.map((r) => r.mutedUserId);
+			}
+
 			const baseWhere = and(
 				eq(posts.status, "published"),
 				sql`${posts.visibility} IN ('public', 'both')`,
@@ -250,6 +263,7 @@ export const $listPublishedPosts = createServerFn({ method: "GET" })
 				followedAuthorIds !== undefined
 					? (followedAuthorIds.length > 0 ? inArray(posts.authorId, followedAuthorIds) : sql`false`)
 					: undefined,
+				mutedAuthorIds.length > 0 ? notInArray(posts.authorId, mutedAuthorIds) : undefined,
 			);
 
 			const whereClause = useCursor
@@ -1871,6 +1885,7 @@ export const $createReadingList = createServerFn({ method: "POST" })
 export const $getReadingListPosts = createServerFn({ method: "GET" })
 	.inputValidator((data: unknown) => validate(z.object({ listId: z.string().uuid() }), data))
 	.middleware([accessMiddleware({})])
+	// @ts-ignore handler type inference
 	.handler(async ({ data }) => {
 		return safe(async () => {
 			if (!data.ok) throw data.error;
@@ -1922,5 +1937,102 @@ export const $addToReadingList = createServerFn({ method: "POST" })
 			}
 			await db.insert(bookmarks).values({ postId: data.data.postId, userId: session.user.id, listId });
 			return { action: "added", listId };
+		});
+	});
+
+// =============================================================================
+// Mute / Ignore
+// =============================================================================
+
+export const $toggleMute = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(z.object({ mutedUserId: z.string().min(1) }), data))
+	.middleware([accessMiddleware({ requireAuth: true })])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			const userId = session.user.id;
+
+			const existing = await db.query.userMutes.findFirst({
+				where: and(eq(userMutes.userId, userId), eq(userMutes.mutedUserId, data.data.mutedUserId)),
+			});
+
+			if (existing) {
+				await db.delete(userMutes).where(eq(userMutes.id, existing.id));
+				return { muted: false };
+			}
+
+			await db.insert(userMutes).values({ userId, mutedUserId: data.data.mutedUserId });
+			return { muted: true };
+		});
+	});
+
+export const $getMutedUsers = createServerFn({ method: "GET" })
+	.inputValidator((data: unknown) => validate(z.object({}), data))
+	.middleware([accessMiddleware({})])
+	.handler(async (_ctx) => {
+		return safe(async () => {
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			const rows = await db.query.userMutes.findMany({
+				where: eq(userMutes.userId, session.user.id),
+				with: {
+					mutedUser: { columns: { id: true, name: true, image: true } },
+				},
+				orderBy: [desc(userMutes.createdAt)],
+			});
+			return rows;
+		});
+	});
+
+export const $getUserInterests = createServerFn({ method: "GET" })
+	.inputValidator((data: unknown) => validate(z.object({}), data))
+	.middleware([accessMiddleware({})])
+	.handler(async (_ctx) => {
+		return safe(async () => {
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			const rows = await db.query.userInterests.findMany({
+				where: eq(userInterests.userId, session.user.id),
+				with: { category: true },
+			});
+			return rows;
+		});
+	});
+
+export const $setUserInterests = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(z.object({ categoryIds: z.array(z.string().uuid()) }), data))
+	.middleware([accessMiddleware({})])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			const userId = session.user.id;
+			// Replace all interests
+			await db.delete(userInterests).where(eq(userInterests.userId, userId));
+			if (data.data.categoryIds.length > 0) {
+				await db.insert(userInterests).values(
+					data.data.categoryIds.map((categoryId) => ({ userId, categoryId })),
+				);
+			}
+			return { ok: true };
+		});
+	});
+
+export const $getPublicReadingListsByUser = createServerFn({ method: "GET" })
+	.inputValidator((data: unknown) => validate(z.object({ userId: z.string() }), data))
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const lists = await db.query.readingLists.findMany({
+				where: and(
+					eq(readingLists.userId, data.data.userId),
+					eq(readingLists.isPublic, true),
+				),
+				orderBy: [desc(readingLists.createdAt)],
+			});
+			return lists;
 		});
 	});

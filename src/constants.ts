@@ -34,6 +34,8 @@ export const ROUTES = {
         APPEARANCE: "/account/appearance",
         NOTIFICATIONS: "/account/notifications",
         READING_LISTS: "/account/reading-lists",
+        MUTED_USERS: "/account/muted-users",
+        TOPICS: "/account/topics",
     },
 
     ADMIN: {
