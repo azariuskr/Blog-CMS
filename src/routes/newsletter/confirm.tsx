@@ -24,15 +24,15 @@ const $confirmNewsletter = createServerFn({ method: "POST" })
 export const Route = createFileRoute("/newsletter/confirm")({
 	validateSearch: z.object({ token: z.string().optional() }),
 	loaderDeps: ({ search }) => ({ token: search.token }),
-	loader: async ({ deps }) => {
+	loader: async ({ deps }): Promise<{ confirmed: boolean; error?: string }> => {
 		if (!deps.token) return { confirmed: false, error: "Missing token" };
-		return $confirmNewsletter({ data: { token: deps.token } });
+		return $confirmNewsletter({ data: { token: deps.token } }) as any;
 	},
 	component: NewsletterConfirmPage,
 });
 
 function NewsletterConfirmPage() {
-	const result = Route.useLoaderData();
+	const result = Route.useLoaderData() as any;
 	return (
 		<div className="min-h-screen flex items-center justify-center bg-background px-4">
 			<div className="max-w-md w-full text-center space-y-6">

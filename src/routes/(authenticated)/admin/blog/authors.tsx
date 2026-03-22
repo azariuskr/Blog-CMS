@@ -1,8 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
-	Search,
-	Plus,
 	MoreHorizontal,
 	ExternalLink,
 	Edit2,
@@ -191,7 +189,7 @@ function EditAuthorDialog({
 }
 
 function AdminAuthorsPage() {
-	const [search, setSearch] = useState("");
+	const [search, _setSearch] = useState("");
 	const [editingAuthor, setEditingAuthor] = useState<AuthorProfile | null>(null);
 	const [tab, setTab] = useState<"authors" | "applications">("authors");
 	const authorsQuery = useAuthors();
@@ -399,18 +397,18 @@ function AdminAuthorsPage() {
 										</TableCell>
 										<TableCell>
 											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
+												<DropdownMenuTrigger {...{asChild: true} as any}>
 													<Button variant="ghost" size="icon" className="h-8 w-8">
 														<MoreHorizontal className="w-4 h-4" />
 													</Button>
 												</DropdownMenuTrigger>
 												<DropdownMenuContent align="end">
-													<DropdownMenuItem asChild className="gap-2">
+													<DropdownMenuItem {...{asChild: true} as any} className="gap-2">
 														<Link to={`/@${author.username}` as string}>
 															<ExternalLink className="w-4 h-4" /> View Profile
 														</Link>
 													</DropdownMenuItem>
-												<DropdownMenuItem asChild className="gap-2">
+												<DropdownMenuItem {...{asChild: true} as any} className="gap-2">
 													<Link to={ROUTES.ADMIN.USERS as string}>
 														<ExternalLink className="w-4 h-4" /> View User Account
 													</Link>

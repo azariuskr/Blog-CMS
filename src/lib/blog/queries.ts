@@ -77,7 +77,7 @@ function getMockPublishedPosts(params: {
 		page,
 		limit,
 		totalPages: Math.max(1, Math.ceil(filtered.length / limit)),
-	}) as Awaited<ReturnType<typeof $listPublishedPosts>>;
+	}) as unknown as Awaited<ReturnType<typeof $listPublishedPosts>>;
 }
 
 async function withModeFallback<T>(
@@ -155,7 +155,7 @@ export const postBySlugQueryOptions = (slug: string) =>
 						author: BLOG_SEED_AUTHORS.find((author) => author.id === mock.authorId),
 						category: null,
 						createdAt: mock.publishedAt,
-					}) as Awaited<ReturnType<typeof $getPostBySlug>>;
+					}) as unknown as Awaited<ReturnType<typeof $getPostBySlug>>;
 				},
 			),
 		staleTime: 1000 * 60 * 10,
@@ -235,7 +235,7 @@ export const authorProfileQueryOptions = (username: string) =>
 				() => {
 					const author = BLOG_SEED_AUTHORS.find((item) => item.username === username);
 					if (!author) throw new Error("Author not found");
-					return ok(author) as Awaited<ReturnType<typeof $getAuthorByUsername>>;
+					return ok(author) as unknown as Awaited<ReturnType<typeof $getAuthorByUsername>>;
 				},
 			),
 		staleTime: 1000 * 60 * 10,
@@ -254,7 +254,7 @@ export const authorsQueryOptions = (page = 1) =>
 						page,
 						limit: 20,
 						totalPages: 1,
-					}) as Awaited<ReturnType<typeof $listAuthors>>,
+					}) as unknown as Awaited<ReturnType<typeof $listAuthors>>,
 			),
 		staleTime: 1000 * 60 * 5,
 	});
@@ -294,9 +294,9 @@ export function useInfinitePublishedPosts(params: InfinitePostsParams = {}) {
 				},
 			}),
 		initialPageParam: undefined as string | undefined,
-		getNextPageParam: (lastPage) => {
+		getNextPageParam: (lastPage: any) => {
 			if (!lastPage?.ok) return undefined;
-			return (lastPage.data as any).nextCursor ?? undefined;
+			return lastPage.data?.nextCursor ?? undefined;
 		},
 		staleTime: 1000 * 60 * 5,
 	});
@@ -539,7 +539,7 @@ export function useToggleFollow() {
 export function useUpsertAuthorProfile() {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (data: Parameters<typeof $upsertAuthorProfile>[0]["data"]) =>
+		mutationFn: (data: any) =>
 			$upsertAuthorProfile({ data }),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.AUTHORS.LIST });
@@ -579,7 +579,7 @@ export function usePostVersions(postId: string) {
 export function useCreatePostVersion() {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (data: Parameters<typeof $createPostVersion>[0]["data"]) =>
+		mutationFn: (data: any) =>
 			$createPostVersion({ data }),
 		onSuccess: (_, vars) => {
 			qc.invalidateQueries({ queryKey: ["blog", "admin", "post-versions", vars.postId] });
@@ -604,7 +604,7 @@ export function useNewsletterSubscribers(params: { page?: number; confirmed?: bo
 export function useApplyForAuthor() {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (data: Parameters<typeof $applyForAuthor>[0]["data"]) => $applyForAuthor({ data }),
+		mutationFn: (data: any) => $applyForAuthor({ data }),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ["blog", "author-application", "mine"] });
 		},
@@ -663,7 +663,7 @@ export function useSites() {
 export function useUpsertSite() {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (data: Parameters<typeof $upsertSite>[0]["data"]) =>
+		mutationFn: (data: any) =>
 			$upsertSite({ data }),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ["blog", "sites"] });
@@ -693,7 +693,7 @@ export function usePages(siteId: string | null) {
 export function useUpsertPage() {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (data: Parameters<typeof $upsertPage>[0]["data"]) =>
+		mutationFn: (data: any) =>
 			$upsertPage({ data }),
 		onSuccess: (_, vars) => {
 			qc.invalidateQueries({ queryKey: ["blog", "pages", vars.siteId] });

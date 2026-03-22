@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useHasPermission } from "@/hooks/auth-hooks";
+// import { useHasPermission } from "@/hooks/auth-hooks";
 import {
   useBillingConfig,
   useAdminSubscriptions,
@@ -53,8 +53,6 @@ const STATUS_BADGE_VARIANTS: Record<string, "default" | "secondary" | "destructi
 export function AdminSubscriptionsView({ search }: AdminSubscriptionsViewProps) {
   const navigate = useNavigate();
   const { data: config, isLoading: isLoadingConfig } = useBillingConfig();
-  const canWriteBilling = useHasPermission({ billing: ["write"] });
-
   const defaultSearch = useMemo(
     () => ({ ...SubscriptionFiltersSchema.parse({}), page: 1, limit: 20 }),
     []
@@ -209,10 +207,10 @@ export function AdminSubscriptionsView({ search }: AdminSubscriptionsViewProps) 
                         <TableCell>
                           <div className="text-sm">
                             <p>
-                              {format(new Date(sub.currentPeriodStart), "MMM d, yyyy")}
+                              {format(new Date(sub.currentPeriodStart as unknown as string), "MMM d, yyyy")}
                             </p>
                             <p className="text-muted-foreground">
-                              to {format(new Date(sub.currentPeriodEnd), "MMM d, yyyy")}
+                              to {format(new Date(sub.currentPeriodEnd as unknown as string), "MMM d, yyyy")}
                             </p>
                           </div>
                         </TableCell>

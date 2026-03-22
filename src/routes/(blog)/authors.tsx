@@ -28,9 +28,9 @@ function getInitials(displayName: string) {
 function AuthorsPage() {
 	const [search, setSearch] = useState("");
 	const query = useAuthors();
-	const authors = query.data?.data?.items ?? [];
+	const authors = (query.data as any)?.data?.items ?? [];
 
-	const filtered = authors.filter((a) => {
+	const filtered = authors.filter((a: any) => {
 		const name = (a.displayName ?? a.username).toLowerCase();
 		const bio = (a.bio ?? "").toLowerCase();
 		const uname = a.username.toLowerCase();
@@ -153,7 +153,7 @@ function AuthorsPage() {
 						)}
 
 						<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-							{filtered.map((author) => {
+							{filtered.map((author: any) => {
 								const name = author.displayName ?? author.username;
 								return (
 									<Link

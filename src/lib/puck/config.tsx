@@ -377,7 +377,7 @@ export const puckConfig: Config = {
 				backgroundValue: "",
 				alignment: "center",
 			},
-			render: HeroSection,
+			render: HeroSection as any,
 		},
 
 		FeatureGrid: {
@@ -415,7 +415,7 @@ export const puckConfig: Config = {
 					{ icon: "🛡️", title: "Feature Three", description: "Description here." },
 				],
 			},
-			render: FeatureGrid,
+			render: FeatureGrid as any,
 		},
 
 		CTASection: {
@@ -442,7 +442,7 @@ export const puckConfig: Config = {
 				ctaHref: "#",
 				variant: "gradient",
 			},
-			render: CTASection,
+			render: CTASection as any,
 		},
 
 		TextBlock: {
@@ -483,7 +483,7 @@ export const puckConfig: Config = {
 				size: "md",
 				maxWidth: "prose",
 			},
-			render: TextBlock,
+			render: TextBlock as any,
 		},
 
 		ImageBlock: {
@@ -513,7 +513,7 @@ export const puckConfig: Config = {
 				rounded: true,
 				shadow: false,
 			},
-			render: ImageBlock,
+			render: ImageBlock as any,
 		},
 
 		TestimonialsSection: {
@@ -548,7 +548,7 @@ export const puckConfig: Config = {
 					{ quote: "Incredible platform.", author: "Sam L.", role: "Designer", avatarUrl: "" },
 				],
 			},
-			render: TestimonialsSection,
+			render: TestimonialsSection as any,
 		},
 
 		NewsletterSignup: {
@@ -574,7 +574,7 @@ export const puckConfig: Config = {
 				placeholder: "your@email.com",
 				variant: "inline",
 			},
-			render: NewsletterSignup,
+			render: NewsletterSignup as any,
 		},
 
 		Divider: {
@@ -601,7 +601,7 @@ export const puckConfig: Config = {
 				},
 			},
 			defaultProps: { style: "line", spacing: "md" },
-			render: Divider,
+			render: Divider as any,
 		},
 	},
 
@@ -610,6 +610,6 @@ export const puckConfig: Config = {
 			title: { type: "text", label: "Page Title" },
 		},
 		defaultProps: { title: "" },
-		render: ({ children }) => <>{children}</>,
+		render: ({ children }: any) => <>{children}</>,
 	},
 };

@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useCallback, useEffect } from "react";
 import { ArrowLeft, Send, BookOpen, Save, Eye, History, RotateCcw, CheckCircle, Archive, Calendar } from "lucide-react";
 import { toast } from "sonner";
-import { ROUTES } from "@/constants";
+// import { ROUTES } from "@/constants";
 import { usePostById, useUpsertPost, useCategories, useTags, usePostVersions, useCreatePostVersion, useGetPostVersion, useTransitionPostStatus } from "@/lib/blog/queries";
 import { useSession } from "@/lib/auth/auth-client";
 import { BlockEditor, type Block } from "@/components/admin/blog/editor/BlockEditor";
@@ -33,9 +33,9 @@ function PostEditorPage() {
 	const postQuery = usePostById(postId);
 	const upsertPost = useUpsertPost();
 	const categoriesQuery = useCategories();
-	const categoryOptions = categoriesQuery.data?.ok ? categoriesQuery.data.data : [];
+	const categoryOptions = (categoriesQuery.data as any)?.ok ? (categoriesQuery.data as any).data : [];
 	const tagsQuery = useTags();
-	const allTags = tagsQuery.data?.data ?? [];
+	const allTags = (tagsQuery.data as any)?.data ?? [];
 	const versionsQuery = usePostVersions(postId);
 	const createVersion = useCreatePostVersion();
 	const getVersion = useGetPostVersion();
@@ -165,7 +165,7 @@ function PostEditorPage() {
 		if (!confirm("Restore this version? Your current unsaved changes will be replaced.")) return;
 		setRestoring(true);
 		try {
-			const result = await getVersion.mutateAsync(versionId);
+			const result = await getVersion.mutateAsync(versionId) as any;
 			if (result?.ok && result.data) {
 				const v = result.data;
 				setMeta((prev) => ({
@@ -228,7 +228,7 @@ function PostEditorPage() {
 		return (
 			<div className="h-screen flex items-center justify-center bg-[hsl(222,47%,11%)] text-destructive">
 				Failed to load post.{" "}
-				<Link to="/admin/blog/posts" className="underline ml-2 text-[hsl(199,89%,49%)]">
+				<Link to={"/admin/blog/posts" as string} className="underline ml-2 text-[hsl(199,89%,49%)]">
 					Back to posts
 				</Link>
 			</div>
@@ -242,7 +242,7 @@ function PostEditorPage() {
 				<div className="flex items-center justify-between gap-4">
 					<div className="flex items-center gap-3">
 						<Link
-							to="/admin/blog/posts"
+							to={"/admin/blog/posts" as string}
 							className="text-[hsl(216,33%,68%)] hover:text-[hsl(199,89%,49%)] transition-colors"
 						>
 							<ArrowLeft className="h-5 w-5" />
@@ -432,7 +432,7 @@ function PostEditorPage() {
 								className="w-full text-xs bg-[hsl(222,47%,11%)] border border-[hsl(216,33%,20%)] rounded-lg px-3 py-2 text-[hsl(216,100%,95%)] outline-none focus:border-[hsl(199,89%,49%)] transition-colors"
 							>
 								<option value="">No category</option>
-								{categoryOptions.map((cat) => (
+								{categoryOptions.map((cat: any) => (
 									<option key={cat.id} value={cat.id}>{cat.name}</option>
 								))}
 							</select>
@@ -443,7 +443,7 @@ function PostEditorPage() {
 							<div className="space-y-1.5">
 								<label className="text-xs font-medium text-[hsl(199,69%,84%)]">Tags</label>
 								<div className="flex flex-wrap gap-1">
-									{allTags.map((tag) => {
+									{allTags.map((tag: any) => {
 										const selected = tagIds.includes(tag.id);
 										return (
 											<button

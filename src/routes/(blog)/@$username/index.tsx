@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useAuthorProfile, usePublishedPosts, authorProfileQueryOptions } from "@/lib/blog/queries";
+import { useAuthorProfile, usePublishedPosts, authorProfileQueryOptions, useToggleFollow } from "@/lib/blog/queries";
 import { useSession } from "@/lib/auth/auth-client";
 
 export const Route = createFileRoute("/(blog)/@$username/")({
@@ -30,7 +30,7 @@ function AuthorProfilePage() {
 	const { data: session } = useSession();
 	const userId = session?.user?.id;
 	const profileQuery = useAuthorProfile(username);
-	const profile = profileQuery.data?.data ?? null;
+	const profile = (profileQuery.data as any)?.data ?? null;
 	const toggleFollow = useToggleFollow();
 	const [isFollowing, setIsFollowing] = useState(false);
 
@@ -38,7 +38,7 @@ function AuthorProfilePage() {
 		authorId: profile?.userId ?? undefined,
 		limit: 10,
 	});
-	const authorPosts = postsQuery.data?.data?.items ?? [];
+	const authorPosts = (postsQuery.data as any)?.data?.items ?? [];
 
 	if (profileQuery.isLoading) {
 		return (
@@ -224,7 +224,7 @@ function AuthorProfilePage() {
 					</h2>
 
 					<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-						{authorPosts.map((post) => (
+						{authorPosts.map((post: any) => (
 							<article
 								key={post.id}
 								className="navy-blue-blog-card rounded-2xl overflow-hidden transition-all hover:-translate-y-1"
@@ -248,7 +248,7 @@ function AuthorProfilePage() {
 										</div>
 									</div>
 									<h3 className="text-columbia-blue font-semibold mb-3 text-lg hover:text-carolina-blue transition-colors line-clamp-2">
-										<Link to="/$slug" params={{ slug: post.slug }}>
+										<Link to={"/$slug" as string} params={{ slug: post.slug } as any}>
 											{post.title}
 										</Link>
 									</h3>

@@ -69,6 +69,11 @@ export const ROUTES = {
             NEWSLETTER: "/admin/blog/newsletter",
             SETTINGS: "/admin/blog/settings",
         },
+        API: {
+            BASE: "/admin/api",
+            NEW: "/admin/api/new",
+            DETAIL: (keyId: string) => `/admin/api/${keyId}`,
+        },
     },
 
     // Public blog routes
@@ -292,6 +297,10 @@ export const QUERY_KEYS = {
             DETAIL: (id: string) => ["blog", "sites", id],
         },
         STATS: ["blog", "stats"],
+        API_KEYS: {
+            LIST: ["blog", "api-keys", "list"],
+            DETAIL: (id: string) => ["blog", "api-keys", id],
+        },
     },
     ROUTE_ACCESS: (route: string) => ["route-access", route],
     EMAIL_TEMPLATES: {

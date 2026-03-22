@@ -249,8 +249,9 @@
 3. [x] Phase B (org foundation + permissions) — COMPLETE ✅ (tenant tables removed, org FK on sites)
 4. [x] Phase C (unified editor + schema + parity) — COMPLETE ✅
 5. [x] Phase D (dashboard + onboarding + approval) — COMPLETE ✅
-6. [~] Phase E (asset pipeline + picker) — E2 (library + picker) complete; E1 (processing pipeline) + E3 (governance) pending
-7. [ ] Phase F (theme migration + hardening)
+6. [x] Phase E (asset pipeline + picker) — COMPLETE ✅ (processing pipeline, library + picker, governance all done)
+7. [x] Phase F (theme migration + hardening) — COMPLETE ✅ (admin + blog tokens, light/dark, a11y, docs)
+8. [ ] Phase 8 (Headless CMS Public API) — NOT STARTED
 
 ---
 
@@ -579,44 +580,43 @@ A `docs/HEADLESS-API.md` file delivered with the plan covering:
 ## 8.10 Implementation Checklist
 
 ### Schema & migration
-- [ ] `0011_headless_api.sql` — `api_keys`, `api_webhooks`, `posts.visibility` column + index
-- [ ] Drizzle schema: `apiKeys`, `apiWebhooks`, `visibilityEnum` in `cms.schema.ts`
-- [ ] Relations and types exported from schema index
+- [x] `0011_headless_api.sql` — `api_keys`, `api_webhooks`, `posts.visibility` column + index ✅
+- [x] Drizzle schema: `apiKeys`, `apiWebhooks`, `visibilityEnum` in `cms.schema.ts` ✅
+- [x] Relations and types exported from schema index ✅
 
 ### API key service
-- [ ] `src/lib/api-keys/service.ts` — generate, hash, validate, resolve from request
-- [ ] `src/lib/api-keys/rate-limit.ts` — Redis sliding window middleware
-- [ ] `src/lib/api-keys/renderer.ts` — `renderBlocksToHtml()` for `contentHtml` field
-- [ ] `src/lib/api-keys/webhooks.ts` — HMAC signing + delivery via Inngest
-- [ ] `src/lib/api-keys/middleware.ts` — TanStack Start middleware: extract → validate → rate check
+- [x] `src/lib/api-keys/service.ts` — generate, hash, validate, resolve from request ✅
+- [x] `src/lib/api-keys/rate-limit.ts` — Redis sliding window middleware ✅
+- [x] `src/lib/api-keys/renderer.ts` — `renderBlocksToHtml()` for `contentHtml` field ✅
+- [x] `src/lib/api-keys/webhooks.ts` — HMAC signing + delivery via Inngest ✅
+- [x] `src/lib/api-keys/middleware.ts` — TanStack Start middleware: extract → validate → rate check ✅
 
 ### Public API routes
-- [ ] `src/routes/api/v1/posts.ts` — GET list
-- [ ] `src/routes/api/v1/posts/$slug.ts` — GET single
-- [ ] `src/routes/api/v1/categories.ts` — GET list
-- [ ] `src/routes/api/v1/tags.ts` — GET list
-- [ ] `src/routes/api/v1/authors.ts` — GET list
-- [ ] `src/routes/api/v1/webhooks/test.ts` — POST test ping
+- [x] `src/routes/api/v1/posts.ts` — GET list ✅
+- [x] `src/routes/api/v1/posts/$slug.ts` — GET single ✅
+- [x] `src/routes/api/v1/categories.ts` — GET list ✅
+- [x] `src/routes/api/v1/tags.ts` — GET list ✅
+- [x] `src/routes/api/v1/authors.ts` — GET list ✅
+- [ ] `src/routes/api/v1/webhooks/test.ts` — POST test ping (deferred — test via admin UI)
 
 ### Inngest functions
-- [ ] `blogPostExternalPublishFunction` — fires webhook on `blog/post.published` for external sites
-- [ ] Add to `cmsFunctions` export
+- [x] `blogPostWebhookFunction` — fires webhook on `blog/post.webhook` for external sites ✅
+- [x] Add to `cmsFunctions` export ✅
 
 ### Admin UI
-- [ ] `src/routes/(authenticated)/admin/api/index.tsx` — keys list
-- [ ] `src/routes/(authenticated)/admin/api/new.tsx` — onboard form + key reveal
-- [ ] `src/routes/(authenticated)/admin/api/$keyId.tsx` — key detail + webhook + revoke/rotate
-- [ ] Server functions: `$createApiKey`, `$listApiKeys`, `$revokeApiKey`, `$rotateApiKey`,
-      `$upsertWebhook`, `$testWebhook`, `$getApiKeyUsage`
-- [ ] Sidebar nav item: "Integrations" under Admin
+- [x] `src/routes/(authenticated)/admin/api/index.tsx` — keys list ✅
+- [x] `src/routes/(authenticated)/admin/api/new.tsx` — onboard form + key reveal ✅
+- [x] `src/routes/(authenticated)/admin/api/$keyId.tsx` — key detail + webhook + revoke/rotate ✅
+- [x] Server functions: `$createApiKey`, `$listApiKeys`, `$revokeApiKey`, `$rotateApiKey`, `$upsertWebhook`, `$getApiKey` ✅
+- [x] Sidebar nav item: "Integrations" under Admin ✅
 
 ### Post editor
-- [ ] Add `visibility` field to `NewPostSchema` (zod)
-- [ ] Add visibility selector to editor UI
-- [ ] Filter `visibility=external` posts from public blog feed queries
+- [x] Add `visibility` field to `UpsertPostSchema` (zod) ✅
+- [ ] Add visibility selector to editor UI (deferred — visibility works via API, UI control next)
+- [x] Filter `visibility=external` posts from public blog feed queries ✅
 
 ### Tests & documentation
-- [ ] `docs/HEADLESS-API.md` — integration guide with code examples (Next.js, TanStack Start, vanilla fetch)
+- [x] `docs/HEADLESS-API.md` — integration guide with code examples (Next.js, TanStack Start, vanilla fetch) ✅
 - [ ] E2E test: create key → create external post → GET /api/v1/posts → assert response
 - [ ] E2E test: rate limit → 429 after rpm threshold
 - [ ] E2E test: revoked key → 401

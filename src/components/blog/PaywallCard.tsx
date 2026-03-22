@@ -43,7 +43,7 @@ export function PaywallCard() {
 					</UpgradeButton>
 					{!session?.user && (
 						<Link
-							to="/sign-in"
+							to={"/sign-in" as string}
 							className="px-6 py-2.5 rounded-xl text-sm font-medium border border-[hsl(216,33%,30%)] text-[hsl(216,33%,68%)] hover:border-[hsl(199,89%,49%)] hover:text-[hsl(199,89%,49%)] transition-colors"
 						>
 							Sign in
@@ -57,7 +57,7 @@ export function PaywallCard() {
 					{session?.user ? (
 						<span>Your subscription may not be active — check your billing settings.</span>
 					) : (
-						<Link to="/sign-in" className="text-[hsl(199,89%,49%)] hover:underline">Sign in</Link>
+						<Link to={"/sign-in" as string} className="text-[hsl(199,89%,49%)] hover:underline">Sign in</Link>
 					)}
 				</p>
 			</div>

@@ -6,11 +6,9 @@ import {
   Users,
   ArrowRight,
   Coins,
-  Receipt,
 } from "lucide-react";
 import { PageContainer } from "@/components/admin/app-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBillingConfig, usePlans, useBillingStats } from "@/hooks/use-billing";
 import { useHasPermission } from "@/hooks/auth-hooks";
@@ -245,7 +243,7 @@ function QuickActionCard({ title, description, icon: Icon, href, canAccess }: Qu
 
   return (
     <Card className="hover:bg-muted/50 transition-colors">
-      <Link to={href}>
+      <Link to={href as string}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <Icon className="h-8 w-8 text-primary" />

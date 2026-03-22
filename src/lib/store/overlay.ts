@@ -23,6 +23,7 @@ export type OverlayId =
     | "createCustomer"
     | "userPaymentHistory"
     | "addPaymentMethod"
+    | "userSessions"
     // E-commerce overlays
     | "confirmDeleteProduct"
     | "shipOrder"
@@ -118,6 +119,7 @@ export const OVERLAY_CONFIG: Record<
     createCustomer: { type: "modal" },
     userPaymentHistory: { type: "drawer", side: "right" },
     addPaymentMethod: { type: "modal" },
+    userSessions: { type: "sheet" },
     // E-commerce overlays
     confirmDeleteProduct: { type: "modal" },
     shipOrder: { type: "modal" },

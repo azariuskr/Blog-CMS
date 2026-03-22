@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { UserBillingView } from "@/components/billing/views/user-billing-view";
 import { toast } from "sonner";
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/(authenticated)/billing/")({
 });
 
 function BillingPage() {
-  const search = useSearch({ from: "/(authenticated)/billing/" });
+  const search: z.infer<typeof billingSearchSchema> = Route.useSearch();
   const queryClient = useQueryClient();
   const verifyMutation = useVerifyCreditPurchase();
   const hasVerified = useRef(false);

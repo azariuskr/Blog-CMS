@@ -71,13 +71,13 @@ function AdminCommentsPage() {
 		});
 	};
 
-	const toggleSelectAll = () => {
+	/* const toggleSelectAll = () => {
 		if (selected.size === comments.length) {
 			setSelected(new Set());
 		} else {
-			setSelected(new Set(comments.map((c) => c.id)));
+			setSelected(new Set(comments.map((c: any) => c.id)));
 		}
-	};
+	}; */
 
 	const bulkAction = async (action: "approve" | "spam" | "delete") => {
 		if (selected.size === 0) return;
@@ -108,11 +108,11 @@ function AdminCommentsPage() {
 	};
 
 	const comments = useMemo(() => {
-		const items = commentsQuery.data?.data?.items ?? [];
+		const items = (commentsQuery.data as any)?.data?.items ?? [];
 		const term = search.trim().toLowerCase();
 		if (!term) return items;
 
-		return items.filter((comment) => {
+		return items.filter((comment: any) => {
 			const content = comment.content ?? "";
 			const authorId = comment.authorId ?? "";
 			return (
@@ -120,10 +120,10 @@ function AdminCommentsPage() {
 				authorId.toLowerCase().includes(term)
 			);
 		});
-	}, [commentsQuery.data?.data?.items, search]);
+	}, [(commentsQuery.data as any)?.data?.items, search]);
 
 	const counts = {
-		all: commentsQuery.data?.data?.total ?? comments.length,
+		all: (commentsQuery.data as any)?.data?.total ?? comments.length,
 		pending: tab === "pending" ? comments.length : undefined,
 		approved: tab === "approved" ? comments.length : undefined,
 		spam: tab === "spam" ? comments.length : undefined,
@@ -206,7 +206,7 @@ function AdminCommentsPage() {
 						<p>No comments found</p>
 					</div>
 				) : (
-					comments.map((comment) => {
+					comments.map((comment: any) => {
 						const {
 							label,
 							variant,

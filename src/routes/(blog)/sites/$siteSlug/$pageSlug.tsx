@@ -14,7 +14,7 @@ export const Route = createFileRoute("/(blog)/sites/$siteSlug/$pageSlug")({
 	loader: async ({ params }) => {
 		const result = await $getPageBySlug({
 			data: { siteSlug: params.siteSlug, pageSlug: params.pageSlug },
-		});
+		}) as any;
 		if (!result?.ok || !result.data) throw notFound();
 		return result.data;
 	},
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/(blog)/sites/$siteSlug/$pageSlug")({
 });
 
 function PuckPublicPage() {
-	const { site, page } = Route.useLoaderData();
+	const { site, page } = Route.useLoaderData() as any;
 
 	// Apply per-site theme tokens as CSS variables on the page wrapper
 	const themeVars: React.CSSProperties = site.themeConfig

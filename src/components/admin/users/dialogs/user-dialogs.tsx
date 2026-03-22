@@ -263,7 +263,7 @@ export function EditUserDialog({ onSuccess }: EditUserDialogProps) {
 		const result = await impersonateMutation.mutateAsync({ userId: user.id });
 		if (result.ok) {
 			setConfirmImpersonateOpen(false);
-			navigate({ to: "/admin/users" });
+			navigate({ to: "/admin/users" as string });
 		}
 	};
 

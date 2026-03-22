@@ -43,6 +43,10 @@ import { Route as authenticatedBillingIndexRouteImport } from './routes/(authent
 import { Route as authenticatedAdminIndexRouteImport } from './routes/(authenticated)/admin/index'
 import { Route as authenticatedAccountIndexRouteImport } from './routes/(authenticated)/account/index'
 import { Route as authPagesAuthIndexRouteImport } from './routes/(auth-pages)/auth/index'
+import { Route as ApiV1TagsRouteImport } from './routes/api/v1/tags'
+import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
+import { Route as ApiV1CategoriesRouteImport } from './routes/api/v1/categories'
+import { Route as ApiV1AuthorsRouteImport } from './routes/api/v1/authors'
 import { Route as ApiStorageUploadRouteImport } from './routes/api/storage/upload'
 import { Route as ApiInngestInngestRouteImport } from './routes/api/inngest/inngest'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -61,6 +65,8 @@ import { Route as authPagesAuthAuthViewRouteImport } from './routes/(auth-pages)
 import { Route as authenticatedAdminBillingRouteRouteImport } from './routes/(authenticated)/admin/billing/route'
 import { Route as authenticatedAdminBlogIndexRouteImport } from './routes/(authenticated)/admin/blog/index'
 import { Route as authenticatedAdminBillingIndexRouteImport } from './routes/(authenticated)/admin/billing/index'
+import { Route as authenticatedAdminApiIndexRouteImport } from './routes/(authenticated)/admin/api/index'
+import { Route as ApiV1PostsSlugRouteImport } from './routes/api/v1/posts/$slug'
 import { Route as ApiStorageFilesSplatRouteImport } from './routes/api/storage/files/$'
 import { Route as ApiStorageAvatarUserIdRouteImport } from './routes/api/storage/avatar/$userId'
 import { Route as ApiAuthPasskeyVerifyRegistrationRouteImport } from './routes/api/auth/passkey/verify-registration'
@@ -81,6 +87,8 @@ import { Route as authenticatedAdminBlogAnalyticsRouteImport } from './routes/(a
 import { Route as authenticatedAdminBillingSubscriptionsRouteImport } from './routes/(authenticated)/admin/billing/subscriptions'
 import { Route as authenticatedAdminBillingCustomersRouteImport } from './routes/(authenticated)/admin/billing/customers'
 import { Route as authenticatedAdminBillingCreditsRouteImport } from './routes/(authenticated)/admin/billing/credits'
+import { Route as authenticatedAdminApiNewRouteImport } from './routes/(authenticated)/admin/api/new'
+import { Route as authenticatedAdminApiKeyIdRouteImport } from './routes/(authenticated)/admin/api/$keyId'
 import { Route as authenticatedAccountOrganizationsOrganizationViewRouteImport } from './routes/(authenticated)/account/organizations/$organizationView'
 import { Route as authenticatedAccountOrganizationOrganizationViewRouteImport } from './routes/(authenticated)/account/organization/$organizationView'
 import { Route as authPagesAuthCallbackVerifyEmailRouteImport } from './routes/(auth-pages)/auth/callback/verify-email'
@@ -265,6 +273,26 @@ const authPagesAuthIndexRoute = authPagesAuthIndexRouteImport.update({
   path: '/auth/',
   getParentRoute: () => authPagesRouteRoute,
 } as any)
+const ApiV1TagsRoute = ApiV1TagsRouteImport.update({
+  id: '/api/v1/tags',
+  path: '/api/v1/tags',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PostsRoute = ApiV1PostsRouteImport.update({
+  id: '/api/v1/posts',
+  path: '/api/v1/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1CategoriesRoute = ApiV1CategoriesRouteImport.update({
+  id: '/api/v1/categories',
+  path: '/api/v1/categories',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthorsRoute = ApiV1AuthorsRouteImport.update({
+  id: '/api/v1/authors',
+  path: '/api/v1/authors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStorageUploadRoute = ApiStorageUploadRouteImport.update({
   id: '/api/storage/upload',
   path: '/api/storage/upload',
@@ -366,6 +394,17 @@ const authenticatedAdminBillingIndexRoute =
     path: '/',
     getParentRoute: () => authenticatedAdminBillingRouteRoute,
   } as any)
+const authenticatedAdminApiIndexRoute =
+  authenticatedAdminApiIndexRouteImport.update({
+    id: '/api/',
+    path: '/api/',
+    getParentRoute: () => authenticatedAdminRouteRoute,
+  } as any)
+const ApiV1PostsSlugRoute = ApiV1PostsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ApiV1PostsRoute,
+} as any)
 const ApiStorageFilesSplatRoute = ApiStorageFilesSplatRouteImport.update({
   id: '/api/storage/files/$',
   path: '/api/storage/files/$',
@@ -483,6 +522,18 @@ const authenticatedAdminBillingCreditsRoute =
     path: '/credits',
     getParentRoute: () => authenticatedAdminBillingRouteRoute,
   } as any)
+const authenticatedAdminApiNewRoute =
+  authenticatedAdminApiNewRouteImport.update({
+    id: '/api/new',
+    path: '/api/new',
+    getParentRoute: () => authenticatedAdminRouteRoute,
+  } as any)
+const authenticatedAdminApiKeyIdRoute =
+  authenticatedAdminApiKeyIdRouteImport.update({
+    id: '/api/$keyId',
+    path: '/api/$keyId',
+    getParentRoute: () => authenticatedAdminRouteRoute,
+  } as any)
 const authenticatedAccountOrganizationsOrganizationViewRoute =
   authenticatedAccountOrganizationsOrganizationViewRouteImport.update({
     id: '/organizations/$organizationView',
@@ -580,6 +631,10 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/inngest/inngest': typeof ApiInngestInngestRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
+  '/api/v1/authors': typeof ApiV1AuthorsRoute
+  '/api/v1/categories': typeof ApiV1CategoriesRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/api/v1/tags': typeof ApiV1TagsRoute
   '/auth/': typeof authPagesAuthIndexRoute
   '/account/': typeof authenticatedAccountIndexRoute
   '/admin/': typeof authenticatedAdminIndexRoute
@@ -590,6 +645,8 @@ export interface FileRoutesByFullPath {
   '/auth/callback/verify-email': typeof authPagesAuthCallbackVerifyEmailRoute
   '/account/organization/$organizationView': typeof authenticatedAccountOrganizationOrganizationViewRoute
   '/account/organizations/$organizationView': typeof authenticatedAccountOrganizationsOrganizationViewRoute
+  '/admin/api/$keyId': typeof authenticatedAdminApiKeyIdRoute
+  '/admin/api/new': typeof authenticatedAdminApiNewRoute
   '/admin/billing/credits': typeof authenticatedAdminBillingCreditsRoute
   '/admin/billing/customers': typeof authenticatedAdminBillingCustomersRoute
   '/admin/billing/subscriptions': typeof authenticatedAdminBillingSubscriptionsRoute
@@ -610,6 +667,8 @@ export interface FileRoutesByFullPath {
   '/api/auth/passkey/verify-registration': typeof ApiAuthPasskeyVerifyRegistrationRoute
   '/api/storage/avatar/$userId': typeof ApiStorageAvatarUserIdRoute
   '/api/storage/files/$': typeof ApiStorageFilesSplatRoute
+  '/api/v1/posts/$slug': typeof ApiV1PostsSlugRoute
+  '/admin/api/': typeof authenticatedAdminApiIndexRoute
   '/admin/billing/': typeof authenticatedAdminBillingIndexRoute
   '/admin/blog/': typeof authenticatedAdminBlogIndexRoute
   '/account/organization/$slug/$organizationView': typeof authenticatedAccountOrganizationSlugOrganizationViewRoute
@@ -655,6 +714,10 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/inngest/inngest': typeof ApiInngestInngestRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
+  '/api/v1/authors': typeof ApiV1AuthorsRoute
+  '/api/v1/categories': typeof ApiV1CategoriesRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/api/v1/tags': typeof ApiV1TagsRoute
   '/auth': typeof authPagesAuthIndexRoute
   '/account': typeof authenticatedAccountIndexRoute
   '/admin': typeof authenticatedAdminIndexRoute
@@ -665,6 +728,8 @@ export interface FileRoutesByTo {
   '/auth/callback/verify-email': typeof authPagesAuthCallbackVerifyEmailRoute
   '/account/organization/$organizationView': typeof authenticatedAccountOrganizationOrganizationViewRoute
   '/account/organizations/$organizationView': typeof authenticatedAccountOrganizationsOrganizationViewRoute
+  '/admin/api/$keyId': typeof authenticatedAdminApiKeyIdRoute
+  '/admin/api/new': typeof authenticatedAdminApiNewRoute
   '/admin/billing/credits': typeof authenticatedAdminBillingCreditsRoute
   '/admin/billing/customers': typeof authenticatedAdminBillingCustomersRoute
   '/admin/billing/subscriptions': typeof authenticatedAdminBillingSubscriptionsRoute
@@ -685,6 +750,8 @@ export interface FileRoutesByTo {
   '/api/auth/passkey/verify-registration': typeof ApiAuthPasskeyVerifyRegistrationRoute
   '/api/storage/avatar/$userId': typeof ApiStorageAvatarUserIdRoute
   '/api/storage/files/$': typeof ApiStorageFilesSplatRoute
+  '/api/v1/posts/$slug': typeof ApiV1PostsSlugRoute
+  '/admin/api': typeof authenticatedAdminApiIndexRoute
   '/admin/billing': typeof authenticatedAdminBillingIndexRoute
   '/admin/blog': typeof authenticatedAdminBlogIndexRoute
   '/account/organization/$slug/$organizationView': typeof authenticatedAccountOrganizationSlugOrganizationViewRoute
@@ -739,6 +806,10 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/inngest/inngest': typeof ApiInngestInngestRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
+  '/api/v1/authors': typeof ApiV1AuthorsRoute
+  '/api/v1/categories': typeof ApiV1CategoriesRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/api/v1/tags': typeof ApiV1TagsRoute
   '/(auth-pages)/auth/': typeof authPagesAuthIndexRoute
   '/(authenticated)/account/': typeof authenticatedAccountIndexRoute
   '/(authenticated)/admin/': typeof authenticatedAdminIndexRoute
@@ -749,6 +820,8 @@ export interface FileRoutesById {
   '/(auth-pages)/auth/callback/verify-email': typeof authPagesAuthCallbackVerifyEmailRoute
   '/(authenticated)/account/organization/$organizationView': typeof authenticatedAccountOrganizationOrganizationViewRoute
   '/(authenticated)/account/organizations/$organizationView': typeof authenticatedAccountOrganizationsOrganizationViewRoute
+  '/(authenticated)/admin/api/$keyId': typeof authenticatedAdminApiKeyIdRoute
+  '/(authenticated)/admin/api/new': typeof authenticatedAdminApiNewRoute
   '/(authenticated)/admin/billing/credits': typeof authenticatedAdminBillingCreditsRoute
   '/(authenticated)/admin/billing/customers': typeof authenticatedAdminBillingCustomersRoute
   '/(authenticated)/admin/billing/subscriptions': typeof authenticatedAdminBillingSubscriptionsRoute
@@ -769,6 +842,8 @@ export interface FileRoutesById {
   '/api/auth/passkey/verify-registration': typeof ApiAuthPasskeyVerifyRegistrationRoute
   '/api/storage/avatar/$userId': typeof ApiStorageAvatarUserIdRoute
   '/api/storage/files/$': typeof ApiStorageFilesSplatRoute
+  '/api/v1/posts/$slug': typeof ApiV1PostsSlugRoute
+  '/(authenticated)/admin/api/': typeof authenticatedAdminApiIndexRoute
   '/(authenticated)/admin/billing/': typeof authenticatedAdminBillingIndexRoute
   '/(authenticated)/admin/blog/': typeof authenticatedAdminBlogIndexRoute
   '/(authenticated)/account/organization/$slug/$organizationView': typeof authenticatedAccountOrganizationSlugOrganizationViewRoute
@@ -821,6 +896,10 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/inngest/inngest'
     | '/api/storage/upload'
+    | '/api/v1/authors'
+    | '/api/v1/categories'
+    | '/api/v1/posts'
+    | '/api/v1/tags'
     | '/auth/'
     | '/account/'
     | '/admin/'
@@ -831,6 +910,8 @@ export interface FileRouteTypes {
     | '/auth/callback/verify-email'
     | '/account/organization/$organizationView'
     | '/account/organizations/$organizationView'
+    | '/admin/api/$keyId'
+    | '/admin/api/new'
     | '/admin/billing/credits'
     | '/admin/billing/customers'
     | '/admin/billing/subscriptions'
@@ -851,6 +932,8 @@ export interface FileRouteTypes {
     | '/api/auth/passkey/verify-registration'
     | '/api/storage/avatar/$userId'
     | '/api/storage/files/$'
+    | '/api/v1/posts/$slug'
+    | '/admin/api/'
     | '/admin/billing/'
     | '/admin/blog/'
     | '/account/organization/$slug/$organizationView'
@@ -896,6 +979,10 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/inngest/inngest'
     | '/api/storage/upload'
+    | '/api/v1/authors'
+    | '/api/v1/categories'
+    | '/api/v1/posts'
+    | '/api/v1/tags'
     | '/auth'
     | '/account'
     | '/admin'
@@ -906,6 +993,8 @@ export interface FileRouteTypes {
     | '/auth/callback/verify-email'
     | '/account/organization/$organizationView'
     | '/account/organizations/$organizationView'
+    | '/admin/api/$keyId'
+    | '/admin/api/new'
     | '/admin/billing/credits'
     | '/admin/billing/customers'
     | '/admin/billing/subscriptions'
@@ -926,6 +1015,8 @@ export interface FileRouteTypes {
     | '/api/auth/passkey/verify-registration'
     | '/api/storage/avatar/$userId'
     | '/api/storage/files/$'
+    | '/api/v1/posts/$slug'
+    | '/admin/api'
     | '/admin/billing'
     | '/admin/blog'
     | '/account/organization/$slug/$organizationView'
@@ -979,6 +1070,10 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/inngest/inngest'
     | '/api/storage/upload'
+    | '/api/v1/authors'
+    | '/api/v1/categories'
+    | '/api/v1/posts'
+    | '/api/v1/tags'
     | '/(auth-pages)/auth/'
     | '/(authenticated)/account/'
     | '/(authenticated)/admin/'
@@ -989,6 +1084,8 @@ export interface FileRouteTypes {
     | '/(auth-pages)/auth/callback/verify-email'
     | '/(authenticated)/account/organization/$organizationView'
     | '/(authenticated)/account/organizations/$organizationView'
+    | '/(authenticated)/admin/api/$keyId'
+    | '/(authenticated)/admin/api/new'
     | '/(authenticated)/admin/billing/credits'
     | '/(authenticated)/admin/billing/customers'
     | '/(authenticated)/admin/billing/subscriptions'
@@ -1009,6 +1106,8 @@ export interface FileRouteTypes {
     | '/api/auth/passkey/verify-registration'
     | '/api/storage/avatar/$userId'
     | '/api/storage/files/$'
+    | '/api/v1/posts/$slug'
+    | '/(authenticated)/admin/api/'
     | '/(authenticated)/admin/billing/'
     | '/(authenticated)/admin/blog/'
     | '/(authenticated)/account/organization/$slug/$organizationView'
@@ -1035,6 +1134,10 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiInngestInngestRoute: typeof ApiInngestInngestRoute
   ApiStorageUploadRoute: typeof ApiStorageUploadRoute
+  ApiV1AuthorsRoute: typeof ApiV1AuthorsRoute
+  ApiV1CategoriesRoute: typeof ApiV1CategoriesRoute
+  ApiV1PostsRoute: typeof ApiV1PostsRouteWithChildren
+  ApiV1TagsRoute: typeof ApiV1TagsRoute
   ApiAuthPasskeyAddPasskeyRoute: typeof ApiAuthPasskeyAddPasskeyRoute
   ApiAuthPasskeyRegistrationOptionsRoute: typeof ApiAuthPasskeyRegistrationOptionsRoute
   ApiAuthPasskeySignInRoute: typeof ApiAuthPasskeySignInRoute
@@ -1283,6 +1386,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authPagesAuthIndexRouteImport
       parentRoute: typeof authPagesRouteRoute
     }
+    '/api/v1/tags': {
+      id: '/api/v1/tags'
+      path: '/api/v1/tags'
+      fullPath: '/api/v1/tags'
+      preLoaderRoute: typeof ApiV1TagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/posts': {
+      id: '/api/v1/posts'
+      path: '/api/v1/posts'
+      fullPath: '/api/v1/posts'
+      preLoaderRoute: typeof ApiV1PostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/categories': {
+      id: '/api/v1/categories'
+      path: '/api/v1/categories'
+      fullPath: '/api/v1/categories'
+      preLoaderRoute: typeof ApiV1CategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/authors': {
+      id: '/api/v1/authors'
+      path: '/api/v1/authors'
+      fullPath: '/api/v1/authors'
+      preLoaderRoute: typeof ApiV1AuthorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/storage/upload': {
       id: '/api/storage/upload'
       path: '/api/storage/upload'
@@ -1408,6 +1539,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/billing/'
       preLoaderRoute: typeof authenticatedAdminBillingIndexRouteImport
       parentRoute: typeof authenticatedAdminBillingRouteRoute
+    }
+    '/(authenticated)/admin/api/': {
+      id: '/(authenticated)/admin/api/'
+      path: '/api'
+      fullPath: '/admin/api/'
+      preLoaderRoute: typeof authenticatedAdminApiIndexRouteImport
+      parentRoute: typeof authenticatedAdminRouteRoute
+    }
+    '/api/v1/posts/$slug': {
+      id: '/api/v1/posts/$slug'
+      path: '/$slug'
+      fullPath: '/api/v1/posts/$slug'
+      preLoaderRoute: typeof ApiV1PostsSlugRouteImport
+      parentRoute: typeof ApiV1PostsRoute
     }
     '/api/storage/files/$': {
       id: '/api/storage/files/$'
@@ -1548,6 +1693,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/billing/credits'
       preLoaderRoute: typeof authenticatedAdminBillingCreditsRouteImport
       parentRoute: typeof authenticatedAdminBillingRouteRoute
+    }
+    '/(authenticated)/admin/api/new': {
+      id: '/(authenticated)/admin/api/new'
+      path: '/api/new'
+      fullPath: '/admin/api/new'
+      preLoaderRoute: typeof authenticatedAdminApiNewRouteImport
+      parentRoute: typeof authenticatedAdminRouteRoute
+    }
+    '/(authenticated)/admin/api/$keyId': {
+      id: '/(authenticated)/admin/api/$keyId'
+      path: '/api/$keyId'
+      fullPath: '/admin/api/$keyId'
+      preLoaderRoute: typeof authenticatedAdminApiKeyIdRouteImport
+      parentRoute: typeof authenticatedAdminRouteRoute
     }
     '/(authenticated)/account/organizations/$organizationView': {
       id: '/(authenticated)/account/organizations/$organizationView'
@@ -1697,6 +1856,8 @@ interface authenticatedAdminRouteRouteChildren {
   authenticatedAdminStorageRoute: typeof authenticatedAdminStorageRoute
   authenticatedAdminUsersRoute: typeof authenticatedAdminUsersRoute
   authenticatedAdminIndexRoute: typeof authenticatedAdminIndexRoute
+  authenticatedAdminApiKeyIdRoute: typeof authenticatedAdminApiKeyIdRoute
+  authenticatedAdminApiNewRoute: typeof authenticatedAdminApiNewRoute
   authenticatedAdminBlogAnalyticsRoute: typeof authenticatedAdminBlogAnalyticsRoute
   authenticatedAdminBlogAuthorsRoute: typeof authenticatedAdminBlogAuthorsRoute
   authenticatedAdminBlogCategoriesRoute: typeof authenticatedAdminBlogCategoriesRoute
@@ -1706,6 +1867,7 @@ interface authenticatedAdminRouteRouteChildren {
   authenticatedAdminBlogSitesRoute: typeof authenticatedAdminBlogSitesRoute
   authenticatedAdminBlogTagsRoute: typeof authenticatedAdminBlogTagsRoute
   authenticatedAdminOrganizationOrganizationViewRoute: typeof authenticatedAdminOrganizationOrganizationViewRoute
+  authenticatedAdminApiIndexRoute: typeof authenticatedAdminApiIndexRoute
   authenticatedAdminBlogIndexRoute: typeof authenticatedAdminBlogIndexRoute
   authenticatedAdminBlogPostsNewRoute: typeof authenticatedAdminBlogPostsNewRoute
   authenticatedAdminBlogPostsIndexRoute: typeof authenticatedAdminBlogPostsIndexRoute
@@ -1720,6 +1882,8 @@ const authenticatedAdminRouteRouteChildren: authenticatedAdminRouteRouteChildren
     authenticatedAdminStorageRoute: authenticatedAdminStorageRoute,
     authenticatedAdminUsersRoute: authenticatedAdminUsersRoute,
     authenticatedAdminIndexRoute: authenticatedAdminIndexRoute,
+    authenticatedAdminApiKeyIdRoute: authenticatedAdminApiKeyIdRoute,
+    authenticatedAdminApiNewRoute: authenticatedAdminApiNewRoute,
     authenticatedAdminBlogAnalyticsRoute: authenticatedAdminBlogAnalyticsRoute,
     authenticatedAdminBlogAuthorsRoute: authenticatedAdminBlogAuthorsRoute,
     authenticatedAdminBlogCategoriesRoute:
@@ -1732,6 +1896,7 @@ const authenticatedAdminRouteRouteChildren: authenticatedAdminRouteRouteChildren
     authenticatedAdminBlogTagsRoute: authenticatedAdminBlogTagsRoute,
     authenticatedAdminOrganizationOrganizationViewRoute:
       authenticatedAdminOrganizationOrganizationViewRoute,
+    authenticatedAdminApiIndexRoute: authenticatedAdminApiIndexRoute,
     authenticatedAdminBlogIndexRoute: authenticatedAdminBlogIndexRoute,
     authenticatedAdminBlogPostsNewRoute: authenticatedAdminBlogPostsNewRoute,
     authenticatedAdminBlogPostsIndexRoute:
@@ -1851,6 +2016,18 @@ const blogRouteRouteWithChildren = blogRouteRoute._addFileChildren(
   blogRouteRouteChildren,
 )
 
+interface ApiV1PostsRouteChildren {
+  ApiV1PostsSlugRoute: typeof ApiV1PostsSlugRoute
+}
+
+const ApiV1PostsRouteChildren: ApiV1PostsRouteChildren = {
+  ApiV1PostsSlugRoute: ApiV1PostsSlugRoute,
+}
+
+const ApiV1PostsRouteWithChildren = ApiV1PostsRoute._addFileChildren(
+  ApiV1PostsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   authPagesRouteRoute: authPagesRouteRouteWithChildren,
   authenticatedRouteRoute: authenticatedRouteRouteWithChildren,
@@ -1868,6 +2045,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiInngestInngestRoute: ApiInngestInngestRoute,
   ApiStorageUploadRoute: ApiStorageUploadRoute,
+  ApiV1AuthorsRoute: ApiV1AuthorsRoute,
+  ApiV1CategoriesRoute: ApiV1CategoriesRoute,
+  ApiV1PostsRoute: ApiV1PostsRouteWithChildren,
+  ApiV1TagsRoute: ApiV1TagsRoute,
   ApiAuthPasskeyAddPasskeyRoute: ApiAuthPasskeyAddPasskeyRoute,
   ApiAuthPasskeyRegistrationOptionsRoute:
     ApiAuthPasskeyRegistrationOptionsRoute,
@@ -1879,12 +2060,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

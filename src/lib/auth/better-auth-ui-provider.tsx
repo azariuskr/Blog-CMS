@@ -20,15 +20,6 @@ type BetterAuthUiLinkProps = Omit<React.ComponentPropsWithoutRef<"a">, "href"> &
   ref?: React.Ref<HTMLAnchorElement>;
 };
 
-function getBasePath(): string {
-  try {
-    const u = new URL(env.VITE_BASE_URL);
-    return u.pathname.replace(/\/$/, "");
-  } catch {
-    return "";
-  }
-}
-
 function toRouterPath(path: string): string {
   // Router already has a basepath configured.
   // If we pass base-prefixed paths into router.navigate/link, the prefix is duplicated.
@@ -60,7 +51,7 @@ export function BetterAuthUiProviders({ children }: { children: React.ReactNode 
   const router = useRouter();
   const queryClient = router.options.context.queryClient;
   const isMobile = useIsMobile();
-  const { data: activeOrganization } = useActiveOrganization();
+  useActiveOrganization();
 
   return (
     <AuthQueryProvider sessionQueryOptions={authQueryOptions()}>
@@ -130,7 +121,7 @@ export function BetterAuthUiProviders({ children }: { children: React.ReactNode 
           basePath: "/org",
           pathMode: "slug",
           hideTeams: true,
-        }}
+        } as any}
         social={{ providers: ["google"] }}
         // freshAge: seconds since last auth action for session to be "fresh"
         // 0 = always require re-auth, 300 = 5 minutes, undefined = no fresh check

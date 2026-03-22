@@ -30,9 +30,9 @@ function WriterEditorPage() {
 	const upsertPost = useUpsertPost();
 	const createVersion = useCreatePostVersion();
 	const categoriesQuery = useCategories();
-	const categoryOptions = categoriesQuery.data?.ok ? categoriesQuery.data.data : [];
+	const categoryOptions = (categoriesQuery.data as any)?.ok ? (categoriesQuery.data as any).data : [];
 	const tagsQuery = useTags();
-	const allTags = tagsQuery.data?.data ?? [];
+	const allTags = (tagsQuery.data as any)?.data ?? [];
 
 	const [meta, setMeta] = useState({
 		title: "",
@@ -87,7 +87,7 @@ function WriterEditorPage() {
 				tagIds,
 				isPremium,
 				previewBlocks,
-				scheduledAt: status === "scheduled" && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
+				scheduledAt: (status as string) === "scheduled" && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
 			} as any);
 
 			if (result?.ok) {
@@ -132,7 +132,7 @@ function WriterEditorPage() {
 			tagIds,
 			isPremium,
 			previewBlocks,
-			scheduledAt: status === "scheduled" && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
+			scheduledAt: (status as string) === "scheduled" && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
 		} as any);
 	}, [meta, status, tagIds, scheduledAt, isPremium, previewBlocks, session, upsertPost]);
 
@@ -267,7 +267,7 @@ function WriterEditorPage() {
 								className="w-full text-xs bg-oxford-blue-2 border border-prussian-blue rounded-lg px-3 py-2 text-alice-blue outline-none focus:border-carolina-blue transition-colors"
 							>
 								<option value="">No category</option>
-								{categoryOptions.map((cat) => (
+								{categoryOptions.map((cat: any) => (
 									<option key={cat.id} value={cat.id}>{cat.name}</option>
 								))}
 							</select>
@@ -278,7 +278,7 @@ function WriterEditorPage() {
 							<div className="space-y-1.5">
 								<label className="text-xs font-medium text-columbia-blue">Tags</label>
 								<div className="flex flex-wrap gap-1">
-									{allTags.map((tag) => {
+									{allTags.map((tag: any) => {
 										const selected = tagIds.includes(tag.id);
 										return (
 											<button

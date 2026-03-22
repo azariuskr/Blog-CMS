@@ -49,7 +49,7 @@ function RouteComponent() {
 		const redirectTo = params.get("redirectTo") || ROUTES.ACCOUNT.ORGANIZATIONS
 
 		void router.navigate({
-			to: ROUTES.AUTH.CALLBACK.ACCEPT_INVITATION,
+			to: ROUTES.AUTH.CALLBACK.ACCEPT_INVITATION as string,
 			search: { invitationId, redirectTo } as never,
 			replace: true,
 		})

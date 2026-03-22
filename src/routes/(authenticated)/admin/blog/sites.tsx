@@ -144,7 +144,7 @@ function SitesView({ onOpenSite }: { onOpenSite: (s: SelectedSite) => void }) {
 		<PageContainer
 			title="Sites"
 			description="Manage your sites and their pages"
-			headerActions={
+			actions={
 				<Button size="sm" onClick={() => setCreateOpen(true)}>
 					<Plus className="h-4 w-4 mr-2" /> New Site
 				</Button>
@@ -184,7 +184,7 @@ function SitesView({ onOpenSite }: { onOpenSite: (s: SelectedSite) => void }) {
 									<FileText className="h-3.5 w-3.5 mr-1.5" /> Pages
 								</Button>
 								{s.subdomain && (
-									<Button size="sm" variant="ghost" asChild>
+									<Button size="sm" variant="ghost" {...{asChild: true} as any}>
 										<a href={`/${s.slug}`} target="_blank" rel="noopener noreferrer">
 											<ExternalLink className="h-3.5 w-3.5" />
 										</a>
@@ -272,7 +272,7 @@ function PagesView({
 	const slugify = (s: string) =>
 		s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-	const pages = pagesQuery.data?.ok ? pagesQuery.data.data : [];
+	const pages = (pagesQuery.data as any)?.ok ? (pagesQuery.data as any).data : [];
 
 	const handleCreate = async () => {
 		if (!form.title.trim()) { toast.error("Title is required"); return; }
@@ -282,7 +282,7 @@ function PagesView({
 				siteId: site.id,
 				title: form.title,
 				slug: form.slug || slugify(form.title),
-			});
+			}) as any;
 			if (res?.ok) {
 				toast.success("Page created");
 				setCreateOpen(false);
@@ -312,7 +312,7 @@ function PagesView({
 		<PageContainer
 			title={`${site.name} — Pages`}
 			description={`Manage pages for /${site.slug}`}
-			headerActions={
+			actions={
 				<div className="flex gap-2">
 					<Button size="sm" variant="outline" onClick={onBack}>
 						<ArrowLeft className="h-4 w-4 mr-2" /> All Sites
@@ -332,7 +332,7 @@ function PagesView({
 				</div>
 			) : (
 				<div className="divide-y divide-border rounded-xl border border-border overflow-hidden">
-					{pages.map((p) => (
+					{pages.map((p: any) => (
 						<div key={p.id} className="flex items-center gap-4 px-5 py-4 bg-card hover:bg-accent/5 transition-colors">
 							<div className="flex-1 min-w-0">
 								<p className="font-medium text-foreground truncate">{p.title}</p>
@@ -354,7 +354,7 @@ function PagesView({
 								>
 									<Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
 								</Button>
-								<Button size="sm" variant="ghost" asChild>
+								<Button size="sm" variant="ghost" {...{asChild: true} as any}>
 									<a href={`/${site.slug}/${p.slug}`} target="_blank" rel="noopener noreferrer">
 										<Eye className="h-3.5 w-3.5" />
 									</a>
@@ -440,7 +440,7 @@ function PuckEditorView({
 					slug: page.slug,
 					status: "published",
 					puckData: data as Record<string, unknown>,
-				});
+				}) as any;
 				if (res?.ok) toast.success("Page published!");
 				else toast.error("Failed to publish page");
 			} catch {

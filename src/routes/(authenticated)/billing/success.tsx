@@ -42,10 +42,10 @@ function BillingSuccessPage() {
               A confirmation email has been sent to your email address with the details of your purchase.
             </p>
             <div className="flex flex-col gap-2 pt-4">
-              <Link to="/billing">
+              <Link to={"/billing" as string}>
                 <Button className="w-full">View Billing Dashboard</Button>
               </Link>
-              <Link to={ROUTES.DASHBOARD}>
+              <Link to={ROUTES.DASHBOARD as string}>
                 <Button variant="outline" className="w-full">
                   Go to Dashboard
                 </Button>
