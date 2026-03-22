@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
 	MoreHorizontal,
@@ -13,7 +13,6 @@ import {
 	XCircle,
 	UserPlus,
 } from "lucide-react";
-import { PageContainer } from "@/components/admin/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,16 +40,14 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { useAuthors, useUpsertAuthorProfile, useAuthorApplications, useReviewAuthorApplication } from "@/lib/blog/queries";
+import {
+	useAuthors,
+	useUpsertAuthorProfile,
+	useAuthorApplications,
+	useReviewAuthorApplication,
+} from "@/lib/blog/queries";
 import { ROUTES } from "@/constants";
 import { toast } from "sonner";
-
-export const Route = createFileRoute("/(authenticated)/admin/blog/authors")({
-	beforeLoad: () => {
-		throw redirect({ to: "/admin/users" });
-	},
-	component: AdminAuthorsPage,
-});
 
 function fmt(n: number) {
 	if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
@@ -103,8 +100,10 @@ function EditAuthorDialog({
 		location: author.location ?? "",
 	});
 
-	const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-		setForm((p) => ({ ...p, [k]: e.target.value }));
+	const set =
+		(k: keyof typeof form) =>
+		(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+			setForm((p) => ({ ...p, [k]: e.target.value }));
 
 	const handleSave = async () => {
 		if (!form.username.trim()) {
@@ -191,15 +190,17 @@ function EditAuthorDialog({
 	);
 }
 
-function AdminAuthorsPage() {
+export function AuthorsTab() {
 	const [search, _setSearch] = useState("");
 	const [editingAuthor, setEditingAuthor] = useState<AuthorProfile | null>(null);
-	const [tab, setTab] = useState<"authors" | "applications">("authors");
+	const [subTab, setSubTab] = useState<"authors" | "applications">("authors");
 	const authorsQuery = useAuthors();
 	const applicationsQuery = useAuthorApplications("pending");
 	const reviewMutation = useReviewAuthorApplication();
 
-	const pendingApplications = applicationsQuery.data?.ok ? (applicationsQuery.data.data as any).items ?? [] : [];
+	const pendingApplications = applicationsQuery.data?.ok
+		? (applicationsQuery.data.data as any).items ?? []
+		: [];
 	const pendingCount = pendingApplications.length;
 
 	const authors = useMemo(() => {
@@ -207,7 +208,6 @@ function AdminAuthorsPage() {
 		const items: AuthorProfile[] = (raw?.ok ? raw.data.items : []) as AuthorProfile[];
 		const term = search.trim().toLowerCase();
 		if (!term) return items;
-
 		return items.filter((author) => {
 			const displayName = author.displayName ?? "";
 			const username = author.username ?? "";
@@ -221,28 +221,24 @@ function AdminAuthorsPage() {
 	}, [authorsQuery.data, search]);
 
 	return (
-		<PageContainer
-			title="Authors"
-			description="Manage author profiles and permissions."
-		>
-			{/* Edit dialog */}
+		<>
 			<Dialog open={!!editingAuthor} onOpenChange={(open) => { if (!open) setEditingAuthor(null); }}>
 				{editingAuthor && <EditAuthorDialog author={editingAuthor} onClose={() => setEditingAuthor(null)} />}
 			</Dialog>
 
-			{/* Tab bar */}
+			{/* Sub-tab bar: Authors / Applications */}
 			<div className="flex gap-1 border-b border-border mb-6">
 				<button
 					type="button"
-					onClick={() => setTab("authors")}
-					className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "authors" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+					onClick={() => setSubTab("authors")}
+					className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${subTab === "authors" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
 				>
 					Authors
 				</button>
 				<button
 					type="button"
-					onClick={() => setTab("applications")}
-					className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${tab === "applications" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+					onClick={() => setSubTab("applications")}
+					className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${subTab === "applications" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
 				>
 					<UserPlus className="h-3.5 w-3.5" />
 					Applications
@@ -255,7 +251,7 @@ function AdminAuthorsPage() {
 			</div>
 
 			{/* Applications panel */}
-			{tab === "applications" && (
+			{subTab === "applications" && (
 				<div className="space-y-3">
 					{applicationsQuery.isLoading && (
 						<p className="text-sm text-muted-foreground py-8 text-center">Loading applications…</p>
@@ -306,8 +302,8 @@ function AdminAuthorsPage() {
 				</div>
 			)}
 
-			{/* Authors list */}
-			{tab === "authors" && (
+			{/* Authors table */}
+			{subTab === "authors" && (
 				<div className="rounded-lg border bg-card">
 					<Table>
 						<TableHeader>
@@ -324,28 +320,19 @@ function AdminAuthorsPage() {
 						<TableBody>
 							{authorsQuery.isLoading ? (
 								<TableRow>
-									<TableCell
-										colSpan={7}
-										className="h-32 text-center text-muted-foreground"
-									>
+									<TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
 										Loading authors…
 									</TableCell>
 								</TableRow>
 							) : authorsQuery.isError ? (
 								<TableRow>
-									<TableCell
-										colSpan={7}
-										className="h-32 text-center text-destructive"
-									>
+									<TableCell colSpan={7} className="h-32 text-center text-destructive">
 										Failed to load authors.
 									</TableCell>
 								</TableRow>
 							) : authors.length === 0 ? (
 								<TableRow>
-									<TableCell
-										colSpan={7}
-										className="h-32 text-center text-muted-foreground"
-									>
+									<TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
 										No authors found.
 									</TableCell>
 								</TableRow>
@@ -355,30 +342,19 @@ function AdminAuthorsPage() {
 										<TableCell>
 											<div className="flex items-center gap-3">
 												<Avatar className="w-8 h-8">
-													<AvatarImage
-														src={author.avatarUrl ?? undefined}
-														alt={author.displayName ?? author.username}
-													/>
+													<AvatarImage src={author.avatarUrl ?? undefined} alt={author.displayName ?? author.username} />
 													<AvatarFallback className="text-xs">
-														{(author.displayName ?? author.username)
-															.slice(0, 2)
-															.toUpperCase()}
+														{(author.displayName ?? author.username).slice(0, 2).toUpperCase()}
 													</AvatarFallback>
 												</Avatar>
 												<div>
-													<p className="font-medium text-sm">
-														{author.displayName ?? author.username}
-													</p>
-													<p className="text-xs text-muted-foreground">
-														@{author.username}
-													</p>
+													<p className="font-medium text-sm">{author.displayName ?? author.username}</p>
+													<p className="text-xs text-muted-foreground">@{author.username}</p>
 												</div>
 											</div>
 										</TableCell>
 										<TableCell>
-											<Badge variant="default" className="capitalize text-xs">
-												active
-											</Badge>
+											<Badge variant="default" className="capitalize text-xs">active</Badge>
 										</TableCell>
 										<TableCell className="text-right">
 											<div className="flex items-center justify-end gap-1 text-sm text-muted-foreground">
@@ -400,22 +376,17 @@ function AdminAuthorsPage() {
 										</TableCell>
 										<TableCell>
 											<DropdownMenu>
-												<DropdownMenuTrigger {...{asChild: true} as any}>
+												<DropdownMenuTrigger {...{ asChild: true } as any}>
 													<Button variant="ghost" size="icon" className="h-8 w-8">
 														<MoreHorizontal className="w-4 h-4" />
 													</Button>
 												</DropdownMenuTrigger>
 												<DropdownMenuContent align="end">
-													<DropdownMenuItem {...{asChild: true} as any} className="gap-2">
+													<DropdownMenuItem {...{ asChild: true } as any} className="gap-2">
 														<Link to={`/@${author.username}` as string}>
 															<ExternalLink className="w-4 h-4" /> View Profile
 														</Link>
 													</DropdownMenuItem>
-												<DropdownMenuItem {...{asChild: true} as any} className="gap-2">
-													<Link to={ROUTES.ADMIN.USERS as string}>
-														<ExternalLink className="w-4 h-4" /> View User Account
-													</Link>
-												</DropdownMenuItem>
 													<DropdownMenuItem
 														className="gap-2"
 														onClick={() => setEditingAuthor(author as AuthorProfile)}
@@ -423,10 +394,7 @@ function AdminAuthorsPage() {
 														<Edit2 className="w-4 h-4" /> Edit Profile
 													</DropdownMenuItem>
 													<DropdownMenuSeparator />
-													<DropdownMenuItem
-														className="gap-2 text-destructive focus:text-destructive"
-														disabled
-													>
+													<DropdownMenuItem className="gap-2 text-destructive focus:text-destructive" disabled>
 														<UserX className="w-4 h-4" /> Suspend
 													</DropdownMenuItem>
 												</DropdownMenuContent>
@@ -439,6 +407,6 @@ function AdminAuthorsPage() {
 					</Table>
 				</div>
 			)}
-		</PageContainer>
+		</>
 	);
 }
