@@ -12,7 +12,9 @@ import {
 	Settings,
 	LogOut,
 	PenLine,
+	LayoutDashboard,
 } from "lucide-react";
+import { useHasCapability } from "@/hooks/auth-hooks";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
@@ -53,6 +55,7 @@ function BlogLayout() {
 function BlogHeader() {
 	const { data: session } = useSession();
 	const user = session?.user;
+	const canAccessAdmin = useHasCapability("canAccessAdmin");
 	const routerState = useRouterState();
 	const currentPath = routerState.location.pathname;
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -143,9 +146,14 @@ function BlogHeader() {
 										</p>
 										<p className="text-xs text-slate-gray">{user.email}</p>
 									</div>
-									<DropdownMenuItem className="text-alice-blue hover:bg-prussian-blue cursor-pointer">
-										<User className="mr-2 h-4 w-4" />
-										Profile
+									<DropdownMenuItem {...{asChild: true} as any}>
+										<Link
+											to={ROUTES.ACCOUNT.PROFILE as string}
+											className="flex items-center text-alice-blue cursor-pointer"
+										>
+											<User className="mr-2 h-4 w-4" />
+											Profile
+										</Link>
 									</DropdownMenuItem>
 									<DropdownMenuItem {...{asChild: true} as any}>
 										<Link
@@ -165,6 +173,20 @@ function BlogHeader() {
 											Settings
 										</Link>
 									</DropdownMenuItem>
+									{canAccessAdmin && (
+										<>
+											<DropdownMenuSeparator className="bg-prussian-blue" />
+											<DropdownMenuItem {...{asChild: true} as any}>
+												<Link
+													to={ROUTES.ADMIN.BASE as string}
+													className="flex items-center text-alice-blue cursor-pointer"
+												>
+													<LayoutDashboard className="mr-2 h-4 w-4" />
+													Admin Dashboard
+												</Link>
+											</DropdownMenuItem>
+										</>
+									)}
 									<DropdownMenuSeparator className="bg-prussian-blue" />
 									<DropdownMenuItem {...{asChild: true} as any}>
 										<Link
@@ -237,12 +259,35 @@ function BlogHeader() {
 							Write
 						</Link>
 						<Link
+							to={ROUTES.ACCOUNT.PROFILE as string}
+							onClick={() => setMobileMenuOpen(false)}
+							className="block py-2 text-alice-blue hover:text-carolina-blue"
+						>
+							Profile
+						</Link>
+						<Link
+							to={ROUTES.ADMIN.BLOG.POSTS as string}
+							onClick={() => setMobileMenuOpen(false)}
+							className="block py-2 text-alice-blue hover:text-carolina-blue"
+						>
+							My Posts
+						</Link>
+						<Link
 							to={ROUTES.ACCOUNT.BASE as string}
 							onClick={() => setMobileMenuOpen(false)}
 							className="block py-2 text-alice-blue hover:text-carolina-blue"
 						>
 							Settings
 						</Link>
+						{canAccessAdmin && (
+							<Link
+								to={ROUTES.ADMIN.BASE as string}
+								onClick={() => setMobileMenuOpen(false)}
+								className="block py-2 text-alice-blue hover:text-carolina-blue"
+							>
+								Admin Dashboard
+							</Link>
+						)}
 						<Link
 							to={ROUTES.LOGOUT}
 							onClick={() => setMobileMenuOpen(false)}

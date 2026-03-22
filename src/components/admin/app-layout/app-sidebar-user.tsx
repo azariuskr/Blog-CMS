@@ -3,6 +3,8 @@ import {
 	BadgeCheck,
 	ChevronsUpDown,
 	CreditCard,
+	FileText,
+	Globe,
 	KeyRound,
 	Shield,
 	Sparkles,
@@ -165,6 +167,21 @@ export function AppSidebarUser() {
 								</>
 							)}
 
+							<DropdownMenuGroup>
+								<Link to={ROUTES.ADMIN.BLOG.POSTS as string}>
+									<DropdownMenuItem>
+										<FileText className="mr-2 size-4" />
+										My Posts
+									</DropdownMenuItem>
+								</Link>
+								<Link to={"/" as string}>
+									<DropdownMenuItem>
+										<Globe className="mr-2 size-4" />
+										View Blog
+									</DropdownMenuItem>
+								</Link>
+							</DropdownMenuGroup>
+							<DropdownMenuSeparator />
 							<DropdownMenuGroup>
 								<Link to={getAccountRoute(ACCOUNT_VIEWS.SETTINGS)}>
 									<DropdownMenuItem>
