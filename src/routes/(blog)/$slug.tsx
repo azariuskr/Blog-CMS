@@ -22,7 +22,7 @@ import {
 	Linkedin,
 } from "lucide-react";
 import { toast } from "sonner";
-import { usePostBySlug, usePublishedPosts, usePublicComments, useCreateComment, useToggleReaction, useToggleBookmark, postBySlugQueryOptions, publicCommentsQueryOptions } from "@/lib/blog/queries";
+import { usePostBySlug, usePublishedPosts, usePublicComments, useCreateComment, useToggleReaction, useToggleBookmark, useAddToReadingList, postBySlugQueryOptions, publicCommentsQueryOptions } from "@/lib/blog/queries";
 import { PaywallCard } from "@/components/blog/PaywallCard";
 import { useSession } from "@/lib/auth/auth-client";
 import { unwrap } from "@/lib/result";
@@ -58,7 +58,7 @@ export const Route = createFileRoute("/(blog)/$slug")({
 		const image = post?.featuredImageUrl ?? siteConfig.ogImage;
 		const imageUrl = image.startsWith("http") ? image : `${siteConfig.url}${image}`;
 		const fullTitle = `${title} | ${siteConfig.name}`;
-		const canonicalUrl = `${siteConfig.url}/${params.slug}`;
+		const canonicalUrl = post?.canonicalUrl || `${siteConfig.url}/${params.slug}`;
 		const authorName = post?.author?.name ?? siteConfig.organization.name;
 		const publishedTime = post?.publishedAt ? new Date(post.publishedAt).toISOString() : undefined;
 		const updatedTime = post?.updatedAt ? new Date(post.updatedAt).toISOString() : undefined;
@@ -333,11 +333,16 @@ function BlogPostPage() {
 	const postQuery = usePostBySlug(slug);
 	const toggleReaction = useToggleReaction();
 	const toggleBookmark = useToggleBookmark();
+	const addToReadingList = useAddToReadingList();
 	const createComment = useCreateComment();
 	const resolvedPostForCategory = postQuery.data?.ok ? (postQuery.data as any).data : null;
 	const relatedPostsQuery = usePublishedPosts({
 		categorySlug: resolvedPostForCategory?.category?.slug ?? undefined,
 		limit: 3,
+	});
+	const authorPostsQuery = usePublishedPosts({
+		authorId: resolvedPostForCategory?.author?.id ?? undefined,
+		limit: 4,
 	});
 
 
@@ -378,6 +383,7 @@ function BlogPostPage() {
 			}
 			: null);
 	const relatedPosts = relatedPostsQuery.data?.ok ? relatedPostsQuery.data.data.items.filter((p: any) => p.id !== post?.id) : [];
+	const moreByAuthor = authorPostsQuery.data?.ok ? authorPostsQuery.data.data.items.filter((p: any) => p.id !== post?.id).slice(0, 3) : [];
 	const rawBlocks = (post?.blocks ?? []) as BlogBlock[];
 	const blocks =
 		rawBlocks.length > 0
@@ -556,7 +562,7 @@ function BlogPostPage() {
 							</div>
 							<div className="flex items-center gap-2">
 								<Clock className="w-4 h-4" />
-								<span>{estimateReadTimeFromBlocks(blocks)}</span>
+								<span>{(post as any).readTimeMinutes ? `${(post as any).readTimeMinutes} min read` : estimateReadTimeFromBlocks(blocks)}</span>
 							</div>
 							<div className="flex items-center gap-2">
 								<Eye className="w-4 h-4" />
@@ -602,6 +608,7 @@ function BlogPostPage() {
 										if (!userId || !post?.id) { toast.error("Sign in to bookmark posts"); return; }
 										setIsBookmarked(!isBookmarked);
 										toggleBookmark.mutate({ postId: post.id, userId });
+										if (!isBookmarked) addToReadingList.mutate({ postId: post.id });
 									}}
 									className={`rounded-full ${isBookmarked ? "text-carolina-blue bg-carolina-blue/10" : "text-wild-blue-yonder hover:text-carolina-blue"}`}
 								>
@@ -891,7 +898,48 @@ function BlogPostPage() {
 								</div>
 							</section>
 
-							{/* Related posts */}
+							{/* More from this author */}
+							{moreByAuthor.length > 0 && (
+								<section className="mt-16">
+									<h3 className="text-2xl font-bold text-white mb-8">
+										More from{" "}
+										<Link
+											to={`/@${(post as any).authorProfile?.username ?? ""}` as string}
+											className="text-carolina-blue hover:underline"
+										>
+											{(post as any).authorProfile?.displayName ?? post?.author?.name ?? "this author"}
+										</Link>
+									</h3>
+									<div className="grid gap-6">
+										{moreByAuthor.map((related: any) => (
+											<Link
+												key={related.id}
+												to={"/$slug" as string}
+												params={{ slug: related.slug } as any}
+												className="flex gap-4 p-4 rounded-xl border border-prussian-blue hover:border-carolina-blue/50 bg-prussian-blue/20 hover:bg-prussian-blue/40 transition-all group"
+											>
+												{related.featuredImageUrl && (
+													<img
+														src={related.featuredImageUrl}
+														alt={related.title}
+														className="w-20 h-16 object-cover rounded-lg flex-shrink-0"
+													/>
+												)}
+												<div className="flex-1 min-w-0">
+													<h4 className="text-white font-semibold text-sm line-clamp-2 group-hover:text-carolina-blue transition-colors mb-1">
+														{related.title}
+													</h4>
+													{related.excerpt && (
+														<p className="text-xs text-wild-blue-yonder line-clamp-2">{related.excerpt}</p>
+													)}
+												</div>
+											</Link>
+										))}
+									</div>
+								</section>
+							)}
+
+	{/* Related posts */}
 							{relatedPosts.length > 0 && (
 								<section className="mt-16">
 									<h3 className="text-2xl font-bold text-white mb-8">

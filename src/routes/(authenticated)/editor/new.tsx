@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useCallback } from "react";
-import { ArrowLeft, Send, BookOpen, Save, Calendar } from "lucide-react";
+import { ArrowLeft, Send, BookOpen, Save, Calendar, Link2 } from "lucide-react";
 import { useSession } from "@/lib/auth/auth-client";
 import { toast } from "sonner";
 import { ROUTES } from "@/constants";
-import { useUpsertPost, useCategories, useCreatePostVersion, useTags } from "@/lib/blog/queries";
+import { useUpsertPost, useCategories, useCreatePostVersion, useTags, useGeneratePreviewToken } from "@/lib/blog/queries";
 import { BlockEditor, type Block } from "@/components/admin/blog/editor/BlockEditor";
 import { FeaturedImageUploader } from "@/components/admin/blog/editor/FeaturedImageUploader";
 import { serializeBlocks } from "@/components/admin/blog/editor/blockTypes";
@@ -29,6 +29,7 @@ function WriterEditorPage() {
 	const { data: session } = useSession();
 	const upsertPost = useUpsertPost();
 	const createVersion = useCreatePostVersion();
+	const generatePreviewToken = useGeneratePreviewToken();
 	const categoriesQuery = useCategories();
 	const categoryOptions = (categoriesQuery.data as any)?.ok ? (categoriesQuery.data as any).data : [];
 	const tagsQuery = useTags();
@@ -40,6 +41,7 @@ function WriterEditorPage() {
 		excerpt: "",
 		categoryId: "",
 		featuredImageUrl: "",
+		canonicalUrl: "",
 	});
 	const [autoSlug, setAutoSlug] = useState(true);
 	const [status, setStatus] = useState<Status>("draft");
@@ -49,6 +51,7 @@ function WriterEditorPage() {
 	const [isPremium, setIsPremium] = useState(false);
 	const [previewBlocks, setPreviewBlocks] = useState(3);
 	const [saving, setSaving] = useState(false);
+	const [savedPostId, setSavedPostId] = useState<string | null>(null);
 
 	const setMetaField = (field: keyof typeof meta, value: string) => {
 		setMeta((prev) => {
@@ -87,12 +90,15 @@ function WriterEditorPage() {
 				tagIds,
 				isPremium,
 				previewBlocks,
+				canonicalUrl: meta.canonicalUrl || undefined,
 				scheduledAt: (status as string) === "scheduled" && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
 			} as any);
 
 			if (result?.ok) {
 				setStatus(newStatus);
 				toast.success(submitForReview ? "Submitted for review!" : "Draft saved.");
+				// Track saved post id for preview link generation
+				if (result.data?.id) setSavedPostId(result.data.id);
 				// Auto-snapshot version on every explicit save (fire-and-forget)
 				if (result.data?.id) {
 					createVersion.mutate({
@@ -132,6 +138,7 @@ function WriterEditorPage() {
 			tagIds,
 			isPremium,
 			previewBlocks,
+			canonicalUrl: meta.canonicalUrl || undefined,
 			scheduledAt: (status as string) === "scheduled" && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
 		} as any);
 	}, [meta, status, tagIds, scheduledAt, isPremium, previewBlocks, session, upsertPost]);
@@ -169,6 +176,26 @@ function WriterEditorPage() {
 					</div>
 
 					<div className="flex items-center gap-2">
+						{savedPostId && (
+							<button
+								type="button"
+								disabled={generatePreviewToken.isPending}
+								onClick={async () => {
+									const result = await generatePreviewToken.mutateAsync(savedPostId);
+									if (result?.ok) {
+										const url = `${window.location.origin}${ROUTES.BLOG.PREVIEW(result.data.token)}`;
+										await navigator.clipboard.writeText(url);
+										toast.success("Preview link copied!");
+									} else {
+										toast.error("Failed to generate preview link.");
+									}
+								}}
+								className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-prussian-blue text-wild-blue-yonder hover:border-carolina-blue hover:text-carolina-blue transition-colors disabled:opacity-50"
+							>
+								<Link2 className="h-3.5 w-3.5" />
+								Preview Link
+							</button>
+						)}
 						<button
 							type="button"
 							disabled={saving}
@@ -346,6 +373,19 @@ function WriterEditorPage() {
 									className="w-full text-xs rounded border border-prussian-blue bg-oxford-blue-2 text-alice-blue px-2 py-1.5 outline-none focus:border-carolina-blue"
 								/>
 							</div>
+						</div>
+
+						{/* Canonical URL */}
+						<div className="space-y-2 pt-2 border-t border-prussian-blue">
+							<label className="text-xs font-medium text-columbia-blue">Canonical URL</label>
+							<p className="text-[10px] text-slate-gray">For cross-posts — link to original source.</p>
+							<input
+								type="url"
+								value={meta.canonicalUrl}
+								onChange={(e) => setMetaField("canonicalUrl" as any, e.target.value)}
+								placeholder="https://yourblog.com/original"
+								className="w-full text-xs rounded border border-prussian-blue bg-oxford-blue-2 text-alice-blue px-2 py-1.5 outline-none focus:border-carolina-blue placeholder:text-slate-gray/50"
+							/>
 						</div>
 
 						{/* Info */}

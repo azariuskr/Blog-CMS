@@ -33,6 +33,7 @@ export const ROUTES = {
         SESSIONS: "/account/sessions",
         APPEARANCE: "/account/appearance",
         NOTIFICATIONS: "/account/notifications",
+        READING_LISTS: "/account/reading-lists",
     },
 
     ADMIN: {
@@ -85,6 +86,7 @@ export const ROUTES = {
         AUTHOR: (username: string) => `/@${username}`,
         SEARCH: "/search",
         AUTHOR_ONBOARDING: "/author-onboarding",
+        PREVIEW: (token: string) => `/preview/${token}`,
     },
 
     // Editor

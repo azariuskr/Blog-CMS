@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ArrowLeft, Clock, Eye, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { usePublishedPosts, useInfinitePublishedPosts, usePublicCategories, useSubscribeNewsletter } from "@/lib/blog/queries";
+import { usePublishedPosts, useInfinitePublishedPosts, usePublicCategories, useSubscribeNewsletter, useAuthors, useToggleFollow } from "@/lib/blog/queries";
+import { useSession } from "@/lib/auth/auth-client";
 import { publishedPostsQueryOptions, publicCategoriesQueryOptions } from "@/lib/blog/queries";
 import { toast } from "sonner";
 import { ThrottledImage } from "@/components/shared/ThrottledImage";
@@ -26,6 +27,9 @@ const TOPIC_IMAGES = [
 ];
 
 function BlogHomePage() {
+	const { data: session } = useSession();
+	const userId = session?.user?.id;
+	const [feedTab, setFeedTab] = useState<"foryou" | "following">("foryou");
 	const [currentSlide, setCurrentSlide] = useState(0);
 	const sliderRef = useRef<HTMLUListElement>(null);
 	const [sliderItems, setSliderItems] = useState(1);
@@ -41,8 +45,11 @@ function BlogHomePage() {
 	const featuredQuery = usePublishedPosts({ isFeatured: true, limit: 3 });
 	const featuredPosts = (featuredQuery.data as any)?.data?.items ?? [];
 
-	// Recent posts (infinite / load-more)
-	const recentQuery = useInfinitePublishedPosts({ limit: 6 });
+	// Recent posts (infinite / load-more) — tab-aware
+	const recentQuery = useInfinitePublishedPosts({
+		limit: 6,
+		followedByUserId: feedTab === "following" && userId ? userId : undefined,
+	});
 	const recentPosts = recentQuery.data?.pages.flatMap((p) => (p?.ok ? (p.data as any).items : [])) ?? [];
 
 	// Popular posts (by view count)
@@ -55,6 +62,13 @@ function BlogHomePage() {
 
 	const subscribeNewsletter = useSubscribeNewsletter();
 	const [newsletterEmail, setNewsletterEmail] = useState("");
+
+	// Who to follow
+	const authorsQuery = useAuthors(1);
+	const allAuthors = (authorsQuery.data as any)?.ok ? (authorsQuery.data as any).data?.items ?? [] : [];
+	const toggleFollow = useToggleFollow();
+	// Show up to 3 authors (exclude self)
+	const suggestedAuthors = allAuthors.filter((a: any) => a.id !== userId).slice(0, 3);
 
 	const handleNewsletterSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -328,20 +342,52 @@ function BlogHomePage() {
 					<div className="grid lg:grid-cols-[1fr_0.6fr] gap-12 items-start">
 						{/* Recent Posts */}
 						<div>
+							{/* Feed tabs */}
+							<div className="flex items-center gap-1 mb-8 border-b border-prussian-blue">
+								<button
+									type="button"
+									onClick={() => setFeedTab("foryou")}
+									className={`pb-2.5 px-1 text-sm font-medium border-b-2 transition-colors -mb-px ${feedTab === "foryou" ? "border-carolina-blue text-carolina-blue" : "border-transparent text-wild-blue-yonder hover:text-alice-blue"}`}
+								>
+									For You
+								</button>
+								{userId && (
+									<button
+										type="button"
+										onClick={() => setFeedTab("following")}
+										className={`pb-2.5 px-1 text-sm font-medium border-b-2 transition-colors -mb-px ${feedTab === "following" ? "border-carolina-blue text-carolina-blue" : "border-transparent text-wild-blue-yonder hover:text-alice-blue"}`}
+									>
+										Following
+									</button>
+								)}
+							</div>
 							<h2 className="headline headline-2 text-columbia-blue mb-2.5">
-								Recent Posts
+								{feedTab === "following" ? "Following" : "Recent Posts"}
 							</h2>
 							<p className="text-lg text-wild-blue-yonder mb-16">
-								Stay updated with our latest articles
+								{feedTab === "following" ? "Posts from authors you follow" : "Stay updated with our latest articles"}
 							</p>
 
+							{recentQuery.isFetching && recentPosts.length === 0 ? (
+								<div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-carolina-blue" /></div>
+							) : feedTab === "following" && recentPosts.length === 0 ? (
+								<div className="py-12 text-center">
+									<p className="text-wild-blue-yonder mb-2">No posts yet from authors you follow.</p>
+									<p className="text-sm text-slate-gray">Follow some authors to see their posts here.</p>
+								</div>
+							) : (
 							<div className="space-y-8">
 								{recentPosts.map((post) => (
 									<article
 										key={post.id}
 										className="grid sm:grid-cols-[0.7fr_1fr] gap-5 group"
 									>
-										<figure className="aspect-[4/3] rounded-2xl overflow-hidden bg-prussian-blue transition-transform group-hover:-translate-y-0.5">
+										<figure className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-prussian-blue transition-transform group-hover:-translate-y-0.5">
+											{(post as any).isPremium && (
+												<div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-gradient-to-r from-carolina-blue to-blog-teal text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow">
+													✦ Premium
+												</div>
+											)}
 											<ThrottledImage
 												src={post.featuredImageUrl ?? "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=300&fit=crop"}
 												alt={post.title}
@@ -386,6 +432,7 @@ function BlogHomePage() {
 									</article>
 								))}
 							</div>
+							)}
 
 							{/* Load More */}
 							{recentQuery.hasNextPage && (
@@ -443,6 +490,48 @@ function BlogHomePage() {
 									))}
 								</div>
 							</div>
+
+							{/* Who to Follow */}
+							{suggestedAuthors.length > 0 && (
+								<div className="navy-blue-blog-card p-6 rounded-2xl">
+									<h3 className="headline-2 text-columbia-blue mb-10 text-xl">
+										<span className="relative">
+											Who to Follow
+											<span className="absolute bottom-[-10px] left-0 w-24 h-[3px] bg-carolina-blue" />
+										</span>
+									</h3>
+									<div className="space-y-4 mt-2">
+										{suggestedAuthors.map((author: any) => (
+											<div key={author.id} className="flex items-start gap-3">
+												<Avatar className="w-9 h-9 flex-shrink-0">
+													<AvatarImage src={author.authorProfile?.avatarUrl ?? author.image ?? undefined} alt={author.name ?? "Author"} />
+													<AvatarFallback className="bg-prussian-blue text-xs text-alice-blue">
+														{(author.authorProfile?.displayName ?? author.name ?? "A").charAt(0).toUpperCase()}
+													</AvatarFallback>
+												</Avatar>
+												<div className="flex-1 min-w-0">
+													<p className="text-sm font-medium text-alice-blue truncate">
+														{author.authorProfile?.displayName ?? author.name}
+													</p>
+													{author.authorProfile?.bio && (
+														<p className="text-xs text-slate-gray line-clamp-1 mt-0.5">{author.authorProfile.bio}</p>
+													)}
+												</div>
+												{userId && (
+													<button
+														type="button"
+														onClick={() => toggleFollow.mutate({ followerId: userId, followingId: author.id })}
+														disabled={toggleFollow.isPending}
+														className="flex-shrink-0 text-xs px-3 py-1 rounded-full border border-carolina-blue text-carolina-blue hover:bg-carolina-blue hover:text-white transition-colors disabled:opacity-50"
+													>
+														Follow
+													</button>
+												)}
+											</div>
+										))}
+									</div>
+								</div>
+							)}
 
 							{/* Newsletter */}
 							<div className="navy-blue-blog-card p-6 rounded-2xl">

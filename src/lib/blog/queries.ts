@@ -44,6 +44,15 @@ import {
 	$reviewAuthorApplication,
 	$listAuthorApplications,
 	$getMyAuthorApplication,
+	$generatePreviewToken,
+	$getPostByPreviewToken,
+	$getNotifications,
+	$markNotificationRead,
+	$markAllNotificationsRead,
+	$getMyReadingLists,
+	$createReadingList,
+	$getReadingListPosts,
+	$addToReadingList,
 } from "./functions";
 
 // =============================================================================
@@ -275,6 +284,7 @@ interface InfinitePostsParams {
 	authorId?: string;
 	isFeatured?: boolean;
 	sortBy?: "publishedAt" | "updatedAt" | "title" | "viewCount";
+	followedByUserId?: string;
 }
 
 export function useInfinitePublishedPosts(params: InfinitePostsParams = {}) {
@@ -291,6 +301,7 @@ export function useInfinitePublishedPosts(params: InfinitePostsParams = {}) {
 					authorId: params.authorId,
 					isFeatured: params.isFeatured,
 					sortBy: params.sortBy,
+					followedByUserId: params.followedByUserId,
 				},
 			}),
 		initialPageParam: undefined as string | undefined,
@@ -388,6 +399,21 @@ export function useDeletePost() {
 			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.POSTS.PAGINATED_BASE });
 			qc.invalidateQueries({ queryKey: ["blog", "admin", "posts"] });
 		},
+	});
+}
+
+export function useGeneratePreviewToken() {
+	return useMutation({
+		mutationFn: (id: string) => $generatePreviewToken({ data: { id } }),
+	});
+}
+
+export function usePostByPreviewToken(token: string | undefined) {
+	return useQuery({
+		queryKey: ["blog", "preview", token],
+		queryFn: () => $getPostByPreviewToken({ data: { token: token! } }),
+		enabled: !!token,
+		staleTime: 1000 * 60,
 	});
 }
 
@@ -708,6 +734,75 @@ export function useDeletePage() {
 			$deletePage({ data: { id: vars.id } }),
 		onSuccess: (_, vars) => {
 			qc.invalidateQueries({ queryKey: ["blog", "pages", vars.siteId] });
+		},
+	});
+}
+
+// =============================================================================
+// Notifications
+// =============================================================================
+
+export function useNotifications(limit = 20) {
+	return useQuery({
+		queryKey: ["notifications", limit],
+		queryFn: () => $getNotifications({ data: { limit } }),
+		refetchInterval: 30_000, // poll every 30s
+		refetchIntervalInBackground: false,
+	});
+}
+
+export function useMarkNotificationRead() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (id: string) => $markNotificationRead({ data: { id } }),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+	});
+}
+
+export function useMarkAllNotificationsRead() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: () => $markAllNotificationsRead({ data: {} }),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+	});
+}
+
+// =============================================================================
+// Reading Lists
+// =============================================================================
+
+export function useMyReadingLists() {
+	return useQuery({
+		queryKey: ["reading-lists"],
+		queryFn: () => $getMyReadingLists({ data: {} }),
+	});
+}
+
+export function useCreateReadingList() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (data: { name: string; description?: string; isPublic?: boolean }) =>
+			$createReadingList({ data }),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ["reading-lists"] }),
+	});
+}
+
+export function useReadingListPosts(listId: string | undefined) {
+	return useQuery({
+		queryKey: ["reading-lists", listId, "posts"],
+		queryFn: () => $getReadingListPosts({ data: { listId: listId! } }),
+		enabled: !!listId,
+	});
+}
+
+export function useAddToReadingList() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (data: { postId: string; listId?: string }) =>
+			$addToReadingList({ data }),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["reading-lists"] });
+			qc.invalidateQueries({ queryKey: ["blog", "bookmarks"] });
 		},
 	});
 }

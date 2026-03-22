@@ -181,7 +181,12 @@ function BlogSearchPage() {
 									key={post.id}
 									className="navy-blue-blog-card rounded-2xl overflow-hidden sm:flex gap-0 hover:-translate-y-0.5 transition-transform"
 								>
-									<figure className="sm:w-56 shrink-0 aspect-video sm:aspect-auto overflow-hidden">
+									<figure className="relative sm:w-56 shrink-0 aspect-video sm:aspect-auto overflow-hidden">
+									{(post as any).isPremium && (
+										<div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-gradient-to-r from-carolina-blue to-blog-teal text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow">
+											✦ Premium
+										</div>
+									)}
 										{post.featuredImageUrl ? (
 											<img
 												src={post.featuredImageUrl}

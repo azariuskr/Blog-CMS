@@ -13,6 +13,8 @@ import {
 	LogOut,
 	PenLine,
 	LayoutDashboard,
+	Bell,
+	Check,
 } from "lucide-react";
 import { useHasCapability } from "@/hooks/auth-hooks";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,8 +27,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants";
-import { useSubscribeNewsletter } from "@/lib/blog/queries";
+import { useSubscribeNewsletter, useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/lib/blog/queries";
 import { toast } from "sonner";
+import { Bell } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/(blog)")({
 	component: BlogLayout,
@@ -38,6 +42,77 @@ const navLinks = [
 	{ href: "/authors", label: "Authors" },
 	{ href: "/about", label: "About" },
 ];
+
+function NotificationBell() {
+	const [open, setOpen] = useState(false);
+	const notificationsQuery = useNotifications(20);
+	const markRead = useMarkNotificationRead();
+	const markAllRead = useMarkAllNotificationsRead();
+
+	const result = notificationsQuery.data?.ok ? notificationsQuery.data.data : null;
+	const items = result?.items ?? [];
+	const unreadCount = result?.unreadCount ?? 0;
+
+	return (
+		<div className="relative">
+			<button
+				type="button"
+				onClick={() => setOpen((p) => !p)}
+				className="relative text-wild-blue-yonder hover:text-carolina-blue transition-colors"
+				aria-label="Notifications"
+			>
+				<Bell className="h-5 w-5" />
+				{unreadCount > 0 && (
+					<span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 flex items-center justify-center rounded-full bg-carolina-blue text-white text-[9px] font-bold px-0.5">
+						{unreadCount > 9 ? "9+" : unreadCount}
+					</span>
+				)}
+			</button>
+			{open && (
+				<div className="absolute right-0 top-8 w-80 rounded-xl border border-prussian-blue bg-oxford-blue shadow-xl z-50">
+					<div className="flex items-center justify-between px-4 py-3 border-b border-prussian-blue">
+						<span className="text-sm font-semibold text-alice-blue">Notifications</span>
+						{unreadCount > 0 && (
+							<button
+								type="button"
+								onClick={() => markAllRead.mutate()}
+								className="flex items-center gap-1 text-[10px] text-carolina-blue hover:underline"
+							>
+								<Check className="h-3 w-3" />
+								Mark all read
+							</button>
+						)}
+					</div>
+					<div className="max-h-80 overflow-y-auto">
+						{items.length === 0 ? (
+							<p className="px-4 py-6 text-center text-xs text-slate-gray">No notifications yet.</p>
+						) : (
+							items.map((n: any) => (
+								<button
+									key={n.id}
+									type="button"
+									onClick={() => { if (!n.read) markRead.mutate(n.id); }}
+									className={`w-full text-left px-4 py-3 border-b border-prussian-blue/50 hover:bg-prussian-blue/20 transition-colors ${n.read ? "" : "bg-carolina-blue/5"}`}
+								>
+									<div className="flex items-start gap-2">
+										{!n.read && <span className="mt-1.5 flex-shrink-0 h-1.5 w-1.5 rounded-full bg-carolina-blue" />}
+										<div className={!n.read ? "" : "pl-3.5"}>
+											<p className="text-xs text-alice-blue leading-snug">{n.message ?? n.type.replace(/_/g, " ")}</p>
+											{n.post?.title && <p className="text-[10px] text-slate-gray mt-0.5 truncate">{n.post.title}</p>}
+											<p className="text-[10px] text-prussian-blue-dark mt-0.5">
+												{formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+											</p>
+										</div>
+									</div>
+								</button>
+							))
+						)}
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
 
 function BlogLayout() {
 	return (
@@ -112,6 +187,7 @@ function BlogHeader() {
 
 					{user ? (
 						<>
+							<NotificationBell />
 							<Link
 								to={ROUTES.EDITOR.NEW as string}
 								className="navy-blue-blog-btn px-4 py-2 rounded-md text-sm flex items-center gap-2"
