@@ -613,6 +613,7 @@ export const sitesRelations = relations(sites, ({ one, many }) => ({
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
 	author: one(user, { fields: [posts.authorId], references: [user.id] }),
+	authorProfile: one(authorProfiles, { fields: [posts.authorId], references: [authorProfiles.userId] }),
 	site: one(sites, { fields: [posts.siteId], references: [sites.id] }),
 	category: one(categories, {
 		fields: [posts.categoryId],

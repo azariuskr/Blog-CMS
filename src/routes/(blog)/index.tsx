@@ -261,13 +261,13 @@ function BlogHomePage() {
 									<div className="flex items-center justify-between gap-5 text-sm mb-5">
 										<div className="flex items-center gap-2.5">
 											<Avatar className="w-10 h-10">
-												<AvatarImage src={post.author?.avatarUrl ?? undefined} alt={post.author?.displayName ?? "Unknown"} />
+												<AvatarImage src={(post as any).authorProfile?.avatarUrl ?? post.author?.image ?? undefined} alt={(post as any).authorProfile?.displayName ?? post.author?.name ?? "Anonymous"} />
 												<AvatarFallback className="bg-prussian-blue">
-													{(post.author?.displayName ?? "U").charAt(0).toUpperCase()}
+													{((post as any).authorProfile?.displayName ?? post.author?.name ?? "A").charAt(0).toUpperCase()}
 												</AvatarFallback>
 											</Avatar>
 											<div>
-												<p className="text-slate-gray font-bold">{post.author?.displayName ?? "Unknown"}</p>
+												<p className="text-slate-gray font-bold">{(post as any).authorProfile?.displayName ?? post.author?.name ?? "Anonymous"}</p>
 												<p className="text-xs text-slate-gray">
 													{new Date(post.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
 												</p>
@@ -365,14 +365,14 @@ function BlogHomePage() {
 												<div className="flex items-center gap-2">
 													<Avatar className="w-6 h-6">
 														<AvatarImage
-															src={post.author?.avatarUrl ?? undefined}
-															alt={post.author?.displayName ?? "Unknown"}
+															src={(post as any).authorProfile?.avatarUrl ?? post.author?.image ?? undefined}
+															alt={(post as any).authorProfile?.displayName ?? post.author?.name ?? "Anonymous"}
 														/>
 														<AvatarFallback className="bg-prussian-blue text-xs">
-															{(post.author?.displayName ?? "U").charAt(0).toUpperCase()}
+															{((post as any).authorProfile?.displayName ?? post.author?.name ?? "A").charAt(0).toUpperCase()}
 														</AvatarFallback>
 													</Avatar>
-													<span>{post.author?.displayName ?? "Unknown"}</span>
+													<span>{(post as any).authorProfile?.displayName ?? post.author?.name ?? "Anonymous"}</span>
 												</div>
 												<span>
 													{new Date(post.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}

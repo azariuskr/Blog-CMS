@@ -257,6 +257,7 @@ export const $listPublishedPosts = createServerFn({ method: "GET" })
 				offset: useCursor ? 0 : (params.page - 1) * params.limit,
 				with: {
 					author: true,
+					authorProfile: true,
 					category: true,
 				},
 			});

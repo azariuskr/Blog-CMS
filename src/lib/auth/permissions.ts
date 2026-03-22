@@ -385,9 +385,9 @@ export const routeConfig: Record<string, RouteConfig> = {
 		parent: ROUTES.ADMIN.BILLING,
 	},
 	[ROUTES.ADMIN.STORAGE]: {
-		title: "Storage",
+		title: "Media",
 		icon: HardDrive,
-		description: "Manage storage settings",
+		description: "Manage media files",
 		minRole: ROLES.SUPER_ADMIN,
 		noIndex: true,
 		showInNav: true,
@@ -457,7 +457,7 @@ export const routeConfig: Record<string, RouteConfig> = {
 		description: "Blog management dashboard",
 		minRole: ROLES.ADMIN,
 		noIndex: true,
-		showInNav: true,
+		showInNav: false,
 		parent: ROUTES.ADMIN.BASE,
 	},
 	[ROUTES.ADMIN.BLOG.POSTS]: {
@@ -502,7 +502,7 @@ export const routeConfig: Record<string, RouteConfig> = {
 		description: "Manage blog media",
 		minRole: ROLES.ADMIN,
 		noIndex: true,
-		showInNav: true,
+		showInNav: false,
 		parent: ROUTES.ADMIN.BLOG.BASE,
 	},
 	[ROUTES.ADMIN.BLOG.AUTHORS]: {
@@ -511,7 +511,7 @@ export const routeConfig: Record<string, RouteConfig> = {
 		description: "Manage blog authors",
 		minRole: ROLES.ADMIN,
 		noIndex: true,
-		showInNav: true,
+		showInNav: false,
 		parent: ROUTES.ADMIN.BLOG.BASE,
 	},
 	[ROUTES.ADMIN.BLOG.ANALYTICS]: {
@@ -520,7 +520,7 @@ export const routeConfig: Record<string, RouteConfig> = {
 		description: "Blog performance analytics",
 		minRole: ROLES.ADMIN,
 		noIndex: true,
-		showInNav: true,
+		showInNav: false,
 		parent: ROUTES.ADMIN.BLOG.BASE,
 	},
 	[ROUTES.ADMIN.BLOG.NEWSLETTER]: {
@@ -548,7 +548,7 @@ export const routeConfig: Record<string, RouteConfig> = {
 		minRole: ROLES.ADMIN,
 		noIndex: true,
 		showInNav: true,
-		parent: ROUTES.ADMIN.BLOG.BASE,
+		parent: ROUTES.ADMIN.BASE,
 	},
 
 	// Writer editor (accessible to all authenticated users)

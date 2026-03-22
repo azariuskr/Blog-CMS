@@ -180,7 +180,7 @@ function BlogHeader() {
 						</>
 					) : (
 						<Link to={ROUTES.LOGIN} className="navy-blue-blog-btn px-4 py-2 rounded-md text-sm">
-							Get Started
+							Start Writing
 						</Link>
 					)}
 				</div>
@@ -257,7 +257,7 @@ function BlogHeader() {
 						onClick={() => setMobileMenuOpen(false)}
 						className="navy-blue-blog-btn block py-2.5 px-4 rounded-md text-sm text-center"
 					>
-						Get Started
+						Start Writing
 					</Link>
 				)}
 			</div>

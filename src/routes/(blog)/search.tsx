@@ -212,18 +212,18 @@ function BlogSearchPage() {
 												to={`/@${post.author?.username}` as string}
 												className="flex items-center gap-2 hover:text-carolina-blue transition-colors"
 											>
-												{post.author?.avatarUrl ? (
+												{((post as any).authorProfile?.avatarUrl ?? post.author?.image) ? (
 													<img
-														src={post.author.avatarUrl}
-														alt={post.author.displayName ?? "Unknown"}
+														src={(post as any).authorProfile?.avatarUrl ?? post.author?.image}
+														alt={(post as any).authorProfile?.displayName ?? post.author?.name ?? "Anonymous"}
 														className="w-5 h-5 rounded-full"
 													/>
 												) : (
 													<div className="w-5 h-5 rounded-full bg-prussian-blue flex items-center justify-center text-[8px] text-white font-bold">
-														{(post.author?.displayName ?? "U").charAt(0).toUpperCase()}
+														{((post as any).authorProfile?.displayName ?? post.author?.name ?? "A").charAt(0).toUpperCase()}
 													</div>
 												)}
-												{post.author?.displayName ?? "Unknown"}
+												{(post as any).authorProfile?.displayName ?? post.author?.name ?? "Anonymous"}
 											</Link>
 											<div className="flex items-center gap-3">
 												<span>{new Date(post.publishedAt).toLocaleDateString()}</span>
