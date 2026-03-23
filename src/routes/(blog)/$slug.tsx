@@ -20,9 +20,11 @@ import {
 	Copy,
 	Twitter,
 	Linkedin,
+	Check,
 } from "lucide-react";
 import { toast } from "sonner";
-import { usePostBySlug, usePublishedPosts, usePublicComments, useCreateComment, useToggleReaction, useToggleBookmark, useAddToReadingList, useMyReadingLists, postBySlugQueryOptions, publicCommentsQueryOptions } from "@/lib/blog/queries";
+import { usePostBySlug, usePublishedPosts, usePublicComments, useCreateComment, useToggleReaction, useAddToReadingList, useMyReadingLists, useUserPostReaction, usePostBookmarkStatus, useRemoveFromReadingList, postBySlugQueryOptions, publicCommentsQueryOptions } from "@/lib/blog/queries";
+import { useQueryClient } from "@tanstack/react-query";
 import { PaywallCard } from "@/components/blog/PaywallCard";
 import { useSession } from "@/lib/auth/auth-client";
 import { unwrap } from "@/lib/result";
@@ -324,8 +326,6 @@ function BlogPostPage() {
 	const { data: session } = useSession();
 	const userId = session?.user?.id;
 	const [commentText, setCommentText] = useState("");
-	const [isLiked, setIsLiked] = useState(false);
-	const [isBookmarked, setIsBookmarked] = useState(false);
 	const [showListPicker, setShowListPicker] = useState(false);
 	const listPickerRef = useRef<HTMLDivElement>(null);
 	const [readingProgress, setReadingProgress] = useState(0);
@@ -334,10 +334,11 @@ function BlogPostPage() {
 	const contentRef = useRef<HTMLDivElement>(null);
 	const postQuery = usePostBySlug(slug);
 	const toggleReaction = useToggleReaction();
-	const toggleBookmark = useToggleBookmark();
 	const addToReadingList = useAddToReadingList();
+	const removeFromReadingList = useRemoveFromReadingList();
 	const readingListsQuery = useMyReadingLists();
 	const myLists = readingListsQuery.data?.ok ? (readingListsQuery.data.data as any[]) : [];
+	const queryClient = useQueryClient();
 	const createComment = useCreateComment();
 	const resolvedPostForCategory = postQuery.data?.ok ? (postQuery.data as any).data : null;
 	const relatedPostsQuery = usePublishedPosts({
@@ -386,6 +387,12 @@ function BlogPostPage() {
 				category: { name: fallbackPost.categoryName },
 			}
 			: null);
+	const reactionQuery = useUserPostReaction(post?.id);
+	const bookmarkQuery = usePostBookmarkStatus(post?.id);
+	const isLiked = (reactionQuery.data as any)?.ok ? !!(reactionQuery.data as any).data?.liked : false;
+	const isBookmarked = (bookmarkQuery.data as any)?.ok ? !!(bookmarkQuery.data as any).data?.bookmarked : false;
+	const bookmarkedListId = (bookmarkQuery.data as any)?.ok ? ((bookmarkQuery.data as any).data?.listId ?? null) : null;
+
 	const relatedPosts = relatedPostsQuery.data?.ok ? relatedPostsQuery.data.data.items.filter((p: any) => p.id !== post?.id) : [];
 	const moreByAuthor = authorPostsQuery.data?.ok ? authorPostsQuery.data.data.items.filter((p: any) => p.id !== post?.id).slice(0, 3) : [];
 	const rawBlocks = (post?.blocks ?? []) as BlogBlock[];
@@ -608,8 +615,9 @@ function BlogPostPage() {
 									size="icon"
 									onClick={() => {
 										if (!userId || !post?.id) { toast.error("Sign in to like posts"); return; }
-										setIsLiked(!isLiked);
-										toggleReaction.mutate({ postId: post.id, userId, type: "like" });
+										toggleReaction.mutate({ postId: post.id, userId, type: "like" }, {
+											onSuccess: () => queryClient.invalidateQueries({ queryKey: ["post-reaction", post.id] }),
+										});
 									}}
 									className={`rounded-full ${isLiked ? "text-pink-500 bg-pink-500/10" : "text-wild-blue-yonder hover:text-pink-500"}`}
 								>
@@ -633,24 +641,35 @@ function BlogPostPage() {
 											{myLists.length === 0 ? (
 												<p className="text-xs text-slate-gray px-2 py-1">No lists yet. Create one in your account.</p>
 											) : (
-												myLists.map((list: any) => (
-													<button
-														key={list.id}
-														type="button"
-														onClick={() => {
-															if (!post?.id) return;
-															addToReadingList.mutate({ postId: post.id, listId: list.id });
-															setIsBookmarked(true);
-															toggleBookmark.mutate({ postId: post.id, userId: userId! });
-															setShowListPicker(false);
-															toast.success(`Saved to "${list.name}"`);
-														}}
-														className="w-full text-left px-2 py-1.5 text-sm text-alice-blue hover:bg-prussian-blue/40 rounded-md transition-colors"
-													>
-														{list.name}
-														{list.isDefault && <span className="ml-1 text-[10px] text-slate-gray">(default)</span>}
-													</button>
-												))
+												<>
+													{myLists.map((list: any) => {
+														const inThisList = bookmarkedListId === list.id;
+														return (
+															<button
+																key={list.id}
+																type="button"
+																onClick={() => {
+																	if (!post?.id) return;
+																	if (inThisList) {
+																		removeFromReadingList.mutate({ postId: post.id });
+																		toast.success(`Removed from "${list.name}"`);
+																	} else {
+																		addToReadingList.mutate({ postId: post.id, listId: list.id });
+																		toast.success(`Saved to "${list.name}"`);
+																	}
+																	setShowListPicker(false);
+																}}
+																className={`w-full text-left px-2 py-1.5 text-sm rounded-md transition-colors flex items-center justify-between gap-2 ${inThisList ? "text-carolina-blue bg-carolina-blue/10" : "text-alice-blue hover:bg-prussian-blue/40"}`}
+															>
+																<span className="truncate">
+																	{list.name}
+																	{list.isDefault && <span className="ml-1 text-[10px] text-slate-gray">(default)</span>}
+																</span>
+																{inThisList && <Check className="w-3.5 h-3.5 shrink-0" />}
+															</button>
+														);
+													})}
+												</>
 											)}
 										</div>
 									)}

@@ -2036,3 +2036,80 @@ export const $getPublicReadingListsByUser = createServerFn({ method: "GET" })
 			return lists;
 		});
 	});
+
+// =============================================================================
+// Post interaction state (reaction + bookmark status)
+// =============================================================================
+
+export const $getUserPostReaction = createServerFn({ method: "GET" })
+	.inputValidator((data: unknown) => validate(z.object({ postId: z.string().uuid() }), data))
+	.middleware([accessMiddleware({})])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) return { liked: false };
+			const reaction = await db.query.reactions.findFirst({
+				where: and(
+					eq(reactions.postId, data.data.postId),
+					eq(reactions.userId, session.user.id),
+					eq(reactions.type, "like"),
+				),
+			});
+			return { liked: !!reaction };
+		});
+	});
+
+export const $getPostBookmarkStatus = createServerFn({ method: "GET" })
+	.inputValidator((data: unknown) => validate(z.object({ postId: z.string().uuid() }), data))
+	.middleware([accessMiddleware({})])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) return { bookmarked: false, listId: null };
+			const bookmark = await db.query.bookmarks.findFirst({
+				where: and(
+					eq(bookmarks.postId, data.data.postId),
+					eq(bookmarks.userId, session.user.id),
+				),
+			});
+			return { bookmarked: !!bookmark, listId: bookmark?.listId ?? null };
+		});
+	});
+
+export const $removeFromReadingList = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(z.object({ postId: z.string().uuid() }), data))
+	.middleware([accessMiddleware({})])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			await db.delete(bookmarks).where(
+				and(
+					eq(bookmarks.postId, data.data.postId),
+					eq(bookmarks.userId, session.user.id),
+				),
+			);
+			return { removed: true };
+		});
+	});
+
+export const $deleteReadingList = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(z.object({ listId: z.string().uuid() }), data))
+	.middleware([accessMiddleware({})])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			await db.delete(readingLists).where(
+				and(
+					eq(readingLists.id, data.data.listId),
+					eq(readingLists.userId, session.user.id),
+				),
+			);
+			return { deleted: true };
+		});
+	});

@@ -58,6 +58,10 @@ import {
 	$getUserInterests,
 	$setUserInterests,
 	$getPublicReadingListsByUser,
+	$getUserPostReaction,
+	$getPostBookmarkStatus,
+	$removeFromReadingList,
+	$deleteReadingList,
 } from "./functions";
 
 // =============================================================================
@@ -807,9 +811,10 @@ export function useAddToReadingList() {
 	return useMutation({
 		mutationFn: (data: { postId: string; listId?: string }) =>
 			$addToReadingList({ data }),
-		onSuccess: () => {
+		onSuccess: (_, { postId }) => {
 			qc.invalidateQueries({ queryKey: ["reading-lists"] });
 			qc.invalidateQueries({ queryKey: ["blog", "bookmarks"] });
+			qc.invalidateQueries({ queryKey: ["post-bookmark-status", postId] });
 		},
 	});
 }
@@ -856,5 +861,42 @@ export function usePublicReadingListsByUser(userId?: string) {
 		queryKey: ["public-reading-lists", userId],
 		queryFn: () => $getPublicReadingListsByUser({ data: { userId: userId! } }),
 		enabled: !!userId,
+	});
+}
+
+export function useUserPostReaction(postId?: string) {
+	return useQuery({
+		queryKey: ["post-reaction", postId],
+		queryFn: () => $getUserPostReaction({ data: { postId: postId! } }),
+		enabled: !!postId,
+	});
+}
+
+export function usePostBookmarkStatus(postId?: string) {
+	return useQuery({
+		queryKey: ["post-bookmark-status", postId],
+		queryFn: () => $getPostBookmarkStatus({ data: { postId: postId! } }),
+		enabled: !!postId,
+	});
+}
+
+export function useRemoveFromReadingList() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (data: { postId: string }) => $removeFromReadingList({ data }),
+		onSuccess: (_, { postId }) => {
+			qc.invalidateQueries({ queryKey: ["post-bookmark-status", postId] });
+			qc.invalidateQueries({ queryKey: ["reading-lists"] });
+		},
+	});
+}
+
+export function useDeleteReadingList() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: (data: { listId: string }) => $deleteReadingList({ data }),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["reading-lists"] });
+		},
 	});
 }

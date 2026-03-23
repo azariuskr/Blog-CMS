@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { BookMarked, Plus, Eye, Calendar, Loader2 } from "lucide-react";
-import { useMyReadingLists, useReadingListPosts, useCreateReadingList } from "@/lib/blog/queries";
+import { BookMarked, Plus, Eye, Calendar, Loader2, Trash2, X } from "lucide-react";
+import { useMyReadingLists, useReadingListPosts, useCreateReadingList, useRemoveFromReadingList, useDeleteReadingList } from "@/lib/blog/queries";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/(authenticated)/account/reading-lists")({
@@ -11,10 +11,13 @@ export const Route = createFileRoute("/(authenticated)/account/reading-lists")({
 function ReadingListsPage() {
 	const listsQuery = useMyReadingLists();
 	const createList = useCreateReadingList();
+	const removePost = useRemoveFromReadingList();
+	const deleteList = useDeleteReadingList();
 	const lists = (listsQuery.data as any)?.ok ? ((listsQuery.data as any).data as any[]) : [];
 	const [selectedListId, setSelectedListId] = useState<string | null>(null);
 	const [showCreate, setShowCreate] = useState(false);
 	const [newListName, setNewListName] = useState("");
+	const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
 	const selectedList = lists.find((l) => l.id === selectedListId) ?? lists[0] ?? null;
 	const postsQuery = useReadingListPosts(selectedList?.id);
@@ -29,6 +32,24 @@ function ReadingListsPage() {
 			setShowCreate(false);
 		} else {
 			toast.error("Failed to create list.");
+		}
+	};
+
+	const handleRemovePost = (postId: string) => {
+		removePost.mutate({ postId }, {
+			onSuccess: () => toast.success("Post removed from list."),
+			onError: () => toast.error("Failed to remove post."),
+		});
+	};
+
+	const handleDeleteList = async (listId: string) => {
+		const result = await deleteList.mutateAsync({ listId });
+		if ((result as any)?.ok) {
+			toast.success("List deleted.");
+			setConfirmDeleteId(null);
+			if (selectedListId === listId) setSelectedListId(null);
+		} else {
+			toast.error("Failed to delete list.");
 		}
 	};
 
@@ -84,19 +105,30 @@ function ReadingListsPage() {
 							<p className="text-sm text-slate-gray px-2">No lists yet.</p>
 						) : (
 							lists.map((list: any) => (
-								<button
-									key={list.id}
-									type="button"
-									onClick={() => setSelectedListId(list.id)}
-									className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
-										(selectedListId ?? lists[0]?.id) === list.id
-											? "bg-carolina-blue/15 text-carolina-blue font-medium"
-											: "text-wild-blue-yonder hover:bg-prussian-blue/30"
-									}`}
-								>
-									<span className="block truncate">{list.name}</span>
-									{list.isDefault && <span className="text-[10px] text-slate-gray">Default</span>}
-								</button>
+								<div key={list.id} className="group relative">
+									<button
+										type="button"
+										onClick={() => setSelectedListId(list.id)}
+										className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors pr-8 ${
+											(selectedListId ?? lists[0]?.id) === list.id
+												? "bg-carolina-blue/15 text-carolina-blue font-medium"
+												: "text-wild-blue-yonder hover:bg-prussian-blue/30"
+										}`}
+									>
+										<span className="block truncate">{list.name}</span>
+										{list.isDefault && <span className="text-[10px] text-slate-gray">Default</span>}
+									</button>
+									{!list.isDefault && (
+										<button
+											type="button"
+											onClick={() => setConfirmDeleteId(list.id)}
+											className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-slate-gray hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+											title="Delete list"
+										>
+											<Trash2 className="h-3.5 w-3.5" />
+										</button>
+									)}
+								</div>
 							))
 						)}
 					</div>
@@ -116,7 +148,7 @@ function ReadingListsPage() {
 								{posts.map((item: any) => {
 									const post = item.post ?? item;
 									return (
-										<article key={item.id} className="flex gap-4 p-4 rounded-xl border border-prussian-blue/50 hover:border-prussian-blue transition-colors">
+										<article key={item.id} className="group flex gap-4 p-4 rounded-xl border border-prussian-blue/50 hover:border-prussian-blue transition-colors relative">
 											{post.featuredImageUrl && (
 												<img
 													src={post.featuredImageUrl}
@@ -124,7 +156,7 @@ function ReadingListsPage() {
 													className="w-20 h-16 object-cover rounded-lg flex-shrink-0"
 												/>
 											)}
-											<div className="flex-1 min-w-0">
+											<div className="flex-1 min-w-0 pr-8">
 												<h3 className="text-sm font-semibold text-alice-blue mb-1 line-clamp-2">
 													<Link to={"/$slug" as string} params={{ slug: post.slug } as any} className="hover:text-carolina-blue transition-colors">
 														{post.title}
@@ -145,6 +177,15 @@ function ReadingListsPage() {
 													</span>
 												</div>
 											</div>
+											<button
+												type="button"
+												onClick={() => handleRemovePost(post.id)}
+												disabled={removePost.isPending}
+												className="absolute right-3 top-3 p-1 rounded text-slate-gray hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-30"
+												title="Remove from list"
+											>
+												<X className="h-4 w-4" />
+											</button>
 										</article>
 									);
 								})}
@@ -153,6 +194,33 @@ function ReadingListsPage() {
 					</div>
 				</div>
 			</div>
+
+			{/* Delete list confirmation */}
+			{confirmDeleteId && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+					<div className="bg-oxford-blue border border-prussian-blue rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+						<h2 className="text-alice-blue font-semibold mb-2">Delete list?</h2>
+						<p className="text-sm text-slate-gray mb-6">This will delete the list and remove all saved posts from it. This cannot be undone.</p>
+						<div className="flex justify-end gap-3">
+							<button
+								type="button"
+								onClick={() => setConfirmDeleteId(null)}
+								className="px-4 py-2 rounded-lg text-sm text-wild-blue-yonder hover:bg-prussian-blue/30 transition-colors"
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								onClick={() => handleDeleteList(confirmDeleteId)}
+								disabled={deleteList.isPending}
+								className="px-4 py-2 rounded-lg text-sm bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+							>
+								{deleteList.isPending ? "Deleting…" : "Delete"}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
