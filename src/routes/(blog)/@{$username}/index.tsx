@@ -19,7 +19,7 @@ import { useAuthorProfile, usePublishedPosts, authorProfileQueryOptions, useTogg
 import { useSession } from "@/lib/auth/auth-client";
 import { siteConfig } from "@/lib/seo/siteConfig";
 
-export const Route = createFileRoute("/(blog)/@$username/")({
+export const Route = createFileRoute("/(blog)/@{$username}/")({
 	loader: async ({ context, params }) => {
 		const username = params.username.replace(/^@/, "");
 		await context.queryClient.prefetchQuery(authorProfileQueryOptions(username));

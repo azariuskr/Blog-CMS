@@ -762,7 +762,7 @@ function BlogPostPage() {
 										<div className="flex-1">
 											<h3 className="text-xl font-bold text-white mb-1">Written by {displayName}</h3>
 											{profile?.username && (
-												<Link to={"/@$username" as string} params={{ username: profile.username } as any} className="text-xs text-carolina-blue hover:underline block mb-3">
+												<Link to={"/@{$username}" as string} params={{ username: profile.username } as any} className="text-xs text-carolina-blue hover:underline block mb-3">
 													@{profile.username}
 												</Link>
 											)}
