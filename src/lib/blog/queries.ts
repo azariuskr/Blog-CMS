@@ -1,4 +1,5 @@
-import { queryOptions, useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useAction, fromServerFn } from "@/hooks/use-action";
 import { QUERY_KEYS } from "@/constants";
 import { getBlogDataMode } from "./data-mode";
 import {
@@ -188,7 +189,7 @@ export const adminPostsQueryOptions = (
 	} = {},
 ) =>
 	queryOptions({
-		queryKey: ["blog", "admin", "posts", params],
+		queryKey: QUERY_KEYS.BLOG.POSTS.ADMIN_LIST_PARAMS(params as Record<string, unknown>),
 		queryFn: () =>
 			$listAdminPosts({
 				data: {
@@ -202,7 +203,7 @@ export const adminPostsQueryOptions = (
 
 export const postByIdQueryOptions = (id: string) =>
 	queryOptions({
-		queryKey: ["blog", "admin", "post", id],
+		queryKey: QUERY_KEYS.BLOG.POSTS.ADMIN_DETAIL(id),
 		queryFn: () => $getPostById({ data: { id } }),
 		enabled: !!id,
 		staleTime: 1000 * 60 * 5,
@@ -377,51 +378,32 @@ export function useAuthors(page = 1) {
 // =============================================================================
 
 export function useUpsertPost() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: {
-			id?: string;
-			title: string;
-			slug: string;
-			authorId: string;
-			excerpt?: string;
-			content?: string;
-			blocks?: { id: string; type: string; content: string; meta?: Record<string, unknown> }[];
-			status?: "draft" | "review" | "scheduled" | "published" | "archived";
-			categoryId?: string;
-			featuredImageUrl?: string;
-			metaTitle?: string;
-			metaDescription?: string;
-			tagIds?: string[];
-			publishedAt?: string;
-		}) => $upsertPost({ data }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.POSTS.PAGINATED_BASE });
-			qc.invalidateQueries({ queryKey: ["blog", "admin", "posts"] });
-		},
+	return useAction(fromServerFn($upsertPost), {
+		invalidate: [
+			QUERY_KEYS.BLOG.POSTS.PAGINATED_BASE,
+			QUERY_KEYS.BLOG.POSTS.ADMIN_LIST,
+		],
+		showToast: false,
 	});
 }
 
 export function useDeletePost() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (id: string) => $deletePost({ data: { id } }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.POSTS.PAGINATED_BASE });
-			qc.invalidateQueries({ queryKey: ["blog", "admin", "posts"] });
-		},
+	return useAction(fromServerFn($deletePost), {
+		invalidate: [
+			QUERY_KEYS.BLOG.POSTS.PAGINATED_BASE,
+			QUERY_KEYS.BLOG.POSTS.ADMIN_LIST,
+		],
+		showToast: false,
 	});
 }
 
 export function useGeneratePreviewToken() {
-	return useMutation({
-		mutationFn: (id: string) => $generatePreviewToken({ data: { id } }),
-	});
+	return useAction(fromServerFn($generatePreviewToken), { showToast: false });
 }
 
 export function usePostByPreviewToken(token: string | undefined) {
 	return useQuery({
-		queryKey: ["blog", "preview", token],
+		queryKey: QUERY_KEYS.BLOG.POSTS.PREVIEW(token ?? ""),
 		queryFn: () => $getPostByPreviewToken({ data: { token: token! } }),
 		enabled: !!token,
 		staleTime: 1000 * 60,
@@ -429,131 +411,91 @@ export function usePostByPreviewToken(token: string | undefined) {
 }
 
 export function useTransitionPostStatus() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: { id: string; to: "draft" | "review" | "published" | "archived" }) =>
-			$transitionPostStatus({ data }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.POSTS.PAGINATED_BASE });
-			qc.invalidateQueries({ queryKey: ["blog", "admin", "posts"] });
-		},
+	return useAction(fromServerFn($transitionPostStatus), {
+		invalidate: [
+			QUERY_KEYS.BLOG.POSTS.PAGINATED_BASE,
+			QUERY_KEYS.BLOG.POSTS.ADMIN_LIST,
+		],
+		showToast: false,
 	});
 }
 
 export function useUpsertCategory() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: {
-			id?: string;
-			name: string;
-			slug: string;
-			description?: string;
-			color?: string;
-		}) => $upsertCategory({ data }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.CATEGORIES.LIST });
-		},
+	return useAction(fromServerFn($upsertCategory), {
+		invalidate: [QUERY_KEYS.BLOG.CATEGORIES.LIST],
+		showToast: false,
 	});
 }
 
 export function useDeleteCategory() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (id: string) => $deleteCategory({ data: { id } }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.CATEGORIES.LIST });
-		},
+	return useAction(fromServerFn($deleteCategory), {
+		invalidate: [QUERY_KEYS.BLOG.CATEGORIES.LIST],
+		showToast: false,
 	});
 }
 
 export function useCreateTag() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: { name: string; slug: string }) => $createTag({ data }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.TAGS.LIST });
-		},
+	return useAction(fromServerFn($createTag), {
+		invalidate: [QUERY_KEYS.BLOG.TAGS.LIST],
+		showToast: false,
 	});
 }
 
 export function useDeleteTag() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (id: string) => $deleteTag({ data: { id } }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.TAGS.LIST });
-		},
+	return useAction(fromServerFn($deleteTag), {
+		invalidate: [QUERY_KEYS.BLOG.TAGS.LIST],
+		showToast: false,
 	});
 }
 
 export function useApproveComment() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (id: string) => $approveComment({ data: { id } }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: ["blog", "comments"] });
-		},
+	return useAction(fromServerFn($approveComment), {
+		invalidate: [QUERY_KEYS.BLOG.COMMENTS.BASE],
+		showToast: false,
 	});
 }
 
 export function useSpamComment() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (id: string) => $spamComment({ data: { id } }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: ["blog", "comments"] });
-		},
+	return useAction(fromServerFn($spamComment), {
+		invalidate: [QUERY_KEYS.BLOG.COMMENTS.BASE],
+		showToast: false,
 	});
 }
 
 export function useDeleteComment() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (id: string) => $deleteComment({ data: { id } }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: ["blog", "comments"] });
-		},
+	return useAction(fromServerFn($deleteComment), {
+		invalidate: [QUERY_KEYS.BLOG.COMMENTS.BASE],
+		showToast: false,
 	});
 }
 
 export function useCreateComment() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: { postId: string; authorId: string; content: string; parentId?: string }) =>
-			$createComment({ data }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: ["blog", "comments"] });
-		},
+	return useAction(fromServerFn($createComment), {
+		invalidate: [QUERY_KEYS.BLOG.COMMENTS.BASE],
+		showToast: false,
 	});
 }
 
 export function useToggleReaction() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: {
-			postId: string;
-			userId: string;
-			type: "like" | "love" | "celebrate" | "insightful" | "curious";
-		}) => $toggleReaction({ data }),
-		onSuccess: (_, vars) => {
-			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.POSTS.DETAIL(vars.postId) });
-		},
+	return useAction(fromServerFn($toggleReaction), {
+		invalidate: [
+			QUERY_KEYS.BLOG.POSTS.PAGINATED_BASE,
+			QUERY_KEYS.BLOG.POSTS.REACTION_BASE,
+		],
+		showToast: false,
 	});
 }
 
 export function useToggleBookmark() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: { postId: string; userId: string }) => $toggleBookmark({ data }),
-		onSuccess: (_, vars) => {
-			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.POSTS.DETAIL(vars.postId) });
-		},
+	return useAction(fromServerFn($toggleBookmark), {
+		invalidate: [QUERY_KEYS.BLOG.POSTS.PAGINATED_BASE],
+		showToast: false,
 	});
 }
 
 export function useFollowStatus(followerId: string, followingId: string) {
 	return useQuery({
-		queryKey: ["blog", "follow-status", followerId, followingId],
+		queryKey: QUERY_KEYS.BLOG.FOLLOW_STATUS(followerId, followingId),
 		queryFn: () => $getFollowStatus({ data: { followerId, followingId } }),
 		enabled: !!followerId && !!followingId,
 		staleTime: 1000 * 60 * 5,
@@ -561,38 +503,29 @@ export function useFollowStatus(followerId: string, followingId: string) {
 }
 
 export function useToggleFollow() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: { followerId: string; followingId: string }) => $toggleFollow({ data }),
-		onSuccess: (_, vars) => {
-			qc.invalidateQueries({
-				queryKey: ["blog", "follow-status", vars.followerId, vars.followingId],
-			});
-			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.AUTHORS.LIST });
-		},
+	return useAction(fromServerFn($toggleFollow), {
+		invalidate: [
+			QUERY_KEYS.BLOG.FOLLOW_STATUS_BASE,
+			QUERY_KEYS.BLOG.AUTHORS.LIST,
+		],
+		showToast: false,
 	});
 }
 
 export function useUpsertAuthorProfile() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: any) =>
-			$upsertAuthorProfile({ data }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.AUTHORS.LIST });
-		},
+	return useAction(fromServerFn($upsertAuthorProfile), {
+		invalidate: [QUERY_KEYS.BLOG.AUTHORS.LIST],
+		showToast: false,
 	});
 }
 
 export function useSubscribeNewsletter() {
-	return useMutation({
-		mutationFn: (data: { email: string; name?: string }) => $subscribeNewsletter({ data }),
-	});
+	return useAction(fromServerFn($subscribeNewsletter), { showToast: false });
 }
 
 export const blogStatsQueryOptions = () =>
 	queryOptions({
-		queryKey: ["blog", "admin", "stats"],
+		queryKey: QUERY_KEYS.BLOG.POSTS.ADMIN_STATS,
 		queryFn: () => $getBlogStats(),
 		staleTime: 1000 * 60 * 5,
 	});
@@ -603,7 +536,7 @@ export function useBlogStats() {
 
 export const postVersionsQueryOptions = (postId: string) =>
 	queryOptions({
-		queryKey: ["blog", "admin", "post-versions", postId],
+		queryKey: QUERY_KEYS.BLOG.POSTS.VERSIONS(postId),
 		queryFn: () => $listPostVersions({ data: { id: postId } }),
 		enabled: !!postId,
 		staleTime: 1000 * 60 * 2,
@@ -614,55 +547,45 @@ export function usePostVersions(postId: string) {
 }
 
 export function useCreatePostVersion() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: any) =>
-			$createPostVersion({ data }),
-		onSuccess: (_, vars) => {
-			qc.invalidateQueries({ queryKey: ["blog", "admin", "post-versions", vars.postId] });
-		},
+	return useAction(fromServerFn($createPostVersion), {
+		invalidate: [QUERY_KEYS.BLOG.POSTS.VERSIONS_BASE],
+		showToast: false,
 	});
 }
 
 export function useGetPostVersion() {
-	return useMutation({
-		mutationFn: (id: string) => $getPostVersion({ data: { id } }),
-	});
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	return useAction(fromServerFn($getPostVersion as any), { showToast: false });
 }
 
 export function useNewsletterSubscribers(params: { page?: number; confirmed?: boolean } = {}) {
 	return useQuery({
-		queryKey: ["blog", "newsletter", "subscribers", params],
+		queryKey: QUERY_KEYS.BLOG.NEWSLETTER.SUBSCRIBERS(params as Record<string, unknown>),
 		queryFn: () => $listNewsletterSubscribers({ data: { page: params.page ?? 1, confirmed: params.confirmed } }),
 		staleTime: 1000 * 60 * 2,
 	});
 }
 
 export function useApplyForAuthor() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: any) => $applyForAuthor({ data }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: ["blog", "author-application", "mine"] });
-		},
+	return useAction(fromServerFn($applyForAuthor), {
+		invalidate: [QUERY_KEYS.BLOG.AUTHOR_APPLICATIONS.MINE],
+		showToast: false,
 	});
 }
 
 export function useReviewAuthorApplication() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: { userId: string; action: "approve" | "reject" }) =>
-			$reviewAuthorApplication({ data }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: ["blog", "author-applications"] });
-			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.AUTHORS.LIST });
-		},
+	return useAction(fromServerFn($reviewAuthorApplication), {
+		invalidate: [
+			QUERY_KEYS.BLOG.AUTHOR_APPLICATIONS.LIST_BASE,
+			QUERY_KEYS.BLOG.AUTHORS.LIST,
+		],
+		showToast: false,
 	});
 }
 
 export function useAuthorApplications(status: "pending" | "approved" | "rejected" = "pending") {
 	return useQuery({
-		queryKey: ["blog", "author-applications", status],
+		queryKey: QUERY_KEYS.BLOG.AUTHOR_APPLICATIONS.LIST(status),
 		queryFn: () => $listAuthorApplications({ data: { status, page: 1, limit: 50 } }),
 		staleTime: 1000 * 30,
 	});
@@ -670,7 +593,7 @@ export function useAuthorApplications(status: "pending" | "approved" | "rejected
 
 export function useMyAuthorApplication() {
 	return useQuery({
-		queryKey: ["blog", "author-application", "mine"],
+		queryKey: QUERY_KEYS.BLOG.AUTHOR_APPLICATIONS.MINE,
 		queryFn: () => $getMyAuthorApplication({ data: {} }),
 		staleTime: 1000 * 60 * 5,
 	});
@@ -691,36 +614,29 @@ import {
 
 export function useSites() {
 	return useQuery({
-		queryKey: ["blog", "sites"],
+		queryKey: QUERY_KEYS.BLOG.SITES.BASE,
 		queryFn: () => $listSites(),
 		staleTime: 1000 * 60 * 2,
 	});
 }
 
 export function useUpsertSite() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: any) =>
-			$upsertSite({ data }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: ["blog", "sites"] });
-		},
+	return useAction(fromServerFn($upsertSite), {
+		invalidate: [QUERY_KEYS.BLOG.SITES.BASE],
+		showToast: false,
 	});
 }
 
 export function useDeleteSite() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (id: string) => $deleteSite({ data: { id } }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: ["blog", "sites"] });
-		},
+	return useAction(fromServerFn($deleteSite), {
+		invalidate: [QUERY_KEYS.BLOG.SITES.BASE],
+		showToast: false,
 	});
 }
 
 export function usePages(siteId: string | null) {
 	return useQuery({
-		queryKey: ["blog", "pages", siteId],
+		queryKey: QUERY_KEYS.BLOG.PAGES.BY_SITE(siteId),
 		queryFn: () => $listPages({ data: { siteId: siteId! } }),
 		enabled: !!siteId,
 		staleTime: 1000 * 60,
@@ -728,25 +644,21 @@ export function usePages(siteId: string | null) {
 }
 
 export function useUpsertPage() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: any) =>
-			$upsertPage({ data }),
-		onSuccess: (_, vars) => {
-			qc.invalidateQueries({ queryKey: ["blog", "pages", vars.siteId] });
-		},
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	return useAction(fromServerFn($upsertPage as any), {
+		invalidate: [QUERY_KEYS.BLOG.PAGES.BASE],
+		showToast: false,
 	});
 }
 
 export function useDeletePage() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (vars: { id: string; siteId: string }) =>
-			$deletePage({ data: { id: vars.id } }),
-		onSuccess: (_, vars) => {
-			qc.invalidateQueries({ queryKey: ["blog", "pages", vars.siteId] });
+	return useAction(
+		(vars: { id: string; siteId: string }) => $deletePage({ data: { id: vars.id } }),
+		{
+			invalidate: [QUERY_KEYS.BLOG.PAGES.BASE],
+			showToast: false,
 		},
-	});
+	);
 }
 
 // =============================================================================
@@ -755,26 +667,24 @@ export function useDeletePage() {
 
 export function useNotifications(limit = 20) {
 	return useQuery({
-		queryKey: ["notifications", limit],
+		queryKey: QUERY_KEYS.NOTIFICATIONS.LIST(limit),
 		queryFn: () => $getNotifications({ data: { limit } }),
-		refetchInterval: 30_000, // poll every 30s
+		refetchInterval: 30_000,
 		refetchIntervalInBackground: false,
 	});
 }
 
 export function useMarkNotificationRead() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (id: string) => $markNotificationRead({ data: { id } }),
-		onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+	return useAction(fromServerFn($markNotificationRead), {
+		invalidate: [QUERY_KEYS.NOTIFICATIONS.BASE],
+		showToast: false,
 	});
 }
 
 export function useMarkAllNotificationsRead() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: () => $markAllNotificationsRead({ data: {} }),
-		onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+	return useAction(fromServerFn($markAllNotificationsRead), {
+		invalidate: [QUERY_KEYS.NOTIFICATIONS.BASE],
+		showToast: false,
 	});
 }
 
@@ -784,38 +694,34 @@ export function useMarkAllNotificationsRead() {
 
 export function useMyReadingLists() {
 	return useQuery({
-		queryKey: ["reading-lists"],
+		queryKey: QUERY_KEYS.READING_LISTS.BASE,
 		queryFn: () => $getMyReadingLists({ data: {} }),
 	});
 }
 
 export function useCreateReadingList() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: { name: string; description?: string; isPublic?: boolean }) =>
-			$createReadingList({ data }),
-		onSuccess: () => qc.invalidateQueries({ queryKey: ["reading-lists"] }),
+	return useAction(fromServerFn($createReadingList), {
+		invalidate: [QUERY_KEYS.READING_LISTS.BASE],
+		showToast: false,
 	});
 }
 
 export function useReadingListPosts(listId: string | undefined) {
 	return useQuery({
-		queryKey: ["reading-lists", listId, "posts"],
+		queryKey: QUERY_KEYS.READING_LISTS.POSTS(listId),
 		queryFn: () => $getReadingListPosts({ data: { listId: listId! } }),
 		enabled: !!listId,
 	});
 }
 
 export function useAddToReadingList() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: { postId: string; listId?: string }) =>
-			$addToReadingList({ data }),
-		onSuccess: (_, { postId }) => {
-			qc.invalidateQueries({ queryKey: ["reading-lists"] });
-			qc.invalidateQueries({ queryKey: ["blog", "bookmarks"] });
-			qc.invalidateQueries({ queryKey: ["post-bookmark-status", postId] });
-		},
+	return useAction(fromServerFn($addToReadingList), {
+		invalidate: [
+			QUERY_KEYS.READING_LISTS.BASE,
+			QUERY_KEYS.BLOG.BOOKMARKS,
+			QUERY_KEYS.BLOG.POSTS.BOOKMARK_STATUS_BASE,
+		],
+		showToast: false,
 	});
 }
 
@@ -825,40 +731,38 @@ export function useAddToReadingList() {
 
 export function useMutedUsers() {
 	return useQuery({
-		queryKey: ["muted-users"],
+		queryKey: QUERY_KEYS.MUTED_USERS,
 		queryFn: () => $getMutedUsers({ data: {} }),
 	});
 }
 
 export function useToggleMute() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (mutedUserId: string) => $toggleMute({ data: { mutedUserId } }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: ["muted-users"] });
-			qc.invalidateQueries({ queryKey: QUERY_KEYS.BLOG.POSTS.PAGINATED({}) });
-		},
+	return useAction(fromServerFn($toggleMute), {
+		invalidate: [
+			QUERY_KEYS.MUTED_USERS,
+			QUERY_KEYS.BLOG.POSTS.PAGINATED_BASE,
+		],
+		showToast: false,
 	});
 }
 
 export function useUserInterests() {
 	return useQuery({
-		queryKey: ["user-interests"],
+		queryKey: QUERY_KEYS.USER_INTERESTS,
 		queryFn: () => $getUserInterests({ data: {} }),
 	});
 }
 
 export function useSetUserInterests() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (categoryIds: string[]) => $setUserInterests({ data: { categoryIds } }),
-		onSuccess: () => qc.invalidateQueries({ queryKey: ["user-interests"] }),
+	return useAction(fromServerFn($setUserInterests), {
+		invalidate: [QUERY_KEYS.USER_INTERESTS],
+		showToast: false,
 	});
 }
 
 export function usePublicReadingListsByUser(userId?: string) {
 	return useQuery({
-		queryKey: ["public-reading-lists", userId],
+		queryKey: QUERY_KEYS.READING_LISTS.PUBLIC_BY_USER(userId),
 		queryFn: () => $getPublicReadingListsByUser({ data: { userId: userId! } }),
 		enabled: !!userId,
 	});
@@ -866,7 +770,7 @@ export function usePublicReadingListsByUser(userId?: string) {
 
 export function useUserPostReaction(postId?: string) {
 	return useQuery({
-		queryKey: ["post-reaction", postId],
+		queryKey: QUERY_KEYS.BLOG.POSTS.REACTION(postId ?? ""),
 		queryFn: () => $getUserPostReaction({ data: { postId: postId! } }),
 		enabled: !!postId,
 	});
@@ -874,29 +778,25 @@ export function useUserPostReaction(postId?: string) {
 
 export function usePostBookmarkStatus(postId?: string) {
 	return useQuery({
-		queryKey: ["post-bookmark-status", postId],
+		queryKey: QUERY_KEYS.BLOG.POSTS.BOOKMARK_STATUS(postId ?? ""),
 		queryFn: () => $getPostBookmarkStatus({ data: { postId: postId! } }),
 		enabled: !!postId,
 	});
 }
 
 export function useRemoveFromReadingList() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: { postId: string }) => $removeFromReadingList({ data }),
-		onSuccess: (_, { postId }) => {
-			qc.invalidateQueries({ queryKey: ["post-bookmark-status", postId] });
-			qc.invalidateQueries({ queryKey: ["reading-lists"] });
-		},
+	return useAction(fromServerFn($removeFromReadingList), {
+		invalidate: [
+			QUERY_KEYS.BLOG.POSTS.BOOKMARK_STATUS_BASE,
+			QUERY_KEYS.READING_LISTS.BASE,
+		],
+		showToast: false,
 	});
 }
 
 export function useDeleteReadingList() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: (data: { listId: string }) => $deleteReadingList({ data }),
-		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: ["reading-lists"] });
-		},
+	return useAction(fromServerFn($deleteReadingList), {
+		invalidate: [QUERY_KEYS.READING_LISTS.BASE],
+		showToast: false,
 	});
 }

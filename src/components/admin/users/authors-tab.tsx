@@ -46,7 +46,6 @@ import {
 	useAuthorApplications,
 	useReviewAuthorApplication,
 } from "@/lib/blog/queries";
-import { ROUTES } from "@/constants";
 import { toast } from "sonner";
 
 function fmt(n: number) {

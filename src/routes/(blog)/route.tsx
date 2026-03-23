@@ -62,7 +62,7 @@ function NotificationBell() {
 						{unreadCount > 0 && (
 							<button
 								type="button"
-								onClick={() => markAllRead.mutate()}
+								onClick={() => markAllRead.mutate({})}
 								className="flex items-center gap-1 text-[10px] text-carolina-blue hover:underline"
 							>
 								<Check className="h-3 w-3" />

@@ -1,5 +1,4 @@
 import type { LucideIcon } from "lucide-react";
-import { FileText } from "lucide-react";
 import { ROUTES } from "@/constants";
 import {
 	type AppRole,
