@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle, User, FileText, Shield } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, User, FileText, Shield, ImageIcon, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/lib/auth/auth-client";
 import { useApplyForAuthor, useMyAuthorApplication } from "@/lib/blog/queries";
@@ -33,6 +33,7 @@ function BecomeAuthorPage() {
 	);
 	const [displayName, setDisplayName] = useState((session?.user as any)?.name ?? "");
 	const [bio, setBio] = useState("");
+	const [avatarUrl, setAvatarUrl] = useState("");
 	const [acceptedPolicy, setAcceptedPolicy] = useState(false);
 
 	// Already applied or approved
@@ -77,6 +78,28 @@ function BecomeAuthorPage() {
 		);
 	}
 
+	if (application?.applicationStatus === "rejected") {
+		return (
+			<div className="min-h-screen bg-[var(--bg-oxford-blue-2)] flex items-center justify-center px-4">
+				<div className="max-w-md w-full text-center space-y-4">
+					<div className="h-12 w-12 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center mx-auto">
+						<XCircle className="h-6 w-6 text-red-400" />
+					</div>
+					<h1 className="text-xl font-bold text-[var(--text-alice-blue)]">Application Not Approved</h1>
+					<p className="text-[var(--text-slate-gray)] text-sm">
+						Unfortunately your application was not approved at this time. You're welcome to update your profile and re-apply.
+					</p>
+					<Link
+						to={"/dashboard" as string}
+						className="inline-flex items-center gap-2 text-sm text-[var(--bg-carolina-blue)] hover:underline"
+					>
+						<ArrowLeft className="h-3.5 w-3.5" /> Back to dashboard
+					</Link>
+				</div>
+			</div>
+		);
+	}
+
 	async function handleSubmit() {
 		if (!acceptedPolicy) {
 			toast.error("You must accept the platform policy.");
@@ -90,6 +113,7 @@ function BecomeAuthorPage() {
 			username,
 			displayName,
 			bio,
+			avatarUrl: avatarUrl.trim() || undefined,
 			acceptedPolicy: true,
 		});
 		if (result?.ok) {
@@ -173,6 +197,21 @@ function BecomeAuthorPage() {
 									className="w-full px-3 py-2.5 rounded-lg border border-[var(--bg-prussian-blue)] bg-[var(--bg-oxford-blue-2)] text-sm text-[var(--text-alice-blue)] outline-none focus:border-[var(--bg-carolina-blue)] placeholder:text-[var(--text-slate-darker)]"
 								/>
 							</div>
+							<div>
+								<label className="block text-xs font-medium text-[var(--text-columbia-blue)] mb-1.5 flex items-center gap-1.5">
+									<ImageIcon className="h-3.5 w-3.5" /> Avatar URL <span className="text-[var(--text-slate-gray)] font-normal">(optional)</span>
+								</label>
+								<input
+									type="url"
+									value={avatarUrl}
+									onChange={(e) => setAvatarUrl(e.target.value)}
+									placeholder="https://example.com/photo.jpg"
+									className="w-full px-3 py-2.5 rounded-lg border border-[var(--bg-prussian-blue)] bg-[var(--bg-oxford-blue-2)] text-sm text-[var(--text-alice-blue)] outline-none focus:border-[var(--bg-carolina-blue)] placeholder:text-[var(--text-slate-darker)]"
+								/>
+								<p className="text-[10px] text-[var(--text-slate-dark)] mt-1">
+									A publicly accessible image URL for your profile picture.
+								</p>
+							</div>
 						</div>
 						<button
 							type="button"
@@ -248,9 +287,17 @@ function BecomeAuthorPage() {
 						{/* Preview card */}
 						<div className="rounded-xl border border-[var(--bg-prussian-blue)] bg-[var(--bg-oxford-blue)] p-5 space-y-3">
 							<div className="flex items-center gap-3">
-								<div className="h-10 w-10 rounded-full bg-[var(--bg-carolina-blue)]/20 border border-[var(--bg-carolina-blue)]/30 flex items-center justify-center text-[var(--bg-carolina-blue)] font-bold text-sm">
-									{displayName[0]?.toUpperCase()}
-								</div>
+								{avatarUrl ? (
+									<img
+										src={avatarUrl}
+										alt={displayName}
+										className="h-10 w-10 rounded-full object-cover border border-[var(--bg-prussian-blue)]"
+									/>
+								) : (
+									<div className="h-10 w-10 rounded-full bg-[var(--bg-carolina-blue)]/20 border border-[var(--bg-carolina-blue)]/30 flex items-center justify-center text-[var(--bg-carolina-blue)] font-bold text-sm">
+										{displayName[0]?.toUpperCase()}
+									</div>
+								)}
 								<div>
 									<p className="text-sm font-semibold text-[var(--text-alice-blue)]">{displayName}</p>
 									<p className="text-xs text-[var(--text-slate-gray)]">@{username}</p>
