@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { type AppRole, QUERY_KEYS, ROLE_OPTIONS, ROLES } from "@/constants";
 import { useHasPermission } from "@/hooks/auth-hooks";
-import { useFormAction } from "@/hooks/use-action";
+import { useFormAction, fromServerFn } from "@/hooks/use-action";
 import {
 	useBanUser,
 	useImpersonateUser,
@@ -41,12 +41,7 @@ export function UserCreateDialog({ onSuccess }: { onSuccess?: () => void }) {
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
 	const createMutation = useFormAction(
-		async (vars: {
-			email: string;
-			password: string;
-			name: string;
-			role?: AppRole;
-		}) => $createUser({ data: vars }),
+		fromServerFn($createUser),
 		{
 			invalidate: [
 				QUERY_KEYS.USERS.LIST,
@@ -162,8 +157,7 @@ export function EditUserDialog({ onSuccess }: EditUserDialogProps) {
 	const impersonateMutation = useImpersonateUser();
 
 	const updateMutation = useFormAction(
-		async (vars: { userId: string; name?: string; email?: string }) =>
-			$updateUser({ data: vars }),
+		fromServerFn($updateUser),
 		{
 			invalidate: [
 				QUERY_KEYS.USERS.LIST,
@@ -177,8 +171,7 @@ export function EditUserDialog({ onSuccess }: EditUserDialogProps) {
 	);
 
 	const roleMutation = useFormAction(
-		async (vars: { userId: string; role: string }) =>
-			$setUserRole({ data: vars }),
+		fromServerFn($setUserRole),
 		{
 			invalidate: [
 				QUERY_KEYS.USERS.LIST,

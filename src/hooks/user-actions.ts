@@ -1,5 +1,5 @@
-import { type AppRole, QUERY_KEYS } from "@/constants";
-import { useAction } from "@/hooks/use-action";
+import { QUERY_KEYS } from "@/constants";
+import { useAction, fromServerFn } from "@/hooks/use-action";
 import {
 	$banUser,
 	$clearTrustedDevice,
@@ -16,77 +16,54 @@ import {
 } from "@/lib/auth/functions";
 
 export function useCreateUser() {
-	return useAction(
-		async (vars: {
-			email: string;
-			password: string;
-			name: string;
-			role?: AppRole;
-		}) => $createUser({ data: vars }),
-		{
-			invalidate: [
-				QUERY_KEYS.USERS.LIST,
-				QUERY_KEYS.USERS.PAGINATED_BASE,
-				QUERY_KEYS.USERS.STATS,
-			],
-			showToast: true,
-		},
-	);
+	return useAction(fromServerFn($createUser), {
+		invalidate: [
+			QUERY_KEYS.USERS.LIST,
+			QUERY_KEYS.USERS.PAGINATED_BASE,
+			QUERY_KEYS.USERS.STATS,
+		],
+		showToast: true,
+	});
 }
 
 export function useUpdateUser() {
-	return useAction(
-		async (vars: { userId: string; name?: string; email?: string }) =>
-			$updateUser({ data: vars }),
-		{
-			invalidate: [
-				QUERY_KEYS.USERS.LIST,
-				QUERY_KEYS.USERS.PAGINATED_BASE,
-				QUERY_KEYS.USERS.STATS,
-			],
-			showToast: true,
-		},
-	);
+	return useAction(fromServerFn($updateUser), {
+		invalidate: [
+			QUERY_KEYS.USERS.LIST,
+			QUERY_KEYS.USERS.PAGINATED_BASE,
+			QUERY_KEYS.USERS.STATS,
+		],
+		showToast: true,
+	});
 }
 
 export function useDeleteUser() {
-	return useAction(
-		async (vars: { userId: string }) => $deleteUser({ data: vars }),
-		{
-			invalidate: [
-				QUERY_KEYS.USERS.LIST,
-				QUERY_KEYS.USERS.PAGINATED_BASE,
-				QUERY_KEYS.USERS.STATS,
-			],
-			showToast: true,
-		},
-	);
+	return useAction(fromServerFn($deleteUser), {
+		invalidate: [
+			QUERY_KEYS.USERS.LIST,
+			QUERY_KEYS.USERS.PAGINATED_BASE,
+			QUERY_KEYS.USERS.STATS,
+		],
+		showToast: true,
+	});
 }
 
 export function useSetUserPassword() {
-	return useAction(
-		async (vars: { userId: string; newPassword: string }) =>
-			$setUserPassword({ data: vars }),
-		{
-			showToast: true,
-		},
-	);
+	return useAction(fromServerFn($setUserPassword), {
+		showToast: true,
+	});
 }
 
 // ROLE MANAGEMENT HOOKS
 export function useSetUserRole() {
-	return useAction(
-		async (vars: { userId: string; role: string }) =>
-			$setUserRole({ data: vars }),
-		{
-			invalidate: [
-				QUERY_KEYS.USERS.LIST,
-				QUERY_KEYS.USERS.PAGINATED_BASE,
-				QUERY_KEYS.USERS.STATS,
-			],
-			showToast: true,
-		},
-	);
+	return useAction(fromServerFn($setUserRole), {
+		invalidate: [
+			QUERY_KEYS.USERS.LIST,
+			QUERY_KEYS.USERS.PAGINATED_BASE,
+			QUERY_KEYS.USERS.STATS,
+		],
+		showToast: true,
+	});
 }
 
 export function useBanUser() {

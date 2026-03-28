@@ -482,11 +482,8 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 } as const;
 
 import {
-    Bell,
     Building2,
     type LucideIcon,
-    Monitor,
-    Palette,
     Settings,
     Shield,
     User,

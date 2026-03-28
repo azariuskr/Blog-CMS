@@ -128,6 +128,7 @@ const getAuthConfig = createServerOnlyFn(() =>
         ac,
         roles: {
           user: roles.user,
+          author: roles.author,
           moderator: roles.moderator,
           admin: roles.admin,
           superAdmin: roles.superAdmin,

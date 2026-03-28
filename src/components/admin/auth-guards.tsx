@@ -154,6 +154,7 @@ const ROLE_STYLES: Record<AppRole, string> = {
     superAdmin: "bg-purple-100 text-purple-800 border-purple-200",
     admin: "bg-red-100 text-red-800 border-red-200",
     moderator: "bg-blue-100 text-blue-800 border-blue-200",
+    author: "bg-emerald-100 text-emerald-800 border-emerald-200",
     user: "bg-gray-100 text-gray-800 border-gray-200",
 };
 

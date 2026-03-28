@@ -565,7 +565,7 @@ export const $upsertPost = createServerFn({ method: "POST" })
 					.insert(posts)
 					.values({
 						...rest,
-						blocks: normalizedContent.blocks,
+						...(normalizedContent ? { blocks: normalizedContent.blocks } : {}),
 						...(mdxContent !== undefined ? { content: mdxContent } : {}),
 						publishedAt: publishedAtDate,
 						scheduledAt: scheduledAtDate,
