@@ -325,7 +325,7 @@ test.describe.serial('Admin Panel E2E Sanity', () => {
   });
 
 
-  test('Phase 10 - FINAL SUMMARY', async ({ page }) => {
+  test('Phase 10 - FINAL SUMMARY', async () => {
     console.log('\n\n================================================================');
     console.log('              ADMIN PANEL E2E SANITY TEST RESULTS');
     console.log('================================================================\n');

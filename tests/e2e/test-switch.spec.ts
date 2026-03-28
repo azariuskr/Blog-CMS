@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 const BASE = 'http://172.20.0.9:3000/template';
 
 test('test image switching on color click', async ({ page }) => {
