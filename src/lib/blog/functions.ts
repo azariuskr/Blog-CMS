@@ -798,9 +798,21 @@ export const $listPublicCategories = createServerFn({ method: "GET" })
 	.inputValidator((data: unknown) => validate(z.object({}), data))
 	.handler(async () => {
 		return safe(async () => {
-			return db.query.categories.findMany({
-				orderBy: [categories.name],
-			});
+			return db
+				.select({
+					id: categories.id,
+					name: categories.name,
+					slug: categories.slug,
+					description: categories.description,
+					color: categories.color,
+					iconUrl: categories.iconUrl,
+					parentId: categories.parentId,
+					postCount: sql<number>`cast(count(${posts.id}) as int)`,
+				})
+				.from(categories)
+				.leftJoin(posts, and(eq(posts.categoryId, categories.id), eq(posts.status, "published")))
+				.groupBy(categories.id)
+				.orderBy(desc(sql<number>`count(${posts.id})`), asc(categories.name));
 		});
 	});
 
