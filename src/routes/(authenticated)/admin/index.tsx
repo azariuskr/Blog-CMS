@@ -158,16 +158,16 @@ function AdminDashboardPage() {
 							}))}
 							margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
 						>
-							<XAxis dataKey="name" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
-							<YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} tickFormatter={(v) => fmt(v)} width={36} />
+							<XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
+							<YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} tickFormatter={(v) => fmt(v)} width={36} />
 							<Tooltip
-								contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
-								cursor={{ fill: "hsl(var(--muted))" }}
+								contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+								cursor={{ fill: "var(--muted)" }}
 								formatter={(value: number) => [fmt(value), "Views"]}
 							/>
 							<Bar dataKey="views" radius={[4, 4, 0, 0]} maxBarSize={52}>
 								{stats.topPosts.map((_, i) => (
-									<Cell key={i} fill={i === 0 ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.4)"} />
+									<Cell key={i} fill={i === 0 ? "var(--primary)" : "color-mix(in srgb, var(--primary) 40%, transparent)"} />
 								))}
 							</Bar>
 						</BarChart>

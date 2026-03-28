@@ -31,8 +31,8 @@ function ToolbarButton({
 			}}
 			className={`p-1 rounded text-xs transition-colors ${
 				active
-					? "bg-[hsl(199,89%,49%)]/20 text-[hsl(199,89%,49%)]"
-					: "text-[hsl(216,33%,50%)] hover:text-[hsl(199,89%,49%)] hover:bg-[hsl(199,89%,49%)]/10"
+					? "bg-[var(--bg-carolina-blue)]/20 text-[var(--bg-carolina-blue)]"
+					: "text-[var(--text-yonder-dim)] hover:text-[var(--bg-carolina-blue)] hover:bg-[var(--bg-carolina-blue)]/10"
 			}`}
 		>
 			{children}
@@ -56,7 +56,7 @@ export function TipTapParagraph({ block, onUpdate }: Props) {
 			Link.configure({
 				openOnClick: false,
 				HTMLAttributes: {
-					class: "text-[hsl(199,89%,49%)] underline underline-offset-2",
+					class: "text-[var(--bg-carolina-blue)] underline underline-offset-2",
 					rel: "noopener noreferrer",
 					target: "_blank",
 				},
@@ -69,7 +69,7 @@ export function TipTapParagraph({ block, onUpdate }: Props) {
 		editorProps: {
 			attributes: {
 				class:
-					"w-full bg-transparent border-none outline-none text-[hsl(217,24%,59%)] text-base leading-relaxed min-h-[1.5em] focus:outline-none",
+					"w-full bg-transparent border-none outline-none text-[var(--text-shadow-blue)] text-base leading-relaxed min-h-[1.5em] focus:outline-none",
 			},
 		},
 	});
@@ -103,7 +103,7 @@ export function TipTapParagraph({ block, onUpdate }: Props) {
 		<div className="relative group/tiptap">
 			{/* Inline toolbar — shows on focus */}
 			{hasFocus && (
-				<div className="absolute -top-8 left-0 z-10 flex items-center gap-0.5 rounded-md border border-[hsl(216,33%,20%)] bg-[hsl(222,44%,13%)] px-1 py-0.5 shadow-lg">
+				<div className="absolute -top-8 left-0 z-10 flex items-center gap-0.5 rounded-md border border-[var(--bg-prussian-blue)] bg-[var(--bg-oxford-blue)] px-1 py-0.5 shadow-lg">
 					<ToolbarButton
 						title="Bold (⌘B)"
 						active={isActive("bold")}
@@ -125,7 +125,7 @@ export function TipTapParagraph({ block, onUpdate }: Props) {
 					>
 						<Code className="h-3.5 w-3.5" />
 					</ToolbarButton>
-					<div className="w-px h-3 bg-[hsl(216,33%,25%)] mx-0.5" />
+					<div className="w-px h-3 bg-[var(--bg-prussian-blue-soft)] mx-0.5" />
 					<ToolbarButton
 						title="Link"
 						active={isActive("link")}

@@ -31,22 +31,22 @@ function ContributorDashboard() {
 
 	const statusColor: Record<string, string> = {
 		published: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-		draft: "bg-[hsl(216,33%,20%)] text-[hsl(216,33%,68%)] border-[hsl(216,33%,30%)]",
+		draft: "bg-[var(--bg-prussian-blue)] text-[var(--text-wild-blue-yonder)] border-[var(--bg-prussian-blue-dark)]",
 		review: "bg-amber-500/20 text-amber-400 border-amber-500/30",
 		scheduled: "bg-blue-500/20 text-blue-400 border-blue-500/30",
 		archived: "bg-red-500/20 text-red-400 border-red-500/30",
 	};
 
 	return (
-		<div className="min-h-screen bg-[hsl(222,47%,11%)] text-[hsl(217,24%,59%)]">
+		<div className="min-h-screen bg-[var(--bg-oxford-blue-2)] text-[var(--text-shadow-blue)]">
 			{/* Header */}
-			<header className="border-b border-[hsl(216,33%,20%)] bg-[hsl(222,44%,13%)] px-6 py-4">
+			<header className="border-b border-[var(--bg-prussian-blue)] bg-[var(--bg-oxford-blue)] px-6 py-4">
 				<div className="max-w-4xl mx-auto flex items-center justify-between">
 					<div>
-						<h1 className="text-xl font-bold text-[hsl(216,100%,95%)]">
+						<h1 className="text-xl font-bold text-[var(--text-alice-blue)]">
 							Welcome back, {userName.split(" ")[0]}
 						</h1>
-						<p className="text-sm text-[hsl(217,17%,48%)] mt-0.5">Your contributor dashboard</p>
+						<p className="text-sm text-[var(--text-slate-gray)] mt-0.5">Your contributor dashboard</p>
 					</div>
 					<Link
 						to={ROUTES.EDITOR.NEW as string}
@@ -61,19 +61,19 @@ function ContributorDashboard() {
 			<div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
 				{/* Become an Author banner */}
 				{isReader && !application && (
-					<div className="rounded-xl border border-[hsl(199,89%,49%)]/30 bg-[hsl(199,89%,49%)]/5 p-5 flex items-center justify-between gap-4">
+					<div className="rounded-xl border border-[var(--bg-carolina-blue)]/30 bg-[var(--bg-carolina-blue)]/5 p-5 flex items-center justify-between gap-4">
 						<div className="flex items-center gap-4">
-							<div className="h-10 w-10 rounded-full bg-[hsl(199,89%,49%)]/10 border border-[hsl(199,89%,49%)]/30 flex items-center justify-center">
-								<Feather className="h-5 w-5 text-[hsl(199,89%,49%)]" />
+							<div className="h-10 w-10 rounded-full bg-[var(--bg-carolina-blue)]/10 border border-[var(--bg-carolina-blue)]/30 flex items-center justify-center">
+								<Feather className="h-5 w-5 text-[var(--bg-carolina-blue)]" />
 							</div>
 							<div>
-								<p className="text-sm font-semibold text-[hsl(216,100%,95%)]">Want to publish on this platform?</p>
-								<p className="text-xs text-[hsl(217,17%,48%)] mt-0.5">Apply to become an author and share your writing with readers.</p>
+								<p className="text-sm font-semibold text-[var(--text-alice-blue)]">Want to publish on this platform?</p>
+								<p className="text-xs text-[var(--text-slate-gray)] mt-0.5">Apply to become an author and share your writing with readers.</p>
 							</div>
 						</div>
 						<Link
 							to={"/dashboard/become-author" as string}
-							className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[hsl(199,89%,49%)] text-white text-sm font-medium hover:bg-[hsl(199,89%,42%)] transition-colors whitespace-nowrap flex-shrink-0"
+							className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--bg-carolina-blue)] text-white text-sm font-medium hover:bg-[var(--bg-carolina-blue-dark)] transition-colors whitespace-nowrap flex-shrink-0"
 						>
 							Apply Now <ArrowRight className="h-4 w-4" />
 						</Link>
@@ -93,17 +93,17 @@ function ContributorDashboard() {
 				{/* Stats row */}
 				<div className="grid grid-cols-3 gap-4">
 					{[
-						{ label: "Total Posts", value: allPosts.length, icon: FileText, color: "text-[hsl(199,89%,49%)]" },
+						{ label: "Total Posts", value: allPosts.length, icon: FileText, color: "text-[var(--bg-carolina-blue)]" },
 						{ label: "Published", value: published.length, icon: Eye, color: "text-emerald-400" },
 						{ label: "In Review", value: inReview.length, icon: Clock, color: "text-amber-400" },
 					].map((stat) => (
 						<div
 							key={stat.label}
-							className="p-5 rounded-xl border border-[hsl(216,33%,20%)] bg-[hsl(222,44%,13%)]"
+							className="p-5 rounded-xl border border-[var(--bg-prussian-blue)] bg-[var(--bg-oxford-blue)]"
 						>
 							<stat.icon className={`w-5 h-5 ${stat.color} mb-3`} />
-							<div className="text-2xl font-bold text-[hsl(216,100%,95%)]">{stat.value}</div>
-							<p className="text-xs text-[hsl(217,17%,48%)] mt-0.5">{stat.label}</p>
+							<div className="text-2xl font-bold text-[var(--text-alice-blue)]">{stat.value}</div>
+							<p className="text-xs text-[var(--text-slate-gray)] mt-0.5">{stat.label}</p>
 						</div>
 					))}
 				</div>
@@ -119,11 +119,11 @@ function ContributorDashboard() {
 						<Link
 							key={action.label}
 							to={action.to}
-							className="p-4 rounded-xl border border-[hsl(216,33%,20%)] bg-[hsl(222,44%,13%)] hover:border-[hsl(199,89%,49%)]/40 hover:bg-[hsl(222,44%,15%)] transition-colors group"
+							className="p-4 rounded-xl border border-[var(--bg-prussian-blue)] bg-[var(--bg-oxford-blue)] hover:border-[var(--bg-carolina-blue)]/40 hover:bg-[var(--bg-oxford-blue-light)] transition-colors group"
 						>
-							<action.icon className="w-5 h-5 text-[hsl(199,89%,49%)] mb-2" />
-							<p className="text-sm font-medium text-[hsl(216,100%,95%)]">{action.label}</p>
-							<p className="text-xs text-[hsl(217,17%,48%)] mt-0.5">{action.desc}</p>
+							<action.icon className="w-5 h-5 text-[var(--bg-carolina-blue)] mb-2" />
+							<p className="text-sm font-medium text-[var(--text-alice-blue)]">{action.label}</p>
+							<p className="text-xs text-[var(--text-slate-gray)] mt-0.5">{action.desc}</p>
 						</Link>
 					))}
 				</div>
@@ -131,24 +131,24 @@ function ContributorDashboard() {
 				{/* Recent posts */}
 				<div>
 					<div className="flex items-center justify-between mb-4">
-						<h2 className="text-sm font-semibold text-[hsl(216,100%,95%)]">Recent Posts</h2>
+						<h2 className="text-sm font-semibold text-[var(--text-alice-blue)]">Recent Posts</h2>
 						<Link
 							to={"/admin/blog/posts" as string}
-							className="text-xs text-[hsl(199,89%,49%)] hover:underline flex items-center gap-1"
+							className="text-xs text-[var(--bg-carolina-blue)] hover:underline flex items-center gap-1"
 						>
 							View all <ArrowRight className="h-3 w-3" />
 						</Link>
 					</div>
 
 					{postsQuery.isLoading ? (
-						<p className="text-sm text-[hsl(217,17%,48%)] py-8 text-center">Loading posts…</p>
+						<p className="text-sm text-[var(--text-slate-gray)] py-8 text-center">Loading posts…</p>
 					) : allPosts.length === 0 ? (
-						<div className="text-center py-12 rounded-xl border border-dashed border-[hsl(216,33%,20%)]">
-							<FileText className="w-8 h-8 text-[hsl(217,17%,35%)] mx-auto mb-3" />
-							<p className="text-sm text-[hsl(217,17%,48%)]">No posts yet</p>
+						<div className="text-center py-12 rounded-xl border border-dashed border-[var(--bg-prussian-blue)]">
+							<FileText className="w-8 h-8 text-[var(--text-slate-darker)] mx-auto mb-3" />
+							<p className="text-sm text-[var(--text-slate-gray)]">No posts yet</p>
 							<Link
 								to={ROUTES.EDITOR.NEW as string}
-								className="mt-3 inline-flex items-center gap-2 text-xs text-[hsl(199,89%,49%)] hover:underline"
+								className="mt-3 inline-flex items-center gap-2 text-xs text-[var(--bg-carolina-blue)] hover:underline"
 							>
 								<Plus className="h-3 w-3" /> Write your first post
 							</Link>
@@ -158,13 +158,13 @@ function ContributorDashboard() {
 							{allPosts.slice(0, 8).map((post: any) => (
 								<div
 									key={post.id}
-									className="flex items-center gap-4 p-4 rounded-xl border border-[hsl(216,33%,20%)] bg-[hsl(222,44%,13%)] hover:border-[hsl(216,33%,28%)] transition-colors"
+									className="flex items-center gap-4 p-4 rounded-xl border border-[var(--bg-prussian-blue)] bg-[var(--bg-oxford-blue)] hover:border-[var(--bg-prussian-blue-mid)] transition-colors"
 								>
 									<div className="flex-1 min-w-0">
-										<p className="text-sm font-medium text-[hsl(216,100%,95%)] truncate">
+										<p className="text-sm font-medium text-[var(--text-alice-blue)] truncate">
 											{post.title || "Untitled"}
 										</p>
-										<p className="text-xs text-[hsl(217,17%,48%)] mt-0.5">
+										<p className="text-xs text-[var(--text-slate-gray)] mt-0.5">
 											{formatDate(post.updatedAt ?? post.createdAt)}
 										</p>
 									</div>
@@ -173,7 +173,7 @@ function ContributorDashboard() {
 									</span>
 									<Link
 										to={`/admin/blog/posts/${post.id}/edit` as string}
-										className="p-1.5 rounded-md text-[hsl(217,17%,48%)] hover:text-[hsl(199,89%,49%)] hover:bg-[hsl(216,33%,20%)] transition-colors"
+										className="p-1.5 rounded-md text-[var(--text-slate-gray)] hover:text-[var(--bg-carolina-blue)] hover:bg-[var(--bg-prussian-blue)] transition-colors"
 									>
 										<Edit className="h-3.5 w-3.5" />
 									</Link>
@@ -185,7 +185,7 @@ function ContributorDashboard() {
 
 				{/* Drafts count */}
 				{drafts.length > 0 && (
-					<p className="text-xs text-[hsl(217,17%,48%)] text-center">
+					<p className="text-xs text-[var(--text-slate-gray)] text-center">
 						{drafts.length} draft{drafts.length > 1 ? "s" : ""} waiting to be finished
 					</p>
 				)}

@@ -46,8 +46,8 @@ export function PremiumSwitch({ postId, authorId, title, slug, checked, status }
 			title={optimistic ? "Premium post — click to disable" : "Free post — click to enable premium"}
 			className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
 				optimistic
-					? "bg-[hsl(199,89%,49%)]/15 border-[hsl(199,89%,49%)]/40 text-[hsl(199,89%,49%)]"
-					: "bg-transparent border-[hsl(216,33%,20%)] text-[hsl(217,17%,40%)] hover:border-[hsl(199,89%,49%)]/40 hover:text-[hsl(199,89%,49%)]"
+					? "bg-[var(--bg-carolina-blue)]/15 border-[var(--bg-carolina-blue)]/40 text-[var(--bg-carolina-blue)]"
+					: "bg-transparent border-[var(--bg-prussian-blue)] text-[var(--text-slate-dark)] hover:border-[var(--bg-carolina-blue)]/40 hover:text-[var(--bg-carolina-blue)]"
 			}`}
 		>
 			<Sparkles className="w-3 h-3" />

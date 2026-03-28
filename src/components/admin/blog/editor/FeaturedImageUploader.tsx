@@ -43,9 +43,9 @@ export function FeaturedImageUploader({ value, onChange }: FeaturedImageUploader
 
 	return (
 		<div className="space-y-1.5">
-			<label className="text-xs font-medium text-[hsl(199,69%,84%)]">Featured Image</label>
+			<label className="text-xs font-medium text-[var(--text-columbia-blue)]">Featured Image</label>
 			{value ? (
-				<div className="relative rounded-lg overflow-hidden border border-[hsl(216,33%,20%)] group">
+				<div className="relative rounded-lg overflow-hidden border border-[var(--bg-prussian-blue)] group">
 					<img
 						src={value}
 						alt="Featured"
@@ -56,7 +56,7 @@ export function FeaturedImageUploader({ value, onChange }: FeaturedImageUploader
 						<button
 							type="button"
 							onClick={() => inputRef.current?.click()}
-							className="text-xs text-white bg-[hsl(199,89%,49%)] px-3 py-1.5 rounded-md font-medium"
+							className="text-xs text-white bg-[var(--bg-carolina-blue)] px-3 py-1.5 rounded-md font-medium"
 						>
 							Replace
 						</button>
@@ -76,7 +76,7 @@ export function FeaturedImageUploader({ value, onChange }: FeaturedImageUploader
 					onDragOver={(e) => e.preventDefault()}
 					onDrop={handleDrop}
 					disabled={uploading}
-					className="w-full h-20 rounded-lg border-2 border-dashed border-[hsl(216,33%,25%)] flex flex-col items-center justify-center gap-1.5 text-[hsl(217,17%,48%)] hover:border-[hsl(199,89%,49%)] hover:text-[hsl(199,89%,49%)] transition-colors disabled:opacity-60"
+					className="w-full h-20 rounded-lg border-2 border-dashed border-[var(--bg-prussian-blue-soft)] flex flex-col items-center justify-center gap-1.5 text-[var(--text-slate-gray)] hover:border-[var(--bg-carolina-blue)] hover:text-[var(--bg-carolina-blue)] transition-colors disabled:opacity-60"
 				>
 					{uploading ? (
 						<>
@@ -104,7 +104,7 @@ export function FeaturedImageUploader({ value, onChange }: FeaturedImageUploader
 				placeholder="…or paste image URL"
 				value={uploading ? "" : value}
 				onChange={(e) => onChange(e.target.value)}
-				className="w-full text-[10px] bg-[hsl(222,47%,11%)] border border-[hsl(216,33%,20%)] rounded-lg px-3 py-1.5 text-[hsl(216,100%,95%)] placeholder:text-[hsl(217,17%,30%)] outline-none focus:border-[hsl(199,89%,49%)] transition-colors"
+				className="w-full text-[10px] bg-[var(--bg-oxford-blue-2)] border border-[var(--bg-prussian-blue)] rounded-lg px-3 py-1.5 text-[var(--text-alice-blue)] placeholder:text-[var(--text-slate-dim)] outline-none focus:border-[var(--bg-carolina-blue)] transition-colors"
 			/>
 		</div>
 	);

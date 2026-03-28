@@ -27,15 +27,15 @@ function DraggableBlock({ type, label, icon }: { type: BlockType; label: string;
 			{...attributes}
 			className={`flex items-center gap-2.5 p-2.5 rounded-lg cursor-grab active:cursor-grabbing transition-all ${
 				isDragging
-					? "bg-[hsl(199,89%,49%)]/20 scale-105 shadow-lg"
-					: "bg-[hsl(222,44%,13%)] hover:bg-[hsl(216,33%,20%)] border border-[hsl(216,33%,20%)] hover:border-[hsl(199,89%,49%)]/40"
+					? "bg-[var(--bg-carolina-blue)]/20 scale-105 shadow-lg"
+					: "bg-[var(--bg-oxford-blue)] hover:bg-[var(--bg-prussian-blue)] border border-[var(--bg-prussian-blue)] hover:border-[var(--bg-carolina-blue)]/40"
 			}`}
 			style={{ touchAction: "none" }}
 		>
-			<div className="w-7 h-7 rounded-md bg-[hsl(199,89%,49%)]/15 flex items-center justify-center flex-shrink-0">
-				<Icon className="w-3.5 h-3.5 text-[hsl(199,89%,49%)]" />
+			<div className="w-7 h-7 rounded-md bg-[var(--bg-carolina-blue)]/15 flex items-center justify-center flex-shrink-0">
+				<Icon className="w-3.5 h-3.5 text-[var(--bg-carolina-blue)]" />
 			</div>
-			<span className="text-xs text-[hsl(217,24%,59%)]">{label}</span>
+			<span className="text-xs text-[var(--text-shadow-blue)]">{label}</span>
 		</div>
 	);
 }
@@ -45,10 +45,10 @@ export function BlockSidebar({ className = "" }: { className?: string }) {
 		<div className={`h-full overflow-y-auto ${className}`}>
 			<div className="p-3 space-y-5">
 				<div>
-					<p className="text-xs font-semibold text-[hsl(216,33%,50%)] uppercase tracking-wider mb-1">
+					<p className="text-xs font-semibold text-[var(--text-yonder-dim)] uppercase tracking-wider mb-1">
 						Blocks
 					</p>
-					<p className="text-xs text-[hsl(216,33%,40%)]">Drag to editor or click +</p>
+					<p className="text-xs text-[var(--text-prussian-mid)]">Drag to editor or click +</p>
 				</div>
 
 				{BLOCK_CATEGORIES.map((cat) => {
@@ -59,8 +59,8 @@ export function BlockSidebar({ className = "" }: { className?: string }) {
 					return (
 						<div key={cat.id}>
 							<div className="flex items-center gap-1.5 mb-2">
-								<CatIcon className="w-3.5 h-3.5 text-[hsl(216,33%,50%)]" />
-								<span className="text-xs font-medium text-[hsl(216,33%,50%)] uppercase tracking-wider">
+								<CatIcon className="w-3.5 h-3.5 text-[var(--text-yonder-dim)]" />
+								<span className="text-xs font-medium text-[var(--text-yonder-dim)] uppercase tracking-wider">
 									{cat.label}
 								</span>
 							</div>

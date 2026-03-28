@@ -23,13 +23,13 @@ export function DiagramBlock({ block, onUpdate }: DiagramBlockProps) {
 	}, [block.content]);
 
 	return (
-		<div className="rounded-lg bg-[hsl(222,44%,13%)] border border-[hsl(216,33%,20%)] overflow-hidden">
-			<div className="flex items-center justify-between px-4 py-2 bg-[hsl(222,47%,11%)] border-b border-[hsl(216,33%,20%)]">
-				<span className="text-xs text-[hsl(216,33%,50%)]">Mermaid Diagram</span>
+		<div className="rounded-lg bg-[var(--bg-oxford-blue)] border border-[var(--bg-prussian-blue)] overflow-hidden">
+			<div className="flex items-center justify-between px-4 py-2 bg-[var(--bg-oxford-blue-2)] border-b border-[var(--bg-prussian-blue)]">
+				<span className="text-xs text-[var(--text-yonder-dim)]">Mermaid Diagram</span>
 				<button
 					type="button"
 					onClick={() => setPreview((v) => !v)}
-					className="text-xs text-[hsl(199,89%,49%)] hover:underline"
+					className="text-xs text-[var(--bg-carolina-blue)] hover:underline"
 				>
 					{preview ? "Edit" : "Preview"}
 				</button>
@@ -43,7 +43,7 @@ export function DiagramBlock({ block, onUpdate }: DiagramBlockProps) {
 					ref={ref}
 					value={block.content}
 					onChange={handleChange}
-					className="w-full bg-transparent border-none outline-none resize-none text-[hsl(217,24%,59%)] font-mono text-sm p-4 placeholder:text-[hsl(216,33%,30%)]"
+					className="w-full bg-transparent border-none outline-none resize-none text-[var(--text-shadow-blue)] font-mono text-sm p-4 placeholder:text-[var(--bg-prussian-blue-dark)]"
 					placeholder="graph TD&#10;  A[Start] --> B[End]"
 					rows={4}
 					spellCheck={false}
