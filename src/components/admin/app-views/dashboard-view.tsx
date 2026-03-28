@@ -68,9 +68,9 @@ export function DashboardView() {
 					icon={Shield}
 				/>
 				<QuickActionCard
-					title="Session Management"
-					description="View and manage your sessions"
-					href={ROUTES.ACCOUNT.SESSIONS}
+					title="Account Security"
+					description="Manage your security settings"
+					href={ROUTES.ACCOUNT.SECURITY}
 					icon={Activity}
 				/>
 			</div>
