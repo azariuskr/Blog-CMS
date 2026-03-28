@@ -24,6 +24,7 @@ import {
 } from "@/lib/auth/auth-client";
 import { useMyAuthorApplication, useUpsertAuthorProfile } from "@/lib/blog/queries";
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
 
 type ComingSoonProps = { title: string; description: string };
 
@@ -207,9 +208,9 @@ export function AuthorProfileTab() {
 				<CardContent>
 					<p className="text-sm text-muted-foreground">
 						To set up your author profile, go to{" "}
-						<a href="/dashboard/become-author" className="text-primary hover:underline">
+						<Link to={"/dashboard/become-author" as string} className="text-primary hover:underline">
 							Become an Author
-						</a>
+						</Link>
 						.
 					</p>
 				</CardContent>
