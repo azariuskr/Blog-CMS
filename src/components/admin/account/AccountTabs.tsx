@@ -24,14 +24,12 @@ import {
 } from "@/lib/auth/auth-client";
 import { useMyAuthorApplication, useUpsertAuthorProfile } from "@/lib/blog/queries";
 import { toast } from "sonner";
-import { AvatarUploadCard } from "@/components/admin/account/AvatarUploadCard";
 
 type ComingSoonProps = { title: string; description: string };
 
 export function SettingsTab() {
 	return (
 		<div className="space-y-6">
-			<AvatarUploadCard />
 			<AccountSettingsCards />
 		</div>
 	);

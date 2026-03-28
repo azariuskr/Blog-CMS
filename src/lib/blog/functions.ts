@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { and, asc, count, desc, eq, inArray, lt, notInArray, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, lt, notInArray, sql, gte } from "drizzle-orm";
 import { accessMiddleware } from "@/lib/auth/middleware";
 import { getSession, normalizePagination, paginatedResult } from "@/lib/auth/server";
 import { db } from "@/lib/db";
@@ -25,6 +25,7 @@ import {
 	userMutes,
 	userInterests,
 } from "@/lib/db/schema/cms.schema";
+import { freeReads } from "@/lib/db/schema/commerce.schema";
 import { user } from "@/lib/db/schema/auth.schema";
 import { POST_SCHEMA_VERSION, PostBlockSchema, PostContentSchema, PostMetaSchema } from "@/lib/blog/content-schema";
 import { generateMdx } from "@/lib/blog/mdx-generator";
@@ -342,8 +343,12 @@ export const $getPostBySlug = createServerFn({ method: "GET" })
 
 		const canonicalPost = withCanonicalContent(post as NormalizedPost);
 
+		const FREE_READS_PER_MONTH = 3;
+
 		// Paywall gating
 		let isLocked = false;
+		let freeReadGranted = false;
+		let freeReadsRemaining = 0;
 		if (post.isPremium) {
 			const session = await getSession();
 			const userId = session?.user?.id;
@@ -356,15 +361,54 @@ export const $getPostBySlug = createServerFn({ method: "GET" })
 					.limit(1);
 				hasAccess =
 					userRecord?.subscriptionStatus === true ||
-					["admin", "superAdmin", "editor"].includes(userRecord?.role ?? "");
+					["admin", "superAdmin", "author", "moderator"].includes(userRecord?.role ?? "");
+
+				// Free reads metering for non-subscribers
+				if (!hasAccess) {
+					const now = new Date();
+					const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+					// Count reads used this month
+					const [monthlyCount] = await db
+						.select({ cnt: count() })
+						.from(freeReads)
+						.where(and(
+							eq(freeReads.userId, userId),
+							gte(freeReads.periodStart, periodStart),
+						));
+					const usedThisMonth = Number(monthlyCount?.cnt ?? 0);
+
+					if (usedThisMonth < FREE_READS_PER_MONTH) {
+						// Check if this specific post already recorded
+						const existing = await db.query.freeReads.findFirst({
+							where: and(
+								eq(freeReads.userId, userId),
+								eq(freeReads.postId, post.id),
+								gte(freeReads.periodStart, periodStart),
+							),
+						});
+						if (!existing) {
+							await db.insert(freeReads).values({
+								userId,
+								postId: post.id,
+								periodStart,
+							}).onConflictDoNothing();
+						}
+						hasAccess = true;
+						freeReadGranted = true;
+						// Remaining after this read
+						freeReadsRemaining = FREE_READS_PER_MONTH - (usedThisMonth + 1);
+					}
+				}
 			}
 			if (!hasAccess) {
 				isLocked = true;
 				canonicalPost.blocks = canonicalPost.blocks?.slice(0, post.previewBlocks ?? 3) ?? [];
+				(canonicalPost as any).content = null;
 			}
 		}
 
-		return { ...canonicalPost, authorProfile: authorProfile ?? null, isLocked };
+		return { ...canonicalPost, authorProfile: authorProfile ?? null, isLocked, freeReadGranted, freeReadsRemaining };
 		});
 	});
 
@@ -402,6 +446,10 @@ export const $listAdminPosts = createServerFn({ method: "GET" })
 		return safe(async () => {
 			if (!data.ok) throw data.error;
 
+			const session = await getSession();
+			const userRole = (session?.user as any)?.role as string ?? "user";
+			const isAuthorOnly = userRole === "author";
+
 			const params = normalizePagination({
 				page: data.data.page,
 				limit: data.data.limit,
@@ -415,6 +463,8 @@ export const $listAdminPosts = createServerFn({ method: "GET" })
 			const whereClause = and(
 				data.data.status ? eq(posts.status, data.data.status) : undefined,
 				params.search ? ftsCondition(params.search) : undefined,
+				// Authors only see their own posts
+				isAuthorOnly && session?.user?.id ? eq(posts.authorId, session.user.id) : undefined,
 			);
 
 			const [{ total = 0 } = {}] = whereClause
@@ -441,22 +491,41 @@ export const $upsertPost = createServerFn({ method: "POST" })
 			async () => {
 				if (!data.ok) throw data.error;
 				const { id, tagIds, publishedAt, scheduledAt, schemaVersion, blocks, ...rest } = data.data;
-				const normalizedContent = normalizeContentEnvelope({ schemaVersion, blocks });
+
+				// Authors can only write their own posts
+				const session = await getSession();
+				const userRole = (session?.user as any)?.role as string ?? "user";
+				if (userRole === "author" && id) {
+					const existing = await db.query.posts.findFirst({ where: eq(posts.id, id), columns: { authorId: true } });
+					if (!existing || existing.authorId !== session?.user?.id) {
+						throw new Error("Forbidden: you can only edit your own posts");
+					}
+				}
+
+				// Only process blocks when explicitly provided — a partial update (e.g. toggling
+				// isPremium from the posts list) must never wipe blocks/content in the DB.
+				const hasBlocks = blocks !== undefined;
+				const normalizedContent = hasBlocks
+					? normalizeContentEnvelope({ schemaVersion, blocks })
+					: null;
 
 				const publishedAtDate = publishedAt ? new Date(publishedAt) : undefined;
 				const scheduledAtDate = scheduledAt ? new Date(scheduledAt) : undefined;
 
-				// Calculate read time from block content (200 WPM)
-				const wordCount = (normalizedContent.blocks ?? [])
-					.map((b) => (b as any).content ?? "")
-					.join(" ")
-					.split(/\s+/)
-					.filter(Boolean).length;
-				const readTimeMinutes = Math.max(1, Math.round(wordCount / 200));
+				// Calculate read time only when blocks are present
+				const readTimeMinutes = normalizedContent
+					? Math.max(1, Math.round(
+							normalizedContent.blocks
+								.map((b) => (b as any).content ?? "")
+								.join(" ")
+								.split(/\s+/)
+								.filter(Boolean).length / 200,
+						))
+					: undefined;
 
-				// Generate MDX when publishing
+				// Generate MDX only when blocks are present and post is being published
 				const mdxContent =
-					rest.status === "published"
+					normalizedContent && rest.status === "published"
 						? generateMdx(normalizedContent.blocks, {
 								title: rest.title,
 								slug: rest.slug,
@@ -473,11 +542,11 @@ export const $upsertPost = createServerFn({ method: "POST" })
 						.update(posts)
 						.set({
 							...rest,
-							blocks: normalizedContent.blocks,
+							...(normalizedContent ? { blocks: normalizedContent.blocks } : {}),
 							...(mdxContent !== undefined ? { content: mdxContent } : {}),
 							publishedAt: publishedAtDate,
 							scheduledAt: scheduledAtDate,
-							readTimeMinutes,
+							...(readTimeMinutes !== undefined ? { readTimeMinutes } : {}),
 							updatedAt: new Date(),
 						})
 						.where(eq(posts.id, id));
@@ -595,7 +664,8 @@ export const $deletePost = createServerFn({ method: "POST" })
 //   any authenticated user: review → draft (retract submission — own posts only)
 //   admin/superAdmin (posts:publish): review → published, published → archived,
 //                                     archived → draft, draft → published (direct)
-const PUBLISH_ROLES = ["admin", "superAdmin"] as const;
+//   author (posts:publish): same transitions but only for own posts
+const PUBLISH_ROLES = ["admin", "superAdmin", "author"] as const;
 
 export const $transitionPostStatus = createServerFn({ method: "POST" })
 	.inputValidator((data: unknown) =>
@@ -622,6 +692,12 @@ export const $transitionPostStatus = createServerFn({ method: "POST" })
 
 			const from = post.status;
 			const to = data.data.to;
+
+			const isAuthor = userRole === "author";
+			// Authors can only transition their own posts
+			if (isAuthor && post.authorId !== session?.user?.id) {
+				throw { status: 403, message: "You can only manage your own posts" };
+			}
 
 			const canPublish = PUBLISH_ROLES.includes(userRole as (typeof PUBLISH_ROLES)[number]);
 

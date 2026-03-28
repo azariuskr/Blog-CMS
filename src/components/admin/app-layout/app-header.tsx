@@ -1,5 +1,5 @@
-import { OrganizationSwitcher, UserButton } from "@daveyplate/better-auth-ui";
-import { Building2, LayoutDashboard, Search } from "lucide-react";
+import { UserButton } from "@daveyplate/better-auth-ui";
+import { LayoutDashboard, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Separator } from "@/components/ui/separator";
@@ -100,7 +100,6 @@ export function AppHeader({
 							⌘K
 						</kbd>
 					</Button>
-					<OrganizationSwitcher className="hidden md:flex" />
 					<ThemeToggle />
 					<UserButton
 						size="icon"
@@ -109,11 +108,6 @@ export function AppHeader({
 								href: "/dashboard",
 								label: "Dashboard",
 								icon: <LayoutDashboard size={16} />,
-							},
-							{
-								href: "/account/organizations",
-								label: "Organizations",
-								icon: <Building2 size={16} />,
 							},
 						]}
 					/>

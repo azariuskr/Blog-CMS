@@ -87,6 +87,7 @@ export const ROUTES = {
         CATEGORY: (cat: string) => `/blog/category/${cat}`,
         AUTHOR: (username: string) => `/@${username}`,
         SEARCH: "/search",
+        PRICING: "/pricing",
         AUTHOR_ONBOARDING: "/author-onboarding",
         PREVIEW: (token: string) => `/preview/${token}`,
     },
@@ -167,24 +168,6 @@ export const ACCOUNT_TABS: readonly AccountTabConfig[] = [
         label: "Security",
         icon: Shield,
         path: ROUTES.ACCOUNT.SECURITY,
-    },
-    {
-        id: ACCOUNT_VIEWS.SESSIONS,
-        label: "Sessions",
-        icon: Monitor,
-        path: ROUTES.ACCOUNT.SESSIONS,
-    },
-    {
-        id: ACCOUNT_VIEWS.APPEARANCE,
-        label: "Appearance",
-        icon: Palette,
-        path: ROUTES.ACCOUNT.APPEARANCE,
-    },
-    {
-        id: ACCOUNT_VIEWS.NOTIFICATIONS,
-        label: "Notifications",
-        icon: Bell,
-        path: ROUTES.ACCOUNT.NOTIFICATIONS,
     },
     {
         id: ACCOUNT_VIEWS.ORGANIZATIONS,
@@ -474,6 +457,7 @@ export const PAGINATION = {
 // Centralized role definitions - single source of truth
 export const ROLES = {
     USER: "user",
+    AUTHOR: "author",
     MODERATOR: "moderator",
     ADMIN: "admin",
     SUPER_ADMIN: "superAdmin",
@@ -483,6 +467,7 @@ export type AppRole = (typeof ROLES)[keyof typeof ROLES];
 
 export const ROLE_HIERARCHY: readonly AppRole[] = [
     ROLES.USER,
+    ROLES.AUTHOR,
     ROLES.MODERATOR,
     ROLES.ADMIN,
     ROLES.SUPER_ADMIN,
@@ -490,6 +475,7 @@ export const ROLE_HIERARCHY: readonly AppRole[] = [
 
 export const ROLE_LABELS: Record<AppRole, string> = {
     [ROLES.USER]: "User",
+    [ROLES.AUTHOR]: "Author",
     [ROLES.MODERATOR]: "Moderator",
     [ROLES.ADMIN]: "Admin",
     [ROLES.SUPER_ADMIN]: "Super Admin",
@@ -514,6 +500,7 @@ export const ROLE_OPTIONS = ROLE_HIERARCHY.map((role) => {
         superAdmin: Shield,
         admin: UserCog,
         moderator: Users,
+        author: User,
         user: Wallet,
     };
 

@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
 	MoreHorizontal,
@@ -46,9 +46,6 @@ import { ROUTES } from "@/constants";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/(authenticated)/admin/blog/authors")({
-	beforeLoad: () => {
-		throw redirect({ to: "/admin/users" });
-	},
 	component: AdminAuthorsPage,
 });
 

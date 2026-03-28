@@ -71,7 +71,6 @@ const NAV_STRUCTURE: NavStructureItem[] = [
 		routes: [
 			ROUTES.ADMIN.BLOG.SITES,
 			ROUTES.ADMIN.API.BASE,
-			ROUTES.ADMIN.ORGANIZATIONS,
 		],
 	},
 ];

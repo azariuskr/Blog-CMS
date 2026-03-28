@@ -10,12 +10,14 @@ import {
 	PenLine,
 	Bell,
 	Check,
+	Sparkles,
 } from "lucide-react";
-import { useHasCapability } from "@/hooks/auth-hooks";
+import { useHasCapability, useCanAccessRoute } from "@/hooks/auth-hooks";
 import { ProfileMenu } from "@/components/shared/profile-menu";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants";
 import { useSubscribeNewsletter, useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/lib/blog/queries";
+import { useBilling } from "@/hooks/use-billing";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -27,6 +29,7 @@ const navLinks = [
 	{ href: "/", label: "Home" },
 	{ href: "/topics", label: "Topics" },
 	{ href: "/authors", label: "Authors" },
+	{ href: "/pricing", label: "Pricing" },
 	{ href: "/about", label: "About" },
 ];
 
@@ -118,6 +121,9 @@ function BlogHeader() {
 	const { data: session } = useSession();
 	const user = session?.user;
 	const canAccessAdmin = useHasCapability("canAccessAdmin");
+	const canWrite = useCanAccessRoute(ROUTES.EDITOR.NEW);
+	const { isBillingEnabled, hasSubscription, currentPlan } = useBilling();
+	const showUpgradePill = !!user && isBillingEnabled && (!hasSubscription || currentPlan?.id === "free");
 	const routerState = useRouterState();
 	const currentPath = routerState.location.pathname;
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -175,13 +181,32 @@ function BlogHeader() {
 					{user ? (
 						<>
 							<NotificationBell />
-							<Link
-								to={ROUTES.EDITOR.NEW as string}
-								className="navy-blue-blog-btn px-4 py-2 rounded-md text-sm flex items-center gap-2"
-							>
-								<PenLine className="w-4 h-4" />
-								Write
-							</Link>
+							{showUpgradePill && (
+								<Link
+									to={"/pricing" as string}
+									className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] text-white text-xs font-semibold hover:opacity-90 transition-opacity"
+								>
+									<Sparkles className="w-3 h-3" />
+									Upgrade
+								</Link>
+							)}
+							{canWrite ? (
+								<Link
+									to={ROUTES.EDITOR.NEW as string}
+									className="navy-blue-blog-btn px-4 py-2 rounded-md text-sm flex items-center gap-2"
+								>
+									<PenLine className="w-4 h-4" />
+									Write
+								</Link>
+							) : (
+								<Link
+									to={ROUTES.BLOG.AUTHOR_ONBOARDING as string}
+									className="border border-[hsl(216,33%,30%)] text-[hsl(216,33%,68%)] hover:border-[hsl(199,89%,49%)] hover:text-white px-4 py-2 rounded-md text-sm flex items-center gap-2 transition-colors"
+								>
+									<PenLine className="w-4 h-4" />
+									Become an Author
+								</Link>
+							)}
 							<ProfileMenu user={user} canAccessAdmin={canAccessAdmin} />
 						</>
 					) : (
@@ -235,13 +260,24 @@ function BlogHeader() {
 				</nav>
 				{user ? (
 					<div className="space-y-2">
-						<Link
-							to={ROUTES.EDITOR.NEW as string}
-							onClick={() => setMobileMenuOpen(false)}
-							className="block py-2 text-alice-blue hover:text-carolina-blue"
-						>
-							Write
-						</Link>
+						{canWrite && (
+							<Link
+								to={ROUTES.EDITOR.NEW as string}
+								onClick={() => setMobileMenuOpen(false)}
+								className="block py-2 text-alice-blue hover:text-carolina-blue"
+							>
+								Write
+							</Link>
+						)}
+						{!canWrite && (
+							<Link
+								to={ROUTES.BLOG.AUTHOR_ONBOARDING as string}
+								onClick={() => setMobileMenuOpen(false)}
+								className="block py-2 text-alice-blue hover:text-carolina-blue"
+							>
+								Become an Author
+							</Link>
+						)}
 						<Link
 							to={ROUTES.ACCOUNT.PROFILE as string}
 							onClick={() => setMobileMenuOpen(false)}
@@ -249,13 +285,15 @@ function BlogHeader() {
 						>
 							Profile
 						</Link>
-						<Link
-							to={ROUTES.ADMIN.BLOG.POSTS as string}
-							onClick={() => setMobileMenuOpen(false)}
-							className="block py-2 text-alice-blue hover:text-carolina-blue"
-						>
-							My Posts
-						</Link>
+						{canWrite && (
+							<Link
+								to={ROUTES.ADMIN.BLOG.POSTS as string}
+								onClick={() => setMobileMenuOpen(false)}
+								className="block py-2 text-alice-blue hover:text-carolina-blue"
+							>
+								My Posts
+							</Link>
+						)}
 						<Link
 							to={ROUTES.ACCOUNT.BASE as string}
 							onClick={() => setMobileMenuOpen(false)}

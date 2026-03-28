@@ -42,7 +42,8 @@ function PostEditorPage() {
 	const transitionStatus = useTransitionPostStatus();
 	const { data: session } = useSession();
 	const userRole = (session?.user as any)?.role ?? "user";
-	const canPublish = ["admin", "superAdmin"].includes(userRole);
+	const isAuthor = userRole === "author";
+	const canPublish = ["admin", "superAdmin", "author"].includes(userRole);
 
 	const versions = versionsQuery.data?.ok ? versionsQuery.data.data : [];
 
@@ -63,6 +64,16 @@ function PostEditorPage() {
 	const [saving, setSaving] = useState(false);
 	const [versionKey, setVersionKey] = useState(0);
 	const [restoring, setRestoring] = useState(false);
+
+	// Redirect authors away from posts they don't own
+	useEffect(() => {
+		if (!isAuthor) return;
+		const post = postQuery.data?.ok ? postQuery.data.data : null;
+		if (!post) return;
+		if ((post as any).authorId !== session?.user?.id) {
+			navigate({ to: "/admin/blog/posts" as string });
+		}
+	}, [postQuery.data, isAuthor, session?.user?.id, navigate]);
 
 	// Populate form once post data loads
 	useEffect(() => {

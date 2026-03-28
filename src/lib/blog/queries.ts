@@ -382,6 +382,8 @@ export function useUpsertPost() {
 		invalidate: [
 			QUERY_KEYS.BLOG.POSTS.PAGINATED_BASE,
 			QUERY_KEYS.BLOG.POSTS.ADMIN_LIST,
+			["blog", "posts", "detail"],
+			["blog", "admin", "post"],
 		],
 		showToast: false,
 	});

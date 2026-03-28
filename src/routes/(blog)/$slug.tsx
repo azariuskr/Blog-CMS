@@ -26,6 +26,8 @@ import { toast } from "sonner";
 import { usePostBySlug, usePublishedPosts, usePublicComments, useCreateComment, useToggleReaction, useAddToReadingList, useMyReadingLists, useUserPostReaction, usePostBookmarkStatus, useRemoveFromReadingList, postBySlugQueryOptions, publicCommentsQueryOptions } from "@/lib/blog/queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { PaywallCard } from "@/components/blog/PaywallCard";
+import { MemberCTA } from "@/components/blog/MemberCTA";
+import { FreeReadsBanner } from "@/components/blog/FreeReadsBanner";
 import { useSession } from "@/lib/auth/auth-client";
 import { unwrap } from "@/lib/result";
 import { siteConfig } from "@/lib/seo/siteConfig";
@@ -400,6 +402,8 @@ function BlogPostPage() {
 		rawBlocks.length > 0
 			? rawBlocks
 			: String(post?.content ?? "")
+					// Strip YAML frontmatter so it never renders as plain text
+					.replace(/^---[\s\S]*?---\s*\n?/, "")
 					.split(/\n\n+/)
 					.map((chunk, _i) => chunk.trim())
 					.filter(Boolean)
@@ -738,13 +742,17 @@ function BlogPostPage() {
 							)}
 
 							{/* Article content */}
-							<div ref={contentRef} className={(post as any).isLocked ? "relative" : ""}>
+							{!(post as any).isLocked && (post as any).freeReadGranted && (
+								<FreeReadsBanner readsRemaining={(post as any).freeReadsRemaining ?? 0} />
+							)}
+							<div ref={contentRef} className={(post as any).isLocked ? "relative min-h-[20rem]" : ""}>
 								<PostBlocksRenderer blocks={blocks} />
 								{(post as any).isLocked && (
-									<div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-oxford-blue to-transparent pointer-events-none" />
+									<div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-oxford-blue to-transparent pointer-events-none" />
 								)}
 							</div>
 							{(post as any).isLocked && <PaywallCard />}
+							{!(post as any).isLocked && <MemberCTA />}
 
 							{/* Author bio */}
 						{(() => {

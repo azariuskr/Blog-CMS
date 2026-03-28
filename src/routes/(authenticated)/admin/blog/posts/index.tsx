@@ -118,7 +118,9 @@ function AdminBlogPostsPage() {
 	const transitionStatus = useTransitionPostStatus();
 	const { data: session } = useSession();
 	const userRole = (session?.user as any)?.role ?? "user";
-	const canPublish = ["admin", "superAdmin"].includes(userRole);
+	const isAuthor = userRole === "author";
+	const canPublish = ["admin", "superAdmin", "author"].includes(userRole);
+	const canDelete = ["admin", "superAdmin", "moderator"].includes(userRole);
 
 	const posts = useMemo(
 		() => (postsQuery.data?.ok ? postsQuery.data.data.items : []),
@@ -306,14 +308,16 @@ function AdminBlogPostsPage() {
 										Restore to Draft
 									</DropdownMenuItem>
 								)}
-								<DropdownMenuItem
-									className="text-destructive focus:text-destructive"
-									onClick={() => handleDelete(post.id, post.title)}
-									disabled={deletePost.isPending}
-								>
-									<Trash2 className="mr-2 h-4 w-4" />
-									Delete
-								</DropdownMenuItem>
+								{canDelete && (
+									<DropdownMenuItem
+										className="text-destructive focus:text-destructive"
+										onClick={() => handleDelete(post.id, post.title)}
+										disabled={deletePost.isPending}
+									>
+										<Trash2 className="mr-2 h-4 w-4" />
+										Delete
+									</DropdownMenuItem>
+								)}
 							</DropdownMenuContent>
 						</DropdownMenu>
 					);
@@ -322,7 +326,7 @@ function AdminBlogPostsPage() {
 			},
 		],
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[deletePost.isPending, transitionStatus.isPending, canPublish],
+		[deletePost.isPending, transitionStatus.isPending, canPublish, canDelete],
 	);
 
 	const table = useReactTable({
@@ -378,14 +382,14 @@ function AdminBlogPostsPage() {
 
 	return (
 		<PageContainer
-			title="Posts"
-			description="Create and manage your blog posts."
+			title={isAuthor ? "Your Posts" : "Posts"}
+			description={isAuthor ? "Create and manage your own posts." : "Create and manage your blog posts."}
 		>
 			{/* Toolbar */}
 			<div className="flex flex-wrap items-center gap-3 justify-between">
 				<div className="flex items-center gap-2 flex-1 max-w-sm">
-					{/* Bulk delete — shown only when rows selected */}
-					{selectedCount > 0 && (
+					{/* Bulk delete — shown only when rows selected and user can delete */}
+					{selectedCount > 0 && canDelete && (
 						<Button
 							variant="destructive"
 							size="sm"
