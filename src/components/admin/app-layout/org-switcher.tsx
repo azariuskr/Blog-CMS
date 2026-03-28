@@ -3,7 +3,6 @@
 // import { Building, Check, ChevronsUpDown, Plus } from "lucide-react";
 // import * as React from "react";
 // import { toast } from "sonner";
-
 // import {
 //   DropdownMenu,
 //   DropdownMenuContent,
@@ -30,19 +29,19 @@
 // import { Input } from "@/components/ui/input";
 // import { Label } from "@/components/ui/label";
 // import { organization, useActiveOrganization, useListOrganizations } from "@/lib/auth/auth-client";
-
+// import { ROUTES } from "@/constants";
 // export function OrgSwitcher() {
 //   const { isMobile } = useSidebar();
 //   const navigate = useNavigate();
 //   const queryClient = useQueryClient();
 //   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
 //   const [newOrgName, setNewOrgName] = React.useState("");
-
+//
 //   const { data: activeOrg, isPending: activeOrgPending } = useActiveOrganization();
 //   const { data: orgsData, isPending: orgsPending } = useListOrganizations();
-
+//
 //   const organizations = orgsData ?? [];
-
+//
 //   const switchMutation = useMutation({
 //     mutationFn: async (orgId: string) => {
 //       const result = await organization.setActive({ organizationId: orgId });
@@ -53,9 +52,9 @@
 //       toast.success("Organization switched");
 //       queryClient.invalidateQueries({ queryKey: ["admin"] });
 //     },
-//     onError: (error: any) => toast.error(error?.message || "Failed to switch organization"),
+//     onError: (error: Error) => toast.error(error?.message || "Failed to switch organization"),
 //   });
-
+//
 //   const createMutation = useMutation({
 //     mutationFn: async () => {
 //       if (!newOrgName.trim()) throw new Error("Organization name is required");
@@ -73,26 +72,19 @@
 //       setNewOrgName("");
 //       queryClient.invalidateQueries({ queryKey: ["organizations"] });
 //     },
-//     onError: (error: any) => toast.error(error?.message || "Failed to create organization"),
+//     onError: (error: Error) => toast.error(error?.message || "Failed to create organization"),
 //   });
-
-//   const handleSwitch = (orgId: string) => {
-//     if (orgId !== activeOrg?.id) {
-//       switchMutation.mutate(orgId);
-//     }
-//   };
-
+//
 //   const isLoading = activeOrgPending || orgsPending;
-
+//
 //   return (
 //     <>
 //       <SidebarMenu>
 //         <SidebarMenuItem>
 //           <DropdownMenu>
 //             <DropdownMenuTrigger
-//               render={(props) => (
+//               render={
 //                 <SidebarMenuButton
-//                   {...props}
 //                   size="lg"
 //                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 //                 >
@@ -109,7 +101,7 @@
 //                   </div>
 //                   <ChevronsUpDown className="ml-auto size-4" />
 //                 </SidebarMenuButton>
-//               )}
+//               }
 //             />
 //             <DropdownMenuContent
 //               className="w-56 min-w-56 rounded-lg"
@@ -128,7 +120,11 @@
 //                 organizations.map((org) => (
 //                   <DropdownMenuItem
 //                     key={org.id}
-//                     onClick={() => handleSwitch(org.id)}
+//                     onClick={() => {
+//                       if (org.id !== activeOrg?.id) {
+//                         switchMutation.mutate(org.id);
+//                       }
+//                     }}
 //                     className="gap-2"
 //                   >
 //                     <div className="flex size-6 items-center justify-center rounded-sm border">
@@ -144,7 +140,9 @@
 //                 <Plus className="mr-2 size-4" />
 //                 Create Organization
 //               </DropdownMenuItem>
-//               <DropdownMenuItem onClick={() => navigate({ to: "/organization/members" } as any)}>
+//               <DropdownMenuItem
+//                 onClick={() => navigate({ to: ROUTES.ADMIN.ORGANIZATIONS as string })}
+//               >
 //                 <Building className="mr-2 size-4" />
 //                 Manage Organizations
 //               </DropdownMenuItem>
@@ -152,7 +150,7 @@
 //           </DropdownMenu>
 //         </SidebarMenuItem>
 //       </SidebarMenu>
-
+//
 //       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
 //         <DialogContent className="sm:max-w-md">
 //           <DialogHeader>

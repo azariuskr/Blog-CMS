@@ -21,7 +21,7 @@ function BlogAnalyticsPage() {
 	const statCards = [
 		{ label: "Total Views", value: stats ? fmt(stats.totalViews) : "—", icon: Eye, color: "text-blue-500 bg-blue-500/10" },
 		{ label: "Published Posts", value: stats ? fmt(stats.totalPosts) : "—", icon: FileText, color: "text-violet-500 bg-violet-500/10" },
-		{ label: "Premium Posts", value: stats ? fmt((stats as any).premiumPosts ?? 0) : "—", icon: Sparkles, color: "text-[hsl(199,89%,49%)] bg-[hsl(199,89%,49%)]/10" },
+		{ label: "Premium Posts", value: stats ? fmt((stats as any).premiumPosts ?? 0) : "—", icon: Sparkles, color: "text-[var(--bg-carolina-blue)] bg-[var(--bg-carolina-blue)]/10" },
 		{ label: "Premium Views", value: stats ? fmt((stats as any).premiumPostViews ?? 0) : "—", icon: TrendingUp, color: "text-emerald-500 bg-emerald-500/10" },
 		{ label: "Subscribers", value: stats ? fmt((stats as any).subscriberCount ?? 0) : "—", icon: Mail, color: "text-sky-500 bg-sky-500/10" },
 		{ label: "Total Reactions", value: stats ? fmt(stats.totalReactions) : "—", icon: ThumbsUp, color: "text-amber-500 bg-amber-500/10" },

@@ -55,6 +55,18 @@
 	--bg-prussian-blue-dark: hsl(216, 33%, 30%);
 	--bg-teal: hsl(180, 70%, 45%);
 
+	--bg-oxford-blue-dark: hsl(222, 47%, 8%);
+	--bg-oxford-blue-deeper: hsl(222, 44%, 11%);
+	--bg-oxford-blue-light: hsl(222, 44%, 15%);
+	--text-prussian-mid: hsl(216, 33%, 40%);
+	--bg-prussian-blue-mid: hsl(216, 33%, 28%);
+	--text-slate-dark: hsl(217, 17%, 40%);
+	--text-slate-dim: hsl(217, 17%, 30%);
+	--text-slate-darker: hsl(217, 17%, 35%);
+	--text-shadow-blue-mid: hsl(217, 24%, 50%);
+	--bg-carolina-blue-dark: hsl(199, 89%, 42%);
+	--bg-prussian-blue-soft: hsl(216, 33%, 25%);
+
 	--gradient-1: linear-gradient(90deg, #0ea5ea, #0bd1d1 51%);
 	--gradient-2: linear-gradient(90deg, #0ea5ea, #0bd1d1 51%, #0ea5ea);
 	--gradient-3: linear-gradient(0deg, #000d1a, transparent);

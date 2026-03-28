@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useCallback } from "react";
-import { ArrowLeft, Send, BookOpen, Save, Calendar } from "lucide-react";
+import { ArrowLeft, Send, BookOpen, Save, Calendar, Link2, History, RotateCcw, Clock } from "lucide-react";
 import { useSession } from "@/lib/auth/auth-client";
 import { toast } from "sonner";
 import { ROUTES } from "@/constants";
-import { useUpsertPost, useCategories, useCreatePostVersion, useTags } from "@/lib/blog/queries";
+import { useUpsertPost, useCategories, useCreatePostVersion, useTags, useGeneratePreviewToken, usePostVersions, useGetPostVersion } from "@/lib/blog/queries";
 import { BlockEditor, type Block } from "@/components/admin/blog/editor/BlockEditor";
 import { FeaturedImageUploader } from "@/components/admin/blog/editor/FeaturedImageUploader";
 import { serializeBlocks } from "@/components/admin/blog/editor/blockTypes";
@@ -29,6 +29,7 @@ function WriterEditorPage() {
 	const { data: session } = useSession();
 	const upsertPost = useUpsertPost();
 	const createVersion = useCreatePostVersion();
+	const generatePreviewToken = useGeneratePreviewToken();
 	const categoriesQuery = useCategories();
 	const categoryOptions = (categoriesQuery.data as any)?.ok ? (categoriesQuery.data as any).data : [];
 	const tagsQuery = useTags();
@@ -40,6 +41,7 @@ function WriterEditorPage() {
 		excerpt: "",
 		categoryId: "",
 		featuredImageUrl: "",
+		canonicalUrl: "",
 	});
 	const [autoSlug, setAutoSlug] = useState(true);
 	const [status, setStatus] = useState<Status>("draft");
@@ -49,6 +51,10 @@ function WriterEditorPage() {
 	const [isPremium, setIsPremium] = useState(false);
 	const [previewBlocks, setPreviewBlocks] = useState(3);
 	const [saving, setSaving] = useState(false);
+	const [savedPostId, setSavedPostId] = useState<string | null>(null);
+	const versionsQuery = usePostVersions(savedPostId ?? "");
+	const getVersion = useGetPostVersion();
+	const [showVersions, setShowVersions] = useState(false);
 
 	const setMetaField = (field: keyof typeof meta, value: string) => {
 		setMeta((prev) => {
@@ -61,7 +67,7 @@ function WriterEditorPage() {
 		});
 	};
 
-	const handleSave = useCallback(async (submitForReview = false) => {
+	const handleSave = useCallback(async (submitForReview = false, forceStatus?: string) => {
 		if (!meta.title.trim()) {
 			toast.error("Title is required");
 			return;
@@ -73,7 +79,8 @@ function WriterEditorPage() {
 
 		setSaving(true);
 		try {
-			const newStatus = submitForReview ? "review" : "draft";
+			const newStatus = forceStatus ?? (submitForReview ? "review" : "draft");
+			const isScheduled = newStatus === "scheduled";
 			const result = await upsertPost.mutateAsync({
 				title: meta.title,
 				slug: meta.slug || slugify(meta.title),
@@ -87,12 +94,15 @@ function WriterEditorPage() {
 				tagIds,
 				isPremium,
 				previewBlocks,
-				scheduledAt: (status as string) === "scheduled" && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
+				canonicalUrl: meta.canonicalUrl || undefined,
+				scheduledAt: isScheduled && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
 			} as any);
 
 			if (result?.ok) {
-				setStatus(newStatus);
+				setStatus(newStatus as Status);
 				toast.success(submitForReview ? "Submitted for review!" : "Draft saved.");
+				// Track saved post id for preview link generation
+				if (result.data?.id) setSavedPostId(result.data.id);
 				// Auto-snapshot version on every explicit save (fire-and-forget)
 				if (result.data?.id) {
 					createVersion.mutate({
@@ -113,7 +123,7 @@ function WriterEditorPage() {
 		} finally {
 			setSaving(false);
 		}
-	}, [meta, blocks, tagIds, scheduledAt, isPremium, previewBlocks, session, upsertPost, navigate]);
+	}, [meta, blocks, tagIds, scheduledAt, isPremium, previewBlocks, session, upsertPost, navigate, createVersion]);
 
 	// Auto-save handler passed to BlockEditor
 	const handleBlockSave = useCallback(async (updatedBlocks: Block[]) => {
@@ -132,6 +142,7 @@ function WriterEditorPage() {
 			tagIds,
 			isPremium,
 			previewBlocks,
+			canonicalUrl: meta.canonicalUrl || undefined,
 			scheduledAt: (status as string) === "scheduled" && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
 		} as any);
 	}, [meta, status, tagIds, scheduledAt, isPremium, previewBlocks, session, upsertPost]);
@@ -169,6 +180,37 @@ function WriterEditorPage() {
 					</div>
 
 					<div className="flex items-center gap-2">
+						{savedPostId && (
+							<button
+								type="button"
+								disabled={generatePreviewToken.isPending}
+								onClick={async () => {
+									const result = await generatePreviewToken.mutateAsync(savedPostId);
+									if (result?.ok) {
+										const url = `${window.location.origin}${ROUTES.BLOG.PREVIEW(result.data.token)}`;
+										await navigator.clipboard.writeText(url);
+										toast.success("Preview link copied!");
+									} else {
+										toast.error("Failed to generate preview link.");
+									}
+								}}
+								className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-prussian-blue text-wild-blue-yonder hover:border-carolina-blue hover:text-carolina-blue transition-colors disabled:opacity-50"
+							>
+								<Link2 className="h-3.5 w-3.5" />
+								Preview Link
+							</button>
+						)}
+											{scheduledAt && (
+							<button
+								type="button"
+								disabled={saving}
+								onClick={() => handleSave(false, "scheduled")}
+								className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-blue-500/40 text-blue-400 hover:bg-blue-500/10 transition-colors disabled:opacity-50"
+							>
+								<Clock className="h-3.5 w-3.5" />
+								Schedule
+							</button>
+						)}
 						<button
 							type="button"
 							disabled={saving}
@@ -348,6 +390,19 @@ function WriterEditorPage() {
 							</div>
 						</div>
 
+						{/* Canonical URL */}
+						<div className="space-y-2 pt-2 border-t border-prussian-blue">
+							<label className="text-xs font-medium text-columbia-blue">Canonical URL</label>
+							<p className="text-[10px] text-slate-gray">For cross-posts — link to original source.</p>
+							<input
+								type="url"
+								value={meta.canonicalUrl}
+								onChange={(e) => setMetaField("canonicalUrl" as any, e.target.value)}
+								placeholder="https://yourblog.com/original"
+								className="w-full text-xs rounded border border-prussian-blue bg-oxford-blue-2 text-alice-blue px-2 py-1.5 outline-none focus:border-carolina-blue placeholder:text-slate-gray/50"
+							/>
+						</div>
+
 						{/* Info */}
 						<div className="p-3 rounded-lg border border-prussian-blue bg-oxford-blue">
 							<p className="text-xs text-slate-gray leading-relaxed">
@@ -357,6 +412,58 @@ function WriterEditorPage() {
 							</p>
 						</div>
 					</div>
+
+					{/* Revision History */}
+					{savedPostId && (
+						<div className="space-y-2 pt-2 border-t border-prussian-blue">
+							<button
+								type="button"
+								onClick={() => setShowVersions((p) => !p)}
+								className="flex items-center gap-1.5 text-xs font-medium text-columbia-blue w-full"
+							>
+								<History className="h-3.5 w-3.5" />
+								Version History
+								<span className="ml-auto text-slate-gray">{showVersions ? "▲" : "▼"}</span>
+							</button>
+							{showVersions && (
+								<div className="space-y-1 max-h-48 overflow-y-auto">
+									{versionsQuery.isLoading ? (
+										<p className="text-xs text-slate-gray">Loading…</p>
+									) : !(versionsQuery.data as any)?.data?.items?.length ? (
+										<p className="text-xs text-slate-gray">No saved versions yet.</p>
+									) : (
+										(versionsQuery.data as any).data.items.map((v: any) => (
+											<div key={v.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-prussian-blue/40">
+												<div className="min-w-0">
+													<p className="text-[10px] text-alice-blue truncate">{v.title || "Untitled"}</p>
+													<p className="text-[10px] text-slate-gray">
+														{new Date(v.createdAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+													</p>
+												</div>
+												<button
+													type="button"
+													title="Restore this version"
+													onClick={async () => {
+														if (!confirm("Restore this version? Unsaved changes will be lost.")) return;
+														const res = await getVersion.mutateAsync(v.id);
+														if ((res as any)?.ok) {
+															const vData = (res as any).data;
+															if (vData?.blocks?.length) setBlocks(vData.blocks);
+															if (vData?.title) setMeta((prev: any) => ({ ...prev, title: vData.title }));
+															toast.success("Version restored. Save to apply.");
+														}
+													}}
+													className="flex-shrink-0 text-wild-blue-yonder hover:text-carolina-blue transition-colors"
+												>
+													<RotateCcw className="h-3 w-3" />
+												</button>
+											</div>
+										))
+									)}
+								</div>
+							)}
+						</div>
+					)}
 				</aside>
 			</div>
 		</div>

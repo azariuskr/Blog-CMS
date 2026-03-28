@@ -51,6 +51,7 @@ export const PostMetaSchema = z.object({
 	featuredImageUrl: z.string().url().optional().or(z.literal("")),
 	metaTitle: z.string().max(70).optional(),
 	metaDescription: z.string().max(160).optional(),
+	canonicalUrl: z.string().url().optional().or(z.literal("")),
 	status: z
 		.enum(["draft", "review", "scheduled", "published", "archived"])
 		.default("draft"),

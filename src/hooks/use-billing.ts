@@ -127,7 +127,7 @@ export function useCreateCheckout(options?: {
   onError?: (error: unknown) => void;
 }) {
   return useAction(
-    async (vars: { planId: string; interval: "month" | "year" }) => {
+    async (vars: { planId: string; interval: "month" | "year"; returnTo?: string }) => {
       try {
         const result = await $createSubscriptionCheckout({ data: vars });
         return {
@@ -581,8 +581,8 @@ export function useUpgrade() {
     },
   });
 
-  const upgrade = (planId: string, interval: "month" | "year" = "month") => {
-    createCheckout({ planId, interval });
+  const upgrade = (planId: string, interval: "month" | "year" = "month", returnTo?: string) => {
+    createCheckout({ planId, interval, returnTo });
   };
 
   return {

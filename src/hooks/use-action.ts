@@ -112,7 +112,7 @@ export function useFormAction<TData = void, TVariables = void>(
  * This allows using server functions directly with useAction.
  */
 export function fromServerFn<TInput, TReturn>(
-	serverFn: (opts: { data: TInput }) => Promise<Result<TReturn, HttpError>>,
+	serverFn: (opts: { data: TInput }) => Promise<Result<TReturn, HttpError | ValidationError>>,
 	options?: {
 		successMessage?: string;
 		errorMessage?: string;

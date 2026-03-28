@@ -58,14 +58,14 @@ export const MarkdownBlock = memo(function MarkdownBlock({ block, onUpdate, onDe
 			<div
 				ref={setNodeRef}
 				style={style}
-				className="group relative rounded-lg border border-transparent hover:border-[hsl(199,89%,49%)]/30 transition-all p-3"
+				className="group relative rounded-lg border border-transparent hover:border-[var(--bg-carolina-blue)]/30 transition-all p-3"
 			>
 				{/* Drag handle */}
 				<div className="absolute -left-8 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
 					<Button
 						variant="ghost"
 						size="icon"
-						className="h-7 w-7 cursor-grab active:cursor-grabbing text-[hsl(216,33%,50%)] hover:text-[hsl(199,89%,49%)] hover:bg-[hsl(199,89%,49%)]/10"
+						className="h-7 w-7 cursor-grab active:cursor-grabbing text-[var(--text-yonder-dim)] hover:text-[var(--bg-carolina-blue)] hover:bg-[var(--bg-carolina-blue)]/10"
 						{...attributes}
 						{...listeners}
 						style={{ touchAction: "none" }}
@@ -79,7 +79,7 @@ export const MarkdownBlock = memo(function MarkdownBlock({ block, onUpdate, onDe
 					<Button
 						variant="ghost"
 						size="icon"
-						className="h-7 w-7 text-[hsl(216,33%,50%)] hover:text-destructive hover:bg-destructive/10"
+						className="h-7 w-7 text-[var(--text-yonder-dim)] hover:text-destructive hover:bg-destructive/10"
 						onClick={handleDelete}
 					>
 						<Trash2 className="h-4 w-4" />

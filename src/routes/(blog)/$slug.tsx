@@ -20,10 +20,14 @@ import {
 	Copy,
 	Twitter,
 	Linkedin,
+	Check,
 } from "lucide-react";
 import { toast } from "sonner";
-import { usePostBySlug, usePublishedPosts, usePublicComments, useCreateComment, useToggleReaction, useToggleBookmark, postBySlugQueryOptions, publicCommentsQueryOptions } from "@/lib/blog/queries";
+import { usePostBySlug, usePublishedPosts, usePublicComments, useCreateComment, useToggleReaction, useAddToReadingList, useMyReadingLists, useUserPostReaction, usePostBookmarkStatus, useRemoveFromReadingList, postBySlugQueryOptions, publicCommentsQueryOptions } from "@/lib/blog/queries";
+import { useQueryClient } from "@tanstack/react-query";
 import { PaywallCard } from "@/components/blog/PaywallCard";
+import { MemberCTA } from "@/components/blog/MemberCTA";
+import { FreeReadsBanner } from "@/components/blog/FreeReadsBanner";
 import { useSession } from "@/lib/auth/auth-client";
 import { unwrap } from "@/lib/result";
 import { siteConfig } from "@/lib/seo/siteConfig";
@@ -58,7 +62,7 @@ export const Route = createFileRoute("/(blog)/$slug")({
 		const image = post?.featuredImageUrl ?? siteConfig.ogImage;
 		const imageUrl = image.startsWith("http") ? image : `${siteConfig.url}${image}`;
 		const fullTitle = `${title} | ${siteConfig.name}`;
-		const canonicalUrl = `${siteConfig.url}/${params.slug}`;
+		const canonicalUrl = post?.canonicalUrl || `${siteConfig.url}/${params.slug}`;
 		const authorName = post?.author?.name ?? siteConfig.organization.name;
 		const publishedTime = post?.publishedAt ? new Date(post.publishedAt).toISOString() : undefined;
 		const updatedTime = post?.updatedAt ? new Date(post.updatedAt).toISOString() : undefined;
@@ -324,20 +328,28 @@ function BlogPostPage() {
 	const { data: session } = useSession();
 	const userId = session?.user?.id;
 	const [commentText, setCommentText] = useState("");
-	const [isLiked, setIsLiked] = useState(false);
-	const [isBookmarked, setIsBookmarked] = useState(false);
+	const [showListPicker, setShowListPicker] = useState(false);
+	const listPickerRef = useRef<HTMLDivElement>(null);
 	const [readingProgress, setReadingProgress] = useState(0);
 	const [showToc, setShowToc] = useState(false);
 	const [showBackToTop, setShowBackToTop] = useState(false);
 	const contentRef = useRef<HTMLDivElement>(null);
 	const postQuery = usePostBySlug(slug);
 	const toggleReaction = useToggleReaction();
-	const toggleBookmark = useToggleBookmark();
+	const addToReadingList = useAddToReadingList();
+	const removeFromReadingList = useRemoveFromReadingList();
+	const readingListsQuery = useMyReadingLists();
+	const myLists = readingListsQuery.data?.ok ? (readingListsQuery.data.data as any[]) : [];
+	const queryClient = useQueryClient();
 	const createComment = useCreateComment();
 	const resolvedPostForCategory = postQuery.data?.ok ? (postQuery.data as any).data : null;
 	const relatedPostsQuery = usePublishedPosts({
 		categorySlug: resolvedPostForCategory?.category?.slug ?? undefined,
 		limit: 3,
+	});
+	const authorPostsQuery = usePublishedPosts({
+		authorId: resolvedPostForCategory?.author?.id ?? undefined,
+		limit: 4,
 	});
 
 
@@ -377,12 +389,21 @@ function BlogPostPage() {
 				category: { name: fallbackPost.categoryName },
 			}
 			: null);
+	const reactionQuery = useUserPostReaction(post?.id);
+	const bookmarkQuery = usePostBookmarkStatus(post?.id);
+	const isLiked = (reactionQuery.data as any)?.ok ? !!(reactionQuery.data as any).data?.liked : false;
+	const isBookmarked = (bookmarkQuery.data as any)?.ok ? !!(bookmarkQuery.data as any).data?.bookmarked : false;
+	const bookmarkedListId = (bookmarkQuery.data as any)?.ok ? ((bookmarkQuery.data as any).data?.listId ?? null) : null;
+
 	const relatedPosts = relatedPostsQuery.data?.ok ? relatedPostsQuery.data.data.items.filter((p: any) => p.id !== post?.id) : [];
+	const moreByAuthor = authorPostsQuery.data?.ok ? authorPostsQuery.data.data.items.filter((p: any) => p.id !== post?.id).slice(0, 3) : [];
 	const rawBlocks = (post?.blocks ?? []) as BlogBlock[];
 	const blocks =
 		rawBlocks.length > 0
 			? rawBlocks
 			: String(post?.content ?? "")
+					// Strip YAML frontmatter so it never renders as plain text
+					.replace(/^---[\s\S]*?---\s*\n?/, "")
 					.split(/\n\n+/)
 					.map((chunk, _i) => chunk.trim())
 					.filter(Boolean)
@@ -424,6 +445,16 @@ function BlogPostPage() {
 		setReplyToId(null);
 		toast.success("Reply submitted for review!");
 	};
+
+	useEffect(() => {
+		const handleClickOutside = (e: MouseEvent) => {
+			if (listPickerRef.current && !listPickerRef.current.contains(e.target as Node)) {
+				setShowListPicker(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, []);
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -556,7 +587,7 @@ function BlogPostPage() {
 							</div>
 							<div className="flex items-center gap-2">
 								<Clock className="w-4 h-4" />
-								<span>{estimateReadTimeFromBlocks(blocks)}</span>
+								<span>{(post as any).readTimeMinutes ? `${(post as any).readTimeMinutes} min read` : estimateReadTimeFromBlocks(blocks)}</span>
 							</div>
 							<div className="flex items-center gap-2">
 								<Eye className="w-4 h-4" />
@@ -588,25 +619,65 @@ function BlogPostPage() {
 									size="icon"
 									onClick={() => {
 										if (!userId || !post?.id) { toast.error("Sign in to like posts"); return; }
-										setIsLiked(!isLiked);
-										toggleReaction.mutate({ postId: post.id, userId, type: "like" });
+										toggleReaction.mutate({ postId: post.id, userId, type: "like" }, {
+											onSuccess: () => queryClient.invalidateQueries({ queryKey: ["post-reaction", post.id] }),
+										});
 									}}
 									className={`rounded-full ${isLiked ? "text-pink-500 bg-pink-500/10" : "text-wild-blue-yonder hover:text-pink-500"}`}
 								>
 									<Heart className={`w-5 h-5 ${isLiked ? "fill-current" : ""}`} />
 								</Button>
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={() => {
-										if (!userId || !post?.id) { toast.error("Sign in to bookmark posts"); return; }
-										setIsBookmarked(!isBookmarked);
-										toggleBookmark.mutate({ postId: post.id, userId });
-									}}
-									className={`rounded-full ${isBookmarked ? "text-carolina-blue bg-carolina-blue/10" : "text-wild-blue-yonder hover:text-carolina-blue"}`}
-								>
-									<Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-current" : ""}`} />
-								</Button>
+								<div className="relative" ref={listPickerRef}>
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={() => {
+											if (!userId || !post?.id) { toast.error("Sign in to bookmark posts"); return; }
+											setShowListPicker((p) => !p);
+										}}
+										className={`rounded-full ${isBookmarked ? "text-carolina-blue bg-carolina-blue/10" : "text-wild-blue-yonder hover:text-carolina-blue"}`}
+									>
+										<Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-current" : ""}`} />
+									</Button>
+									{showListPicker && (
+										<div className="absolute right-0 top-full mt-1 z-50 w-52 bg-oxford-blue border border-prussian-blue rounded-xl shadow-xl p-2">
+											<p className="text-[10px] text-slate-gray uppercase tracking-wide px-2 pb-1">Save to list</p>
+											{myLists.length === 0 ? (
+												<p className="text-xs text-slate-gray px-2 py-1">No lists yet. Create one in your account.</p>
+											) : (
+												<>
+													{myLists.map((list: any) => {
+														const inThisList = bookmarkedListId === list.id;
+														return (
+															<button
+																key={list.id}
+																type="button"
+																onClick={() => {
+																	if (!post?.id) return;
+																	if (inThisList) {
+																		removeFromReadingList.mutate({ postId: post.id });
+																		toast.success(`Removed from "${list.name}"`);
+																	} else {
+																		addToReadingList.mutate({ postId: post.id, listId: list.id });
+																		toast.success(`Saved to "${list.name}"`);
+																	}
+																	setShowListPicker(false);
+																}}
+																className={`w-full text-left px-2 py-1.5 text-sm rounded-md transition-colors flex items-center justify-between gap-2 ${inThisList ? "text-carolina-blue bg-carolina-blue/10" : "text-alice-blue hover:bg-prussian-blue/40"}`}
+															>
+																<span className="truncate">
+																	{list.name}
+																	{list.isDefault && <span className="ml-1 text-[10px] text-slate-gray">(default)</span>}
+																</span>
+																{inThisList && <Check className="w-3.5 h-3.5 shrink-0" />}
+															</button>
+														);
+													})}
+												</>
+											)}
+										</div>
+									)}
+								</div>
 								<Button
 									variant="ghost"
 									size="icon"
@@ -671,13 +742,17 @@ function BlogPostPage() {
 							)}
 
 							{/* Article content */}
-							<div ref={contentRef} className={(post as any).isLocked ? "relative" : ""}>
+							{!(post as any).isLocked && (post as any).freeReadGranted && (
+								<FreeReadsBanner readsRemaining={(post as any).freeReadsRemaining ?? 0} />
+							)}
+							<div ref={contentRef} className={(post as any).isLocked ? "relative min-h-[20rem]" : ""}>
 								<PostBlocksRenderer blocks={blocks} />
 								{(post as any).isLocked && (
-									<div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-oxford-blue to-transparent pointer-events-none" />
+									<div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-oxford-blue to-transparent pointer-events-none" />
 								)}
 							</div>
 							{(post as any).isLocked && <PaywallCard />}
+							{!(post as any).isLocked && <MemberCTA />}
 
 							{/* Author bio */}
 						{(() => {
@@ -695,7 +770,7 @@ function BlogPostPage() {
 										<div className="flex-1">
 											<h3 className="text-xl font-bold text-white mb-1">Written by {displayName}</h3>
 											{profile?.username && (
-												<Link to={"/@$username" as string} params={{ username: profile.username } as any} className="text-xs text-carolina-blue hover:underline block mb-3">
+												<Link to={"/@{$username}" as string} params={{ username: profile.username } as any} className="text-xs text-carolina-blue hover:underline block mb-3">
 													@{profile.username}
 												</Link>
 											)}
@@ -891,7 +966,48 @@ function BlogPostPage() {
 								</div>
 							</section>
 
-							{/* Related posts */}
+							{/* More from this author */}
+							{moreByAuthor.length > 0 && (
+								<section className="mt-16">
+									<h3 className="text-2xl font-bold text-white mb-8">
+										More from{" "}
+										<Link
+											to={`/@${(post as any).authorProfile?.username ?? ""}` as string}
+											className="text-carolina-blue hover:underline"
+										>
+											{(post as any).authorProfile?.displayName ?? post?.author?.name ?? "this author"}
+										</Link>
+									</h3>
+									<div className="grid gap-6">
+										{moreByAuthor.map((related: any) => (
+											<Link
+												key={related.id}
+												to={"/$slug" as string}
+												params={{ slug: related.slug } as any}
+												className="flex gap-4 p-4 rounded-xl border border-prussian-blue hover:border-carolina-blue/50 bg-prussian-blue/20 hover:bg-prussian-blue/40 transition-all group"
+											>
+												{related.featuredImageUrl && (
+													<img
+														src={related.featuredImageUrl}
+														alt={related.title}
+														className="w-20 h-16 object-cover rounded-lg flex-shrink-0"
+													/>
+												)}
+												<div className="flex-1 min-w-0">
+													<h4 className="text-white font-semibold text-sm line-clamp-2 group-hover:text-carolina-blue transition-colors mb-1">
+														{related.title}
+													</h4>
+													{related.excerpt && (
+														<p className="text-xs text-wild-blue-yonder line-clamp-2">{related.excerpt}</p>
+													)}
+												</div>
+											</Link>
+										))}
+									</div>
+								</section>
+							)}
+
+	{/* Related posts */}
 							{relatedPosts.length > 0 && (
 								<section className="mt-16">
 									<h3 className="text-2xl font-bold text-white mb-8">

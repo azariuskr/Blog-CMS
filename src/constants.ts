@@ -33,6 +33,9 @@ export const ROUTES = {
         SESSIONS: "/account/sessions",
         APPEARANCE: "/account/appearance",
         NOTIFICATIONS: "/account/notifications",
+        READING_LISTS: "/account/reading-lists",
+        MUTED_USERS: "/account/muted-users",
+        TOPICS: "/account/topics",
     },
 
     ADMIN: {
@@ -84,7 +87,9 @@ export const ROUTES = {
         CATEGORY: (cat: string) => `/blog/category/${cat}`,
         AUTHOR: (username: string) => `/@${username}`,
         SEARCH: "/search",
+        PRICING: "/pricing",
         AUTHOR_ONBOARDING: "/author-onboarding",
+        PREVIEW: (token: string) => `/preview/${token}`,
     },
 
     // Editor
@@ -163,24 +168,6 @@ export const ACCOUNT_TABS: readonly AccountTabConfig[] = [
         label: "Security",
         icon: Shield,
         path: ROUTES.ACCOUNT.SECURITY,
-    },
-    {
-        id: ACCOUNT_VIEWS.SESSIONS,
-        label: "Sessions",
-        icon: Monitor,
-        path: ROUTES.ACCOUNT.SESSIONS,
-    },
-    {
-        id: ACCOUNT_VIEWS.APPEARANCE,
-        label: "Appearance",
-        icon: Palette,
-        path: ROUTES.ACCOUNT.APPEARANCE,
-    },
-    {
-        id: ACCOUNT_VIEWS.NOTIFICATIONS,
-        label: "Notifications",
-        icon: Bell,
-        path: ROUTES.ACCOUNT.NOTIFICATIONS,
     },
     {
         id: ACCOUNT_VIEWS.ORGANIZATIONS,
@@ -278,6 +265,17 @@ export const QUERY_KEYS = {
             BY_ID: (id: string) => ["blog", "posts", "id", id],
             FEATURED: ["blog", "posts", "featured"],
             RECENT: ["blog", "posts", "recent"],
+            ADMIN_LIST: ["blog", "admin", "posts"],
+            ADMIN_LIST_PARAMS: (params?: Record<string, unknown>) => ["blog", "admin", "posts", params],
+            ADMIN_DETAIL: (id: string) => ["blog", "admin", "post", id],
+            ADMIN_STATS: ["blog", "admin", "stats"],
+            VERSIONS: (postId: string) => ["blog", "admin", "post-versions", postId],
+            VERSIONS_BASE: ["blog", "admin", "post-versions"],
+            PREVIEW: (token: string) => ["blog", "preview", token],
+            BOOKMARK_STATUS: (postId: string) => ["post-bookmark-status", postId],
+            BOOKMARK_STATUS_BASE: ["post-bookmark-status"],
+            REACTION: (postId: string) => ["post-reaction", postId],
+            REACTION_BASE: ["post-reaction"],
         },
         CATEGORIES: {
             LIST: ["blog", "categories", "list"],
@@ -286,22 +284,53 @@ export const QUERY_KEYS = {
             LIST: ["blog", "tags", "list"],
         },
         COMMENTS: {
+            BASE: ["blog", "comments"],
             BY_POST: (postId: string) => ["blog", "comments", postId],
+            PUBLIC: (postId: string) => ["blog", "comments", "public", postId],
+            ADMIN: (params?: Record<string, unknown>) => ["blog", "comments", "admin", params],
         },
         AUTHORS: {
             PROFILE: (username: string) => ["blog", "authors", username],
             LIST: ["blog", "authors", "list"],
         },
         SITES: {
+            BASE: ["blog", "sites"],
             LIST: ["blog", "sites", "list"],
             DETAIL: (id: string) => ["blog", "sites", id],
         },
+        PAGES: {
+            BASE: ["blog", "pages"],
+            BY_SITE: (siteId: string | null) => ["blog", "pages", siteId],
+        },
+        AUTHOR_APPLICATIONS: {
+            LIST: (status?: string) => ["blog", "author-applications", status],
+            LIST_BASE: ["blog", "author-applications"],
+            MINE: ["blog", "author-application", "mine"],
+        },
+        FOLLOW_STATUS: (followerId: string, followingId: string) =>
+            ["blog", "follow-status", followerId, followingId],
+        FOLLOW_STATUS_BASE: ["blog", "follow-status"],
+        NEWSLETTER: {
+            SUBSCRIBERS: (params?: Record<string, unknown>) => ["blog", "newsletter", "subscribers", params],
+        },
+        BOOKMARKS: ["blog", "bookmarks"],
         STATS: ["blog", "stats"],
         API_KEYS: {
             LIST: ["blog", "api-keys", "list"],
             DETAIL: (id: string) => ["blog", "api-keys", id],
         },
     },
+    NOTIFICATIONS: {
+        BASE: ["notifications"],
+        LIST: (limit?: number) => ["notifications", limit],
+    },
+    READING_LISTS: {
+        BASE: ["reading-lists"],
+        POSTS: (listId: string | undefined) => ["reading-lists", listId, "posts"],
+        PUBLIC_BY_USER: (userId?: string) => ["public-reading-lists", userId],
+    },
+    MUTED_USERS: ["muted-users"],
+    USER_INTERESTS: ["user-interests"],
     ROUTE_ACCESS: (route: string) => ["route-access", route],
     EMAIL_TEMPLATES: {
         LIST: ["email-templates", "list"],
@@ -428,6 +457,7 @@ export const PAGINATION = {
 // Centralized role definitions - single source of truth
 export const ROLES = {
     USER: "user",
+    AUTHOR: "author",
     MODERATOR: "moderator",
     ADMIN: "admin",
     SUPER_ADMIN: "superAdmin",
@@ -437,6 +467,7 @@ export type AppRole = (typeof ROLES)[keyof typeof ROLES];
 
 export const ROLE_HIERARCHY: readonly AppRole[] = [
     ROLES.USER,
+    ROLES.AUTHOR,
     ROLES.MODERATOR,
     ROLES.ADMIN,
     ROLES.SUPER_ADMIN,
@@ -444,6 +475,7 @@ export const ROLE_HIERARCHY: readonly AppRole[] = [
 
 export const ROLE_LABELS: Record<AppRole, string> = {
     [ROLES.USER]: "User",
+    [ROLES.AUTHOR]: "Author",
     [ROLES.MODERATOR]: "Moderator",
     [ROLES.ADMIN]: "Admin",
     [ROLES.SUPER_ADMIN]: "Super Admin",
@@ -468,6 +500,7 @@ export const ROLE_OPTIONS = ROLE_HIERARCHY.map((role) => {
         superAdmin: Shield,
         admin: UserCog,
         moderator: Users,
+        author: User,
         user: Wallet,
     };
 

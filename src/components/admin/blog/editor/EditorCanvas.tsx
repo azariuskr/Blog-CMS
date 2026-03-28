@@ -17,11 +17,11 @@ export const EditorCanvas = memo(function EditorCanvas({ blocks, onBlockUpdate, 
 	return (
 		<div
 			ref={setNodeRef}
-			className={`w-full h-full rounded-lg transition-colors relative ${isOver ? "bg-[hsl(199,89%,49%)]/5" : ""}`}
+			className={`w-full h-full rounded-lg transition-colors relative ${isOver ? "bg-[var(--bg-carolina-blue)]/5" : ""}`}
 		>
 			{blocks.length === 0 ? (
-				<div className="absolute inset-4 flex items-center justify-center border-2 border-dashed rounded-lg border-[hsl(199,89%,49%)]/30">
-					<p className="text-center text-sm text-[hsl(216,33%,50%)] px-4">
+				<div className="absolute inset-4 flex items-center justify-center border-2 border-dashed rounded-lg border-[var(--bg-carolina-blue)]/30">
+					<p className="text-center text-sm text-[var(--text-yonder-dim)] px-4">
 						{isOver ? "Release to add block..." : "Drag blocks here or click + to add content"}
 					</p>
 				</div>
@@ -40,8 +40,8 @@ export const EditorCanvas = memo(function EditorCanvas({ blocks, onBlockUpdate, 
 								))}
 								<div className="h-24 w-full">
 									{isOver && (
-										<div className="h-12 border-2 border-dashed border-[hsl(199,89%,49%)] rounded-lg bg-[hsl(199,89%,49%)]/10 flex items-center justify-center">
-											<p className="text-sm text-[hsl(199,89%,49%)]">Drop here</p>
+										<div className="h-12 border-2 border-dashed border-[var(--bg-carolina-blue)] rounded-lg bg-[var(--bg-carolina-blue)]/10 flex items-center justify-center">
+											<p className="text-sm text-[var(--bg-carolina-blue)]">Drop here</p>
 										</div>
 									)}
 								</div>

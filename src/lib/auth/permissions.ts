@@ -77,6 +77,14 @@ export const roles = {
 		posts: ["create", "read", "update"],
 		content: ["read"],
 	}),
+	author: ac.newRole({
+		user: ["get", "update"],
+		session: ["list", "revoke"],
+		admin: ["access"],
+		// Authors can create, read, update, and publish their own posts
+		posts: ["create", "read", "update", "publish"],
+		content: ["read", "write"],
+	}),
 	moderator: ac.newRole({
 		user: ["get", "update"],
 		session: ["list", "revoke"],
@@ -157,6 +165,13 @@ export const ROLE_GRANTS = {
 		user: ["get", "update"],
 		session: ["list", "revoke"],
 		// Note: users:read removed - regular users should not access admin user lists
+	},
+	[ROLES.AUTHOR]: {
+		user: ["get", "update"],
+		session: ["list", "revoke"],
+		admin: ["access"],
+		posts: ["create", "read", "update", "publish"],
+		content: ["read", "write"],
 	},
 	[ROLES.MODERATOR]: {
 		user: ["get", "update"],
@@ -385,9 +400,9 @@ export const routeConfig: Record<string, RouteConfig> = {
 		parent: ROUTES.ADMIN.BILLING,
 	},
 	[ROUTES.ADMIN.STORAGE]: {
-		title: "Storage",
+		title: "Media",
 		icon: HardDrive,
-		description: "Manage storage settings",
+		description: "Manage media files",
 		minRole: ROLES.SUPER_ADMIN,
 		noIndex: true,
 		showInNav: true,
@@ -455,16 +470,16 @@ export const routeConfig: Record<string, RouteConfig> = {
 		title: "Blog",
 		icon: FileText,
 		description: "Blog management dashboard",
-		minRole: ROLES.ADMIN,
+		permissions: { content: ["write"] },
 		noIndex: true,
-		showInNav: true,
+		showInNav: false,
 		parent: ROUTES.ADMIN.BASE,
 	},
 	[ROUTES.ADMIN.BLOG.POSTS]: {
 		title: "Posts",
 		icon: PenLine,
 		description: "Manage blog posts",
-		minRole: ROLES.ADMIN,
+		permissions: { content: ["write"] },
 		noIndex: true,
 		showInNav: true,
 		parent: ROUTES.ADMIN.BLOG.BASE,
@@ -502,13 +517,13 @@ export const routeConfig: Record<string, RouteConfig> = {
 		description: "Manage blog media",
 		minRole: ROLES.ADMIN,
 		noIndex: true,
-		showInNav: true,
+		showInNav: false,
 		parent: ROUTES.ADMIN.BLOG.BASE,
 	},
 	[ROUTES.ADMIN.BLOG.AUTHORS]: {
 		title: "Authors",
 		icon: Users,
-		description: "Manage blog authors",
+		description: "Manage blog authors and review applications",
 		minRole: ROLES.ADMIN,
 		noIndex: true,
 		showInNav: true,
@@ -520,7 +535,7 @@ export const routeConfig: Record<string, RouteConfig> = {
 		description: "Blog performance analytics",
 		minRole: ROLES.ADMIN,
 		noIndex: true,
-		showInNav: true,
+		showInNav: false,
 		parent: ROUTES.ADMIN.BLOG.BASE,
 	},
 	[ROUTES.ADMIN.BLOG.NEWSLETTER]: {
@@ -548,15 +563,15 @@ export const routeConfig: Record<string, RouteConfig> = {
 		minRole: ROLES.ADMIN,
 		noIndex: true,
 		showInNav: true,
-		parent: ROUTES.ADMIN.BLOG.BASE,
+		parent: ROUTES.ADMIN.BASE,
 	},
 
-	// Writer editor (accessible to all authenticated users)
+	// Writer editor (authors and above only)
 	[ROUTES.EDITOR.NEW]: {
 		title: "New Post",
 		icon: PenLine,
 		description: "Write a new blog post",
-		minRole: ROLES.USER,
+		minRole: ROLES.AUTHOR,
 		noIndex: true,
 		showInNav: false,
 	},

@@ -39,12 +39,12 @@ export function CodeBlock({ block, onUpdate }: CodeBlockProps) {
 	}, [block.content]);
 
 	return (
-		<div className="rounded-lg bg-[hsl(222,47%,8%)] border border-[hsl(216,33%,20%)] overflow-hidden">
-			<div className="flex items-center justify-between px-4 py-2 bg-[hsl(222,44%,11%)] border-b border-[hsl(216,33%,20%)]">
+		<div className="rounded-lg bg-[var(--bg-oxford-blue-dark)] border border-[var(--bg-prussian-blue)] overflow-hidden">
+			<div className="flex items-center justify-between px-4 py-2 bg-[var(--bg-oxford-blue-deeper)] border-b border-[var(--bg-prussian-blue)]">
 				<select
 					value={language}
 					onChange={handleLang}
-					className="bg-[hsl(216,33%,20%)] text-[hsl(216,100%,95%)] text-sm rounded px-2 py-1 border-none outline-none cursor-pointer"
+					className="bg-[var(--bg-prussian-blue)] text-[var(--text-alice-blue)] text-sm rounded px-2 py-1 border-none outline-none cursor-pointer"
 				>
 					{SUPPORTED_LANGUAGES.map((lang) => (
 						<option key={lang} value={lang}>{lang}</option>
@@ -54,7 +54,7 @@ export function CodeBlock({ block, onUpdate }: CodeBlockProps) {
 					type="button"
 					onClick={handleCopy}
 					title="Copy code"
-					className="flex items-center gap-1.5 text-xs text-[hsl(216,33%,50%)] hover:text-[hsl(199,89%,49%)] transition-colors"
+					className="flex items-center gap-1.5 text-xs text-[var(--text-yonder-dim)] hover:text-[var(--bg-carolina-blue)] transition-colors"
 				>
 					{copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
 					{copied ? "Copied!" : "Copy"}
@@ -64,7 +64,7 @@ export function CodeBlock({ block, onUpdate }: CodeBlockProps) {
 				ref={ref}
 				value={block.content}
 				onChange={handleChange}
-				className="w-full bg-transparent border-none outline-none resize-none text-green-400 font-mono text-sm p-4 placeholder:text-[hsl(216,33%,30%)]"
+				className="w-full bg-transparent border-none outline-none resize-none text-green-400 font-mono text-sm p-4 placeholder:text-[var(--bg-prussian-blue-dark)]"
 				placeholder="// Enter your code here..."
 				rows={4}
 				spellCheck={false}

@@ -21,12 +21,12 @@ export function BlockquoteBlock({ block, onUpdate }: BlockquoteBlockProps) {
 	}, [block.content]);
 
 	return (
-		<div className="border-l-4 border-[hsl(199,89%,49%)] pl-4 py-2">
+		<div className="border-l-4 border-[var(--bg-carolina-blue)] pl-4 py-2">
 			<textarea
 				ref={ref}
 				value={block.content}
 				onChange={handleChange}
-				className="w-full bg-transparent border-none outline-none resize-none text-[hsl(217,24%,59%)] text-lg italic placeholder:text-[hsl(217,17%,30%)]"
+				className="w-full bg-transparent border-none outline-none resize-none text-[var(--text-shadow-blue)] text-lg italic placeholder:text-[var(--text-slate-dim)]"
 				placeholder="Enter a quote..."
 				rows={1}
 			/>

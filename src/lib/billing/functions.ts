@@ -283,6 +283,7 @@ export const $getSubscription = createServerFn({ method: "GET" }).handler(async 
 const CreateSubscriptionCheckoutSchema = z.object({
   planId: z.string(),
   interval: z.enum(["month", "year"]),
+  returnTo: z.string().optional(),
 });
 
 export const $createSubscriptionCheckout = createServerFn({ method: "POST" })
@@ -301,7 +302,8 @@ export const $createSubscriptionCheckout = createServerFn({ method: "POST" })
     }
 
     const baseUrl = process.env.VITE_BASE_URL || "http://localhost:3000";
-    const successUrl = `${baseUrl}/billing?success=true&plan=${data.planId}`;
+    const returnParam = data.returnTo ? `&return_to=${encodeURIComponent(data.returnTo)}` : "";
+    const successUrl = `${baseUrl}/billing/success?plan=${data.planId}${returnParam}`;
     const cancelUrl = `${baseUrl}/billing?canceled=true`;
 
     // Stripe checkout uses Better Auth's built-in subscription.upgrade method

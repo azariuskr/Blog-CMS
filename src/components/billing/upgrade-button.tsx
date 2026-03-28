@@ -9,6 +9,7 @@ interface UpgradeButtonProps extends Omit<ButtonProps, "onClick"> {
   interval?: "month" | "year";
   showIcon?: boolean;
   children?: React.ReactNode;
+  returnTo?: string;
 }
 
 export function UpgradeButton({
@@ -19,6 +20,7 @@ export function UpgradeButton({
   className,
   variant = "default",
   size,
+  returnTo,
   ...props
 }: UpgradeButtonProps) {
   const { isBillingEnabled, hasSubscription, currentPlan } = useBilling();
@@ -35,7 +37,7 @@ export function UpgradeButton({
   }
 
   const handleClick = () => {
-    upgrade(planId, interval);
+    upgrade(planId, interval, returnTo);
   };
 
   return (

@@ -34,7 +34,7 @@ export function HeadingBlock({ block, onUpdate }: HeadingBlockProps) {
 			ref={ref}
 			value={block.content}
 			onChange={handleChange}
-			className={`w-full bg-transparent border-none outline-none resize-none text-[hsl(216,100%,95%)] placeholder:text-[hsl(217,17%,30%)] ${HEADING_STYLES[block.type] ?? "text-2xl font-bold"}`}
+			className={`w-full bg-transparent border-none outline-none resize-none text-[var(--text-alice-blue)] placeholder:text-[var(--text-slate-dim)] ${HEADING_STYLES[block.type] ?? "text-2xl font-bold"}`}
 			placeholder={`${block.type.toUpperCase()} Heading...`}
 			rows={1}
 		/>

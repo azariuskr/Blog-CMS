@@ -1,10 +1,17 @@
 import { Lock, Sparkles } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useSession } from "@/lib/auth/auth-client";
 import { UpgradeButton } from "@/components/billing/upgrade-button";
+import { PLANS, formatPrice } from "@/lib/billing/plans";
+
+const proPlan = PLANS.find((p) => p.id === "pro");
+const proPrice = proPlan ? formatPrice(proPlan.priceMonthly) : "$19";
+const trialDays = proPlan?.trialDays ?? 14;
 
 export function PaywallCard() {
 	const { data: session } = useSession();
+	const routerState = useRouterState();
+	const returnTo = routerState.location.pathname;
 
 	return (
 		<div className="relative mt-8 rounded-2xl overflow-hidden border border-[hsl(199,89%,49%)]/30">
@@ -25,9 +32,22 @@ export function PaywallCard() {
 					<span className="text-xs font-semibold uppercase tracking-widest text-[hsl(199,89%,49%)]">Premium Content</span>
 					<Sparkles className="w-4 h-4 text-[hsl(199,89%,49%)]" />
 				</div>
-				<h3 className="text-2xl md:text-3xl font-bold text-white mb-3">
+				<h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
 					Continue reading with a subscription
 				</h3>
+
+				{/* Price + trial */}
+				<div className="flex items-center justify-center gap-3 mb-4">
+					<span className="text-[hsl(216,33%,68%)] text-sm">
+						<span className="text-white font-semibold">{proPrice}/month</span> · Cancel anytime
+					</span>
+					{trialDays > 0 && (
+						<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[hsl(199,89%,49%)]/20 text-[hsl(199,89%,49%)] border border-[hsl(199,89%,49%)]/30">
+							{trialDays}-day free trial
+						</span>
+					)}
+				</div>
+
 				<p className="text-[hsl(216,33%,68%)] mb-8 max-w-md mx-auto leading-relaxed">
 					This article is for subscribers only. Unlock full access to all premium posts, exclusive content, and more.
 				</p>
@@ -37,13 +57,14 @@ export function PaywallCard() {
 					<UpgradeButton
 						planId="pro"
 						interval="month"
+						returnTo={returnTo}
 						className="px-8 py-2.5 rounded-xl text-sm font-semibold"
 					>
 						Unlock Full Access
 					</UpgradeButton>
 					{!session?.user && (
 						<Link
-							to={"/sign-in" as string}
+							to={"/login" as string}
 							className="px-6 py-2.5 rounded-xl text-sm font-medium border border-[hsl(216,33%,30%)] text-[hsl(216,33%,68%)] hover:border-[hsl(199,89%,49%)] hover:text-[hsl(199,89%,49%)] transition-colors"
 						>
 							Sign in
@@ -55,9 +76,9 @@ export function PaywallCard() {
 				<p className="mt-6 text-xs text-[hsl(216,33%,48%)]">
 					Already subscribed?{" "}
 					{session?.user ? (
-						<span>Your subscription may not be active — check your billing settings.</span>
+						<span>Your subscription may not be active — check your <Link to={"/billing" as string} className="text-[hsl(199,89%,49%)] hover:underline">billing settings</Link>.</span>
 					) : (
-						<Link to={"/sign-in" as string} className="text-[hsl(199,89%,49%)] hover:underline">Sign in</Link>
+						<Link to={"/login" as string} className="text-[hsl(199,89%,49%)] hover:underline">Sign in</Link>
 					)}
 				</p>
 			</div>

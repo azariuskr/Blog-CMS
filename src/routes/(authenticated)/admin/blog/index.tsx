@@ -27,6 +27,7 @@ import {
 	useComments,
 	useTags,
 } from "@/lib/blog/queries";
+import { useSession } from "@/lib/auth/auth-client";
 
 export const Route = createFileRoute("/(authenticated)/admin/blog/")({
 	component: AdminBlogDashboard,
@@ -123,7 +124,16 @@ const statusConfig = {
 	},
 };
 
+const AUTHOR_QUICK_ACTIONS = [
+	{ label: "New Post", description: "Start writing", icon: PenLine, to: ROUTES.ADMIN.BLOG.POST_NEW, color: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400" },
+	{ label: "Your Posts", description: "Manage posts", icon: FileText, to: ROUTES.ADMIN.BLOG.POSTS, color: "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400" },
+];
+
 function AdminBlogDashboard() {
+	const { data: session } = useSession();
+	const userRole = (session?.user as any)?.role ?? "user";
+	const isAuthor = userRole === "author";
+
 	const postsQuery = useAdminPosts({ limit: 100 });
 	const authorsQuery = useAuthors();
 	const commentsQuery = useComments({ page: 1 });
@@ -188,8 +198,8 @@ function AdminBlogDashboard() {
 
 	return (
 		<PageContainer
-			title="Blog"
-			description="Manage your blog content, authors, and settings."
+			title={isAuthor ? "Your Dashboard" : "Blog"}
+			description={isAuthor ? "An overview of your writing activity." : "Manage your blog content, authors, and settings."}
 		>
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 				{statsCards.map((stat) => (
@@ -225,7 +235,7 @@ function AdminBlogDashboard() {
 					</Button>
 				</div>
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-					{quickActions.map((action) => (
+					{(isAuthor ? AUTHOR_QUICK_ACTIONS : quickActions).map((action) => (
 						<Link
 							key={action.label}
 							to={action.to as string}
@@ -249,7 +259,7 @@ function AdminBlogDashboard() {
 
 			<div>
 				<div className="mb-4 flex items-center justify-between">
-					<h2 className="text-lg font-semibold tracking-tight">Recent Posts</h2>
+					<h2 className="text-lg font-semibold tracking-tight">{isAuthor ? "Your Recent Posts" : "Recent Posts"}</h2>
 					<Button variant="outline" size="sm" {...{asChild: true} as any}>
 						<Link to={ROUTES.ADMIN.BLOG.POSTS as string}>View all</Link>
 					</Button>

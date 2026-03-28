@@ -16,6 +16,16 @@ import { user, organization } from "./auth.schema";
 
 // ─── Enums ─────────────────────────────────────────────────────────────────
 
+export const notificationTypeEnum = pgEnum("notification_type", [
+	"comment_reply",
+	"new_follower",
+	"post_reaction",
+	"post_published",
+	"author_approved",
+	"author_rejected",
+	"post_comment",
+]);
+
 export const postStatusEnum = pgEnum("post_status", [
 	"draft",
 	"review",
@@ -280,6 +290,7 @@ export const posts = pgTable(
 		// SEO
 		metaTitle: varchar("meta_title", { length: 500 }),
 		metaDescription: text("meta_description"),
+		canonicalUrl: text("canonical_url"),
 		// Stats
 		viewCount: integer("view_count").notNull().default(0),
 		likeCount: integer("like_count").notNull().default(0),
@@ -288,9 +299,10 @@ export const posts = pgTable(
 		// Git publishing
 		gitSha: text("git_sha"),
 		gitPath: text("git_path"),
-		// Scheduling
+		// Scheduling & Preview
 		publishedAt: timestamp("published_at"),
 		scheduledAt: timestamp("scheduled_at"),
+		previewToken: varchar("preview_token", { length: 64 }),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.defaultNow()
@@ -451,6 +463,26 @@ export const reactions = pgTable(
 	],
 );
 
+export const readingLists = pgTable(
+	"reading_lists",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		name: varchar("name", { length: 200 }).notNull().default("Reading List"),
+		description: text("description"),
+		isPublic: boolean("is_public").notNull().default(false),
+		isDefault: boolean("is_default").notNull().default(false),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").defaultNow().notNull(),
+	},
+	(t) => [
+		index("reading_lists_user_idx").on(t.userId),
+		uniqueIndex("reading_lists_default_uk").on(t.userId, t.isDefault),
+	],
+);
+
 export const bookmarks = pgTable(
 	"bookmarks",
 	{
@@ -461,11 +493,13 @@ export const bookmarks = pgTable(
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
+		listId: uuid("list_id").references(() => readingLists.id, { onDelete: "set null" }),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(t) => [
 		uniqueIndex("bookmarks_uk").on(t.postId, t.userId),
 		index("bookmarks_user_idx").on(t.userId),
+		index("bookmarks_list_idx").on(t.listId),
 	],
 );
 
@@ -595,6 +629,28 @@ export const apiWebhooks = pgTable(
 	],
 );
 
+export const notifications = pgTable(
+	"notifications",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		actorId: text("actor_id").references(() => user.id, { onDelete: "set null" }),
+		type: notificationTypeEnum("type").notNull(),
+		postId: uuid("post_id").references(() => posts.id, { onDelete: "cascade" }),
+		commentId: uuid("comment_id").references(() => comments.id, { onDelete: "cascade" }),
+		message: text("message"),
+		read: boolean("read").notNull().default(false),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(t) => [
+		index("notifications_user_idx").on(t.userId),
+		index("notifications_user_read_idx").on(t.userId, t.read),
+		index("notifications_created_at_idx").on(t.createdAt),
+	],
+);
+
 // ─── Relations ───────────────────────────────────────────────────────────────
 
 export const sitesRelations = relations(sites, ({ one, many }) => ({
@@ -613,6 +669,7 @@ export const sitesRelations = relations(sites, ({ one, many }) => ({
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
 	author: one(user, { fields: [posts.authorId], references: [user.id] }),
+	authorProfile: one(authorProfiles, { fields: [posts.authorId], references: [authorProfiles.userId] }),
 	site: one(sites, { fields: [posts.siteId], references: [sites.id] }),
 	category: one(categories, {
 		fields: [posts.categoryId],
@@ -661,6 +718,66 @@ export const apiWebhooksRelations = relations(apiWebhooks, ({ one }) => ({
 	apiKey: one(apiKeys, { fields: [apiWebhooks.apiKeyId], references: [apiKeys.id] }),
 }));
 
+export const userMutes = pgTable(
+	"user_mutes",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		mutedUserId: text("muted_user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(t) => [
+		uniqueIndex("user_mutes_uk").on(t.userId, t.mutedUserId),
+		index("user_mutes_user_idx").on(t.userId),
+	],
+);
+
+export const userMutesRelations = relations(userMutes, ({ one }) => ({
+	user: one(user, { fields: [userMutes.userId], references: [user.id] }),
+	mutedUser: one(user, { fields: [userMutes.mutedUserId], references: [user.id], relationName: "muted_user" }),
+}));
+
+export const userInterests = pgTable(
+	"user_interests",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+		categoryId: uuid("category_id").notNull().references(() => categories.id, { onDelete: "cascade" }),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(t) => [
+		uniqueIndex("user_interests_unique_idx").on(t.userId, t.categoryId),
+		index("user_interests_user_idx").on(t.userId),
+	],
+);
+
+export const userInterestsRelations = relations(userInterests, ({ one }) => ({
+	user: one(user, { fields: [userInterests.userId], references: [user.id] }),
+	category: one(categories, { fields: [userInterests.categoryId], references: [categories.id] }),
+}));
+
+export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
+	post: one(posts, { fields: [bookmarks.postId], references: [posts.id] }),
+	user: one(user, { fields: [bookmarks.userId], references: [user.id] }),
+	list: one(readingLists, { fields: [bookmarks.listId], references: [readingLists.id] }),
+}));
+
+export const readingListsRelations = relations(readingLists, ({ one, many }) => ({
+	user: one(user, { fields: [readingLists.userId], references: [user.id] }),
+	bookmarks: many(bookmarks),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+	user: one(user, { fields: [notifications.userId], references: [user.id] }),
+	actor: one(user, { fields: [notifications.actorId], references: [user.id], relationName: "notification_actor" }),
+	post: one(posts, { fields: [notifications.postId], references: [posts.id] }),
+	comment: one(comments, { fields: [notifications.commentId], references: [comments.id] }),
+}));
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export type Site = typeof sites.$inferSelect;
@@ -674,6 +791,12 @@ export type Comment = typeof comments.$inferSelect;
 export type Reaction = typeof reactions.$inferSelect;
 export type Bookmark = typeof bookmarks.$inferSelect;
 export type Follow = typeof follows.$inferSelect;
+export type ReadingList = typeof readingLists.$inferSelect;
+export type UserMute = typeof userMutes.$inferSelect;
+export type UserInterest = typeof userInterests.$inferSelect;
+export type NewReadingList = typeof readingLists.$inferInsert;
+export type Notification = typeof notifications.$inferSelect;
+export type NewNotification = typeof notifications.$inferInsert;
 export type Media = typeof media.$inferSelect;
 export type AuthorProfile = typeof authorProfiles.$inferSelect;
 export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;

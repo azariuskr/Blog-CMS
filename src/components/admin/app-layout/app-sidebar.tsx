@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Building2, ChevronRight, LayoutDashboard } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import * as React from "react";
 import {
 	Collapsible,
@@ -21,7 +21,7 @@ import {
 	SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { ROUTES } from "@/constants";
-import { useHasCapability, useRole } from "@/hooks/auth-hooks";
+import { useRole } from "@/hooks/auth-hooks";
 import {
 	buildNavigation,
 	isRouteActive,
@@ -30,6 +30,7 @@ import {
 } from "@/lib/navigation/navigation";
 import { useLayout } from "@/lib/store/layout";
 import { AppSidebarUser } from "./app-sidebar-user";
+import { OrganizationSwitcher } from "@daveyplate/better-auth-ui";
 
 function useMounted() {
 	const [mounted, setMounted] = React.useState(false);
@@ -43,15 +44,9 @@ export function AppSidebar() {
 	const currentPath = location.pathname;
 	const mounted = useMounted();
 	const layout = useLayout();
-	const canAccessAdmin = useHasCapability("canAccessAdmin");
-
 	// Wait for client-side hydration before building navigation
 	// This ensures consistent rendering between server and client
 	const navSections = mounted ? buildNavigation(role ?? undefined) : [];
-
-	// Header text based on admin access
-	const headerTitle = canAccessAdmin ? "Dashboard" : "Contributor";
-	const headerSubtitle = canAccessAdmin ? "Admin Panel" : "Writing Hub";
 
 	const variant = mounted ? layout.variant : "inset";
 	const collapsible = mounted ? layout.collapsible : "icon";
@@ -59,43 +54,7 @@ export function AppSidebar() {
 	return (
 		<Sidebar variant={variant} collapsible={collapsible}>
 			<SidebarHeader>
-				<SidebarMenu>
-					<SidebarMenuItem>
-						{canAccessAdmin ? (
-							<Link to={ROUTES.DASHBOARD as string}>
-								<SidebarMenuButton size="lg">
-									<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-										<LayoutDashboard className="size-4" />
-									</div>
-									<div className="grid flex-1 text-left text-sm leading-tight">
-										<span className="truncate font-semibold">
-											{headerTitle}
-										</span>
-										<span className="truncate text-xs text-muted-foreground">
-											{headerSubtitle}
-										</span>
-									</div>
-								</SidebarMenuButton>
-							</Link>
-						) : (
-							<Link to={ROUTES.ACCOUNT.BASE as string}>
-								<SidebarMenuButton size="lg">
-									<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-										<LayoutDashboard className="size-4" />
-									</div>
-									<div className="grid flex-1 text-left text-sm leading-tight">
-										<span className="truncate font-semibold">
-											{headerTitle}
-										</span>
-										<span className="truncate text-xs text-muted-foreground">
-											{headerSubtitle}
-										</span>
-									</div>
-								</SidebarMenuButton>
-							</Link>
-						)}
-					</SidebarMenuItem>
-				</SidebarMenu>
+				<OrganizationSwitcher />
 			</SidebarHeader>
 
 			<SidebarContent>
@@ -107,26 +66,6 @@ export function AppSidebar() {
 							currentPath={currentPath}
 						/>
 					))}
-
-				<SidebarGroup>
-					<SidebarGroupLabel>Organization</SidebarGroupLabel>
-					<SidebarMenu>
-						<SidebarMenuItem>
-							<Link to={ROUTES.ACCOUNT.ORGANIZATIONS as string}>
-								<SidebarMenuButton
-									isActive={isRouteActive(
-										currentPath,
-										ROUTES.ACCOUNT.ORGANIZATIONS,
-									)}
-									tooltip="Organizations"
-								>
-									<Building2 className="size-4" />
-									<span>Organizations</span>
-								</SidebarMenuButton>
-							</Link>
-						</SidebarMenuItem>
-					</SidebarMenu>
-				</SidebarGroup>
 			</SidebarContent>
 
 			<SidebarFooter>

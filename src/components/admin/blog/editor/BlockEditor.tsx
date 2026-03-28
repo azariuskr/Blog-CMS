@@ -132,13 +132,13 @@ export function BlockEditor({
 		>
 			<div className="flex flex-col h-full">
 				{/* Toolbar */}
-				<div className="flex items-center justify-between px-4 py-2 border-b border-[hsl(216,33%,20%)] bg-[hsl(222,44%,13%)]">
+				<div className="flex items-center justify-between px-4 py-2 border-b border-[var(--bg-prussian-blue)] bg-[var(--bg-oxford-blue)]">
 					<div className="flex items-center gap-1">
 						<Button
 							variant="ghost"
 							size="sm"
 							onClick={() => setView("edit")}
-							className={`h-7 px-2.5 text-xs gap-1.5 ${view === "edit" ? "bg-[hsl(199,89%,49%)]/20 text-[hsl(199,89%,49%)]" : "text-[hsl(216,33%,50%)] hover:text-[hsl(199,89%,49%)]"}`}
+							className={`h-7 px-2.5 text-xs gap-1.5 ${view === "edit" ? "bg-[var(--bg-carolina-blue)]/20 text-[var(--bg-carolina-blue)]" : "text-[var(--text-yonder-dim)] hover:text-[var(--bg-carolina-blue)]"}`}
 						>
 							<Code2 className="w-3.5 h-3.5" /> Edit
 						</Button>
@@ -146,7 +146,7 @@ export function BlockEditor({
 							variant="ghost"
 							size="sm"
 							onClick={() => setView("split")}
-							className={`h-7 px-2.5 text-xs gap-1.5 ${view === "split" ? "bg-[hsl(199,89%,49%)]/20 text-[hsl(199,89%,49%)]" : "text-[hsl(216,33%,50%)] hover:text-[hsl(199,89%,49%)]"}`}
+							className={`h-7 px-2.5 text-xs gap-1.5 ${view === "split" ? "bg-[var(--bg-carolina-blue)]/20 text-[var(--bg-carolina-blue)]" : "text-[var(--text-yonder-dim)] hover:text-[var(--bg-carolina-blue)]"}`}
 						>
 							<Columns2 className="w-3.5 h-3.5" /> Split
 						</Button>
@@ -154,14 +154,14 @@ export function BlockEditor({
 							variant="ghost"
 							size="sm"
 							onClick={() => setView("preview")}
-							className={`h-7 px-2.5 text-xs gap-1.5 ${view === "preview" ? "bg-[hsl(199,89%,49%)]/20 text-[hsl(199,89%,49%)]" : "text-[hsl(216,33%,50%)] hover:text-[hsl(199,89%,49%)]"}`}
+							className={`h-7 px-2.5 text-xs gap-1.5 ${view === "preview" ? "bg-[var(--bg-carolina-blue)]/20 text-[var(--bg-carolina-blue)]" : "text-[var(--text-yonder-dim)] hover:text-[var(--bg-carolina-blue)]"}`}
 						>
 							<Eye className="w-3.5 h-3.5" /> Preview
 						</Button>
 					</div>
 
 					<div className="flex items-center gap-3">
-						<div className="text-xs text-[hsl(216,33%,40%)] flex items-center gap-1.5">
+						<div className="text-xs text-[var(--text-prussian-mid)] flex items-center gap-1.5">
 							{saving ? (
 								<><Loader2 className="w-3 h-3 animate-spin" /> Saving…</>
 							) : savedAt ? (
@@ -176,7 +176,7 @@ export function BlockEditor({
 								size="sm"
 								onClick={handleManualSave}
 								disabled={saving || !dirty}
-								className="h-7 px-3 text-xs border-[hsl(199,89%,49%)]/40 text-[hsl(199,89%,49%)] hover:bg-[hsl(199,89%,49%)]/10 disabled:opacity-40"
+								className="h-7 px-3 text-xs border-[var(--bg-carolina-blue)]/40 text-[var(--bg-carolina-blue)] hover:bg-[var(--bg-carolina-blue)]/10 disabled:opacity-40"
 							>
 								Save
 							</Button>
@@ -188,14 +188,14 @@ export function BlockEditor({
 				<div className="flex-1 flex overflow-hidden">
 					{/* Block palette sidebar */}
 					{!readOnly && (view === "edit" || view === "split") && (
-						<div className="w-52 border-r border-[hsl(216,33%,20%)] flex-shrink-0">
+						<div className="w-52 border-r border-[var(--bg-prussian-blue)] flex-shrink-0">
 							<BlockSidebar />
 						</div>
 					)}
 
 					{/* Editor canvas */}
 					{(view === "edit" || view === "split") && (
-						<div className={`flex-1 overflow-hidden ${view === "split" ? "border-r border-[hsl(216,33%,20%)]" : ""}`}>
+						<div className={`flex-1 overflow-hidden ${view === "split" ? "border-r border-[var(--bg-prussian-blue)]" : ""}`}>
 							<EditorCanvas
 								blocks={blocks}
 								onBlockUpdate={handleBlockUpdate}
@@ -215,8 +215,8 @@ export function BlockEditor({
 
 			<DragOverlay>
 				{activeBlock && (
-					<div className="bg-[hsl(199,89%,49%)]/20 border border-[hsl(199,89%,49%)] rounded-lg p-3 shadow-xl">
-						<span className="text-[hsl(199,89%,49%)] text-sm">
+					<div className="bg-[var(--bg-carolina-blue)]/20 border border-[var(--bg-carolina-blue)] rounded-lg p-3 shadow-xl">
+						<span className="text-[var(--bg-carolina-blue)] text-sm">
 							{"label" in activeBlock ? activeBlock.label : activeBlock.type}
 						</span>
 					</div>
@@ -229,7 +229,7 @@ export function BlockEditor({
 /** Inline preview renderer — mirrors the public PostBlocksRenderer but in the editor context. */
 function BlockPreview({ blocks }: { blocks: Block[] }) {
 	if (blocks.length === 0) {
-		return <p className="text-[hsl(216,33%,40%)] text-sm text-center py-12">Nothing to preview yet.</p>;
+		return <p className="text-[var(--text-prussian-mid)] text-sm text-center py-12">Nothing to preview yet.</p>;
 	}
 
 	return (
@@ -237,20 +237,20 @@ function BlockPreview({ blocks }: { blocks: Block[] }) {
 			{blocks.map((block) => {
 				switch (block.type) {
 					case "h1": return <h1 key={block.id} className="text-3xl font-bold text-white mt-8 mb-4">{block.content}</h1>;
-					case "h2": return <h2 key={block.id} className="text-2xl font-bold text-white mt-6 mb-3 pb-2 border-b border-[hsl(216,33%,20%)]">{block.content}</h2>;
+					case "h2": return <h2 key={block.id} className="text-2xl font-bold text-white mt-6 mb-3 pb-2 border-b border-[var(--bg-prussian-blue)]">{block.content}</h2>;
 					case "h3": return <h3 key={block.id} className="text-xl font-semibold text-white mt-5 mb-2">{block.content}</h3>;
 					case "h4": return <h4 key={block.id} className="text-lg font-semibold text-white mt-4 mb-2">{block.content}</h4>;
-					case "paragraph": return <p key={block.id} className="text-[hsl(217,24%,59%)] leading-relaxed mb-4">{block.content}</p>;
+					case "paragraph": return <p key={block.id} className="text-[var(--text-shadow-blue)] leading-relaxed mb-4">{block.content}</p>;
 					case "blockquote": return (
-						<blockquote key={block.id} className="border-l-4 border-[hsl(199,89%,49%)] pl-4 py-2 my-4 bg-[hsl(216,33%,20%)]/30 rounded-r-lg">
-							<p className="text-[hsl(199,69%,84%)] italic">{block.content}</p>
+						<blockquote key={block.id} className="border-l-4 border-[var(--bg-carolina-blue)] pl-4 py-2 my-4 bg-[var(--bg-prussian-blue)]/30 rounded-r-lg">
+							<p className="text-[var(--text-columbia-blue)] italic">{block.content}</p>
 						</blockquote>
 					);
 					case "code": {
 						const lang = (block.props?.language as string) ?? "plaintext";
 						return (
-							<pre key={block.id} className="bg-[hsl(222,47%,8%)] rounded-xl p-4 my-4 overflow-x-auto border border-[hsl(216,33%,20%)]">
-								<div className="text-xs text-[hsl(216,33%,50%)] mb-2">{lang}</div>
+							<pre key={block.id} className="bg-[var(--bg-oxford-blue-dark)] rounded-xl p-4 my-4 overflow-x-auto border border-[var(--bg-prussian-blue)]">
+								<div className="text-xs text-[var(--text-yonder-dim)] mb-2">{lang}</div>
 								<code className="text-green-400 font-mono text-sm">{block.content}</code>
 							</pre>
 						);
@@ -263,15 +263,15 @@ function BlockPreview({ blocks }: { blocks: Block[] }) {
 						return (
 							<figure key={block.id} className="my-6">
 								<img src={src} alt={alt} className="w-full rounded-xl" />
-								{caption && <figcaption className="text-center text-sm text-[hsl(216,33%,50%)] mt-2 italic">{caption}</figcaption>}
+								{caption && <figcaption className="text-center text-sm text-[var(--text-yonder-dim)] mt-2 italic">{caption}</figcaption>}
 							</figure>
 						);
 					}
 					case "separator": return (
 						<div key={block.id} className="my-8 flex items-center justify-center">
-							<div className="w-1/4 h-px bg-gradient-to-r from-transparent via-[hsl(199,89%,49%)] to-transparent" />
-							<div className="mx-3 w-1.5 h-1.5 rounded-full bg-[hsl(199,89%,49%)]" />
-							<div className="w-1/4 h-px bg-gradient-to-r from-transparent via-[hsl(180,70%,45%)] to-transparent" />
+							<div className="w-1/4 h-px bg-gradient-to-r from-transparent via-[var(--bg-carolina-blue)] to-transparent" />
+							<div className="mx-3 w-1.5 h-1.5 rounded-full bg-[var(--bg-carolina-blue)]" />
+							<div className="w-1/4 h-px bg-gradient-to-r from-transparent via-[var(--bg-teal)] to-transparent" />
 						</div>
 					);
 					case "alert": {
@@ -286,13 +286,13 @@ function BlockPreview({ blocks }: { blocks: Block[] }) {
 					}
 					case "ul": {
 						const items = block.content.split("\n").map((i) => i.replace(/^-\s*/, "").trim()).filter(Boolean);
-						return <ul key={block.id} className="my-4 ml-5 space-y-1 list-disc text-[hsl(217,24%,59%)]">{items.map((it, i) => <li key={i}>{it}</li>)}</ul>;
+						return <ul key={block.id} className="my-4 ml-5 space-y-1 list-disc text-[var(--text-shadow-blue)]">{items.map((it, i) => <li key={i}>{it}</li>)}</ul>;
 					}
 					case "ol": {
 						const items = block.content.split("\n").map((i) => i.replace(/^\d+\.\s*/, "").trim()).filter(Boolean);
-						return <ol key={block.id} className="my-4 ml-5 space-y-1 list-decimal text-[hsl(217,24%,59%)]">{items.map((it, i) => <li key={i}>{it}</li>)}</ol>;
+						return <ol key={block.id} className="my-4 ml-5 space-y-1 list-decimal text-[var(--text-shadow-blue)]">{items.map((it, i) => <li key={i}>{it}</li>)}</ol>;
 					}
-					default: return <p key={block.id} className="text-[hsl(217,24%,59%)] mb-4 font-mono text-sm">{block.content}</p>;
+					default: return <p key={block.id} className="text-[var(--text-shadow-blue)] mb-4 font-mono text-sm">{block.content}</p>;
 				}
 			})}
 		</div>

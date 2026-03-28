@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Plus, Trash2, UserCheck, UserX } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageContainer } from "@/components/admin/app-layout";
 import type { BulkOperation } from "@/components/admin/data-table/bulk-actions";
@@ -10,6 +10,7 @@ import {
 	UserDeleteDialog,
 	UserSessionsSheet,
 } from "@/components/admin/users/dialogs";
+import { AuthorsTab } from "@/components/admin/users/authors-tab";
 import { createUsersColumns } from "@/components/admin/users/users-columns";
 import { UsersTable } from "@/components/admin/users/users-table";
 import { Button } from "@/components/ui/button";
@@ -160,6 +161,8 @@ export function Users({ search }: UsersViewProps) {
 		[banMutation, unbanMutation, deleteMutation],
 	);
 
+	const [peopleTab, setPeopleTab] = useState<"users" | "authors">("users");
+
 	// Handle stop impersonation
 	const handleStopImpersonation = useCallback(async () => {
 		const result = await stopImpersonationMutation.mutateAsync();
@@ -170,39 +173,63 @@ export function Users({ search }: UsersViewProps) {
 
 	return (
 		<PageContainer
-			title="User Management"
-			description="Manage users, roles, and permissions"
+			title="People"
+			description="Manage users and author profiles"
 			actions={
-				<>
-					{isImpersonating && (
-						<Button
-							variant="outline"
-							disabled={stopImpersonationMutation.isPending}
-							onClick={handleStopImpersonation}
-						>
-							Stop impersonation
+				peopleTab === "users" ? (
+					<>
+						{isImpersonating && (
+							<Button
+								variant="outline"
+								disabled={stopImpersonationMutation.isPending}
+								onClick={handleStopImpersonation}
+							>
+								Stop impersonation
+							</Button>
+						)}
+						<Button onClick={() => open("createUser")} disabled={!canCreate}>
+							<Plus className="mr-2 h-4 w-4" />
+							Add User
 						</Button>
-					)}
-					<Button onClick={() => open("createUser")} disabled={!canCreate}>
-						<Plus className="mr-2 h-4 w-4" />
-						Add User
-					</Button>
-				</>
+					</>
+				) : null
 			}
 		>
-			<Card>
-				<CardContent>
-					<UsersTable
-						data={users}
-						columns={columns}
-						filters={filters}
-						setFilters={setFilters}
-						isLoading={isLoading}
-						bulkOperations={bulkOperations}
-						pageCount={totalPages}
-					/>
-				</CardContent>
-			</Card>
+			{/* Top-level tab bar */}
+			<div className="flex gap-1 border-b border-border mb-6">
+				<button
+					type="button"
+					onClick={() => setPeopleTab("users")}
+					className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${peopleTab === "users" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+				>
+					All Users
+				</button>
+				<button
+					type="button"
+					onClick={() => setPeopleTab("authors")}
+					className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${peopleTab === "authors" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+				>
+					Authors
+				</button>
+			</div>
+
+			{peopleTab === "users" && (
+				<Card>
+					<CardContent>
+						<UsersTable
+							data={users}
+							columns={columns}
+							filters={filters}
+							setFilters={setFilters}
+							isLoading={isLoading}
+							bulkOperations={bulkOperations}
+							pageCount={totalPages}
+						/>
+					</CardContent>
+				</Card>
+			)}
+
+			{peopleTab === "authors" && <AuthorsTab />}
 
 			{/* Dialogs */}
 			<UserCreateDialog />

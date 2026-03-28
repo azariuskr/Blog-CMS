@@ -42,7 +42,8 @@ function PostEditorPage() {
 	const transitionStatus = useTransitionPostStatus();
 	const { data: session } = useSession();
 	const userRole = (session?.user as any)?.role ?? "user";
-	const canPublish = ["admin", "superAdmin"].includes(userRole);
+	const isAuthor = userRole === "author";
+	const canPublish = ["admin", "superAdmin", "author"].includes(userRole);
 
 	const versions = versionsQuery.data?.ok ? versionsQuery.data.data : [];
 
@@ -63,6 +64,16 @@ function PostEditorPage() {
 	const [saving, setSaving] = useState(false);
 	const [versionKey, setVersionKey] = useState(0);
 	const [restoring, setRestoring] = useState(false);
+
+	// Redirect authors away from posts they don't own
+	useEffect(() => {
+		if (!isAuthor) return;
+		const post = postQuery.data?.ok ? postQuery.data.data : null;
+		if (!post) return;
+		if ((post as any).authorId !== session?.user?.id) {
+			navigate({ to: "/admin/blog/posts" as string });
+		}
+	}, [postQuery.data, isAuthor, session?.user?.id, navigate]);
 
 	// Populate form once post data loads
 	useEffect(() => {
@@ -218,7 +229,7 @@ function PostEditorPage() {
 
 	if (postQuery.isLoading) {
 		return (
-			<div className="h-screen flex items-center justify-center bg-[hsl(222,47%,11%)] text-[hsl(217,24%,59%)]">
+			<div className="h-screen flex items-center justify-center bg-[var(--bg-oxford-blue-2)] text-[var(--text-shadow-blue)]">
 				Loading post…
 			</div>
 		);
@@ -226,9 +237,9 @@ function PostEditorPage() {
 
 	if (postQuery.isError || (postQuery.data && !postQuery.data.ok)) {
 		return (
-			<div className="h-screen flex items-center justify-center bg-[hsl(222,47%,11%)] text-destructive">
+			<div className="h-screen flex items-center justify-center bg-[var(--bg-oxford-blue-2)] text-destructive">
 				Failed to load post.{" "}
-				<Link to={"/admin/blog/posts" as string} className="underline ml-2 text-[hsl(199,89%,49%)]">
+				<Link to={"/admin/blog/posts" as string} className="underline ml-2 text-[var(--bg-carolina-blue)]">
 					Back to posts
 				</Link>
 			</div>
@@ -236,30 +247,30 @@ function PostEditorPage() {
 	}
 
 	return (
-		<div className="h-screen flex flex-col bg-[hsl(222,47%,11%)] text-[hsl(217,24%,59%)] overflow-hidden">
+		<div className="h-screen flex flex-col bg-[var(--bg-oxford-blue-2)] text-[var(--text-shadow-blue)] overflow-hidden">
 			{/* Toolbar */}
-			<header className="flex-shrink-0 border-b border-[hsl(216,33%,20%)] bg-[hsl(222,44%,13%)] px-4 py-2.5">
+			<header className="flex-shrink-0 border-b border-[var(--bg-prussian-blue)] bg-[var(--bg-oxford-blue)] px-4 py-2.5">
 				<div className="flex items-center justify-between gap-4">
 					<div className="flex items-center gap-3">
 						<Link
 							to={"/admin/blog/posts" as string}
-							className="text-[hsl(216,33%,68%)] hover:text-[hsl(199,89%,49%)] transition-colors"
+							className="text-[var(--text-wild-blue-yonder)] hover:text-[var(--bg-carolina-blue)] transition-colors"
 						>
 							<ArrowLeft className="h-5 w-5" />
 						</Link>
 						<div className="flex items-center gap-2">
-							<BookOpen className="h-4 w-4 text-[hsl(199,89%,49%)]" />
-							<span className="text-sm font-medium text-[hsl(216,100%,95%)]">Edit Post</span>
+							<BookOpen className="h-4 w-4 text-[var(--bg-carolina-blue)]" />
+							<span className="text-sm font-medium text-[var(--text-alice-blue)]">Edit Post</span>
 						</div>
 						<Badge
 							variant="outline"
-							className="capitalize text-xs border-[hsl(216,33%,20%)] text-[hsl(217,24%,59%)]"
+							className="capitalize text-xs border-[var(--bg-prussian-blue)] text-[var(--text-shadow-blue)]"
 						>
 							{status}
 						</Badge>
 					</div>
 
-					<div className="flex items-center gap-2 text-xs text-[hsl(217,17%,48%)]">
+					<div className="flex items-center gap-2 text-xs text-[var(--text-slate-gray)]">
 						<span>{wordCount} words</span>
 						<span>·</span>
 						<span>{readTime} min read</span>
@@ -269,7 +280,7 @@ function PostEditorPage() {
 						{meta.slug && (
 							<Link
 								to={`/blog/${meta.slug}` as string}
-								className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-[hsl(216,33%,20%)] text-[hsl(216,33%,68%)] hover:border-[hsl(199,89%,49%)] hover:text-[hsl(199,89%,49%)] transition-colors"
+								className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-[var(--bg-prussian-blue)] text-[var(--text-wild-blue-yonder)] hover:border-[var(--bg-carolina-blue)] hover:text-[var(--bg-carolina-blue)] transition-colors"
 							>
 								<Eye className="h-3.5 w-3.5" />
 								Preview
@@ -283,7 +294,7 @@ function PostEditorPage() {
 								onClick={async () => {
 									await handleSave("review");
 								}}
-								className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-[hsl(216,33%,20%)] text-[hsl(216,33%,68%)] hover:border-amber-400 hover:text-amber-400 transition-colors disabled:opacity-50"
+								className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-[var(--bg-prussian-blue)] text-[var(--text-wild-blue-yonder)] hover:border-amber-400 hover:text-amber-400 transition-colors disabled:opacity-50"
 							>
 								<Send className="h-3.5 w-3.5" />
 								Submit for Review
@@ -305,7 +316,7 @@ function PostEditorPage() {
 								type="button"
 								disabled={transitionStatus.isPending}
 								onClick={() => transitionStatus.mutate({ id: postId, to: "draft" })}
-								className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-[hsl(216,33%,20%)] text-[hsl(216,33%,68%)] hover:border-[hsl(199,89%,49%)] hover:text-[hsl(199,89%,49%)] transition-colors disabled:opacity-50"
+								className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-[var(--bg-prussian-blue)] text-[var(--text-wild-blue-yonder)] hover:border-[var(--bg-carolina-blue)] hover:text-[var(--bg-carolina-blue)] transition-colors disabled:opacity-50"
 							>
 								<RotateCcw className="h-3.5 w-3.5" />
 								Return to Draft
@@ -316,7 +327,7 @@ function PostEditorPage() {
 								type="button"
 								disabled={transitionStatus.isPending}
 								onClick={() => transitionStatus.mutate({ id: postId, to: "archived" })}
-								className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-[hsl(216,33%,20%)] text-[hsl(216,33%,68%)] hover:border-red-400 hover:text-red-400 transition-colors disabled:opacity-50"
+								className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-[var(--bg-prussian-blue)] text-[var(--text-wild-blue-yonder)] hover:border-red-400 hover:text-red-400 transition-colors disabled:opacity-50"
 							>
 								<Archive className="h-3.5 w-3.5" />
 								Archive
@@ -326,7 +337,7 @@ function PostEditorPage() {
 							type="button"
 							disabled={saving}
 							onClick={() => handleSave("draft")}
-							className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-[hsl(216,33%,20%)] text-[hsl(216,33%,68%)] hover:border-[hsl(199,89%,49%)] hover:text-[hsl(199,89%,49%)] transition-colors disabled:opacity-50"
+							className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-[var(--bg-prussian-blue)] text-[var(--text-wild-blue-yonder)] hover:border-[var(--bg-carolina-blue)] hover:text-[var(--bg-carolina-blue)] transition-colors disabled:opacity-50"
 						>
 							<Save className="h-3.5 w-3.5" />
 							Save Draft
@@ -351,16 +362,16 @@ function PostEditorPage() {
 				{/* Block editor */}
 				<div className="flex-1 flex flex-col overflow-hidden">
 					{/* Title + excerpt strip */}
-					<div className="flex-shrink-0 px-10 pt-6 pb-4 border-b border-[hsl(216,33%,20%)] space-y-2">
+					<div className="flex-shrink-0 px-10 pt-6 pb-4 border-b border-[var(--bg-prussian-blue)] space-y-2">
 						<textarea
 							placeholder="Post title..."
 							value={meta.title}
 							onChange={(e) => setMetaField("title", e.target.value)}
 							rows={1}
-							className="w-full text-2xl font-bold text-[hsl(216,100%,95%)] placeholder:text-[hsl(217,17%,30%)] bg-transparent border-none outline-none resize-none leading-tight"
+							className="w-full text-2xl font-bold text-[var(--text-alice-blue)] placeholder:text-[var(--text-slate-dim)] bg-transparent border-none outline-none resize-none leading-tight"
 						/>
 						{meta.slug && (
-							<p className="text-xs text-[hsl(217,17%,40%)] font-mono">
+							<p className="text-xs text-[var(--text-slate-dark)] font-mono">
 								/{meta.slug}
 							</p>
 						)}
@@ -369,7 +380,7 @@ function PostEditorPage() {
 							value={meta.excerpt}
 							onChange={(e) => setMetaField("excerpt", e.target.value)}
 							rows={1}
-							className="w-full text-sm text-[hsl(217,24%,50%)] placeholder:text-[hsl(217,17%,30%)] bg-transparent border-none outline-none resize-none"
+							className="w-full text-sm text-[var(--text-shadow-blue-mid)] placeholder:text-[var(--text-slate-dim)] bg-transparent border-none outline-none resize-none"
 						/>
 					</div>
 
@@ -387,15 +398,15 @@ function PostEditorPage() {
 				</div>
 
 				{/* Metadata sidebar */}
-				<aside className="w-64 flex-shrink-0 border-l border-[hsl(216,33%,20%)] overflow-y-auto">
+				<aside className="w-64 flex-shrink-0 border-l border-[var(--bg-prussian-blue)] overflow-y-auto">
 					<div className="p-4 space-y-4">
 						{/* Status */}
 						<div className="space-y-1.5">
-							<label className="text-xs font-medium text-[hsl(199,69%,84%)]">Status</label>
+							<label className="text-xs font-medium text-[var(--text-columbia-blue)]">Status</label>
 							<select
 								value={status}
 								onChange={(e) => setStatus(e.target.value as Status)}
-								className="w-full text-xs bg-[hsl(222,47%,11%)] border border-[hsl(216,33%,20%)] rounded-lg px-3 py-2 text-[hsl(216,100%,95%)] outline-none focus:border-[hsl(199,89%,49%)] transition-colors"
+								className="w-full text-xs bg-[var(--bg-oxford-blue-2)] border border-[var(--bg-prussian-blue)] rounded-lg px-3 py-2 text-[var(--text-alice-blue)] outline-none focus:border-[var(--bg-carolina-blue)] transition-colors"
 							>
 								<option value="draft">Draft</option>
 								<option value="review">In Review</option>
@@ -413,23 +424,23 @@ function PostEditorPage() {
 
 						{/* URL slug */}
 						<div className="space-y-1.5">
-							<label className="text-xs font-medium text-[hsl(199,69%,84%)]">URL Slug</label>
+							<label className="text-xs font-medium text-[var(--text-columbia-blue)]">URL Slug</label>
 							<input
 								type="text"
 								placeholder="post-url-slug"
 								value={meta.slug}
 								onChange={(e) => setMetaField("slug", e.target.value)}
-								className="w-full text-xs bg-[hsl(222,47%,11%)] border border-[hsl(216,33%,20%)] rounded-lg px-3 py-2 text-[hsl(216,100%,95%)] placeholder:text-[hsl(217,17%,30%)] font-mono outline-none focus:border-[hsl(199,89%,49%)] transition-colors"
+								className="w-full text-xs bg-[var(--bg-oxford-blue-2)] border border-[var(--bg-prussian-blue)] rounded-lg px-3 py-2 text-[var(--text-alice-blue)] placeholder:text-[var(--text-slate-dim)] font-mono outline-none focus:border-[var(--bg-carolina-blue)] transition-colors"
 							/>
 						</div>
 
 						{/* Category */}
 						<div className="space-y-1.5">
-							<label className="text-xs font-medium text-[hsl(199,69%,84%)]">Category</label>
+							<label className="text-xs font-medium text-[var(--text-columbia-blue)]">Category</label>
 							<select
 								value={meta.categoryId}
 								onChange={(e) => setMetaField("categoryId", e.target.value)}
-								className="w-full text-xs bg-[hsl(222,47%,11%)] border border-[hsl(216,33%,20%)] rounded-lg px-3 py-2 text-[hsl(216,100%,95%)] outline-none focus:border-[hsl(199,89%,49%)] transition-colors"
+								className="w-full text-xs bg-[var(--bg-oxford-blue-2)] border border-[var(--bg-prussian-blue)] rounded-lg px-3 py-2 text-[var(--text-alice-blue)] outline-none focus:border-[var(--bg-carolina-blue)] transition-colors"
 							>
 								<option value="">No category</option>
 								{categoryOptions.map((cat: any) => (
@@ -441,7 +452,7 @@ function PostEditorPage() {
 						{/* Tags */}
 						{allTags.length > 0 && (
 							<div className="space-y-1.5">
-								<label className="text-xs font-medium text-[hsl(199,69%,84%)]">Tags</label>
+								<label className="text-xs font-medium text-[var(--text-columbia-blue)]">Tags</label>
 								<div className="flex flex-wrap gap-1">
 									{allTags.map((tag: any) => {
 										const selected = tagIds.includes(tag.id);
@@ -456,8 +467,8 @@ function PostEditorPage() {
 												}
 												className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
 													selected
-														? "bg-[hsl(199,89%,49%)]/20 border-[hsl(199,89%,49%)]/50 text-[hsl(199,89%,49%)]"
-														: "bg-transparent border-[hsl(216,33%,20%)] text-[hsl(217,17%,48%)] hover:border-[hsl(199,89%,49%)]/50 hover:text-[hsl(216,33%,68%)]"
+														? "bg-[var(--bg-carolina-blue)]/20 border-[var(--bg-carolina-blue)]/50 text-[var(--bg-carolina-blue)]"
+														: "bg-transparent border-[var(--bg-prussian-blue)] text-[var(--text-slate-gray)] hover:border-[var(--bg-carolina-blue)]/50 hover:text-[var(--text-wild-blue-yonder)]"
 												}`}
 											>
 												{tag.name}
@@ -469,46 +480,46 @@ function PostEditorPage() {
 						)}
 
 						{/* Premium */}
-						<div className="space-y-2 pt-2 border-t border-[hsl(216,33%,20%)]">
-							<label className="text-xs font-medium text-[hsl(199,69%,84%)]">Monetization</label>
-							<div className="flex items-center justify-between rounded-lg bg-[hsl(222,44%,13%)] border border-[hsl(216,33%,20%)] px-3 py-2">
-								<span className="text-xs text-[hsl(216,33%,68%)]">Premium post</span>
+						<div className="space-y-2 pt-2 border-t border-[var(--bg-prussian-blue)]">
+							<label className="text-xs font-medium text-[var(--text-columbia-blue)]">Monetization</label>
+							<div className="flex items-center justify-between rounded-lg bg-[var(--bg-oxford-blue)] border border-[var(--bg-prussian-blue)] px-3 py-2">
+								<span className="text-xs text-[var(--text-wild-blue-yonder)]">Premium post</span>
 								<button
 									type="button"
 									onClick={() => setIsPremium((p) => !p)}
-									className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors ${isPremium ? "bg-[hsl(199,89%,49%)]" : "bg-[hsl(216,33%,20%)]"}`}
+									className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors ${isPremium ? "bg-[var(--bg-carolina-blue)]" : "bg-[var(--bg-prussian-blue)]"}`}
 								>
 									<span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform ${isPremium ? "translate-x-4" : "translate-x-0"}`} />
 								</button>
 							</div>
 							{isPremium && (
 								<div className="flex items-center gap-2">
-									<label className="text-[10px] text-[hsl(217,17%,48%)] flex-1">Free preview blocks</label>
+									<label className="text-[10px] text-[var(--text-slate-gray)] flex-1">Free preview blocks</label>
 									<input
 										type="number"
 										min={1}
 										max={20}
 										value={previewBlocks}
 										onChange={(e) => setPreviewBlocks(Math.max(1, Math.min(20, Number(e.target.value))))}
-										className="w-14 text-xs text-center rounded border border-[hsl(216,33%,20%)] bg-[hsl(222,47%,11%)] text-[hsl(216,100%,95%)] py-1 outline-none focus:border-[hsl(199,89%,49%)]"
+										className="w-14 text-xs text-center rounded border border-[var(--bg-prussian-blue)] bg-[var(--bg-oxford-blue-2)] text-[var(--text-alice-blue)] py-1 outline-none focus:border-[var(--bg-carolina-blue)]"
 									/>
 								</div>
 							)}
 						</div>
 
 						{/* Schedule */}
-						<div className="space-y-2 pt-2 border-t border-[hsl(216,33%,20%)]">
-							<label className="text-xs font-medium text-[hsl(199,69%,84%)] flex items-center gap-1.5">
+						<div className="space-y-2 pt-2 border-t border-[var(--bg-prussian-blue)]">
+							<label className="text-xs font-medium text-[var(--text-columbia-blue)] flex items-center gap-1.5">
 								<Calendar className="h-3.5 w-3.5" />
 								Schedule
 							</label>
 							<div className="space-y-1.5">
-								<p className="text-[10px] text-[hsl(217,17%,48%)]">Set status to "scheduled" then pick a publish date/time.</p>
+								<p className="text-[10px] text-[var(--text-slate-gray)]">Set status to "scheduled" then pick a publish date/time.</p>
 								<input
 									type="datetime-local"
 									value={scheduledAt}
 									onChange={(e) => setScheduledAt(e.target.value)}
-									className="w-full text-xs rounded border border-[hsl(216,33%,20%)] bg-[hsl(222,47%,11%)] text-[hsl(216,100%,95%)] px-2 py-1.5 outline-none focus:border-[hsl(199,89%,49%)] disabled:opacity-40"
+									className="w-full text-xs rounded border border-[var(--bg-prussian-blue)] bg-[var(--bg-oxford-blue-2)] text-[var(--text-alice-blue)] px-2 py-1.5 outline-none focus:border-[var(--bg-carolina-blue)] disabled:opacity-40"
 								/>
 								{scheduledAt && status !== "scheduled" && (
 									<p className="text-[10px] text-amber-400">Change status to "scheduled" to activate.</p>
@@ -524,32 +535,32 @@ function PostEditorPage() {
 							type="button"
 							disabled={saving}
 							onClick={() => handleSave()}
-							className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs border border-[hsl(216,33%,20%)] text-[hsl(216,33%,68%)] hover:border-[hsl(199,89%,49%)] hover:text-[hsl(199,89%,49%)] transition-colors disabled:opacity-50"
+							className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs border border-[var(--bg-prussian-blue)] text-[var(--text-wild-blue-yonder)] hover:border-[var(--bg-carolina-blue)] hover:text-[var(--bg-carolina-blue)] transition-colors disabled:opacity-50"
 						>
 							<Save className="h-3.5 w-3.5" />
 							{saving ? "Saving…" : "Save Changes"}
 						</button>
 
 						{/* Version History */}
-						<div className="space-y-2 pt-2 border-t border-[hsl(216,33%,20%)]">
-							<div className="flex items-center gap-1.5 text-xs font-medium text-[hsl(199,69%,84%)]">
+						<div className="space-y-2 pt-2 border-t border-[var(--bg-prussian-blue)]">
+							<div className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-columbia-blue)]">
 								<History className="h-3.5 w-3.5" />
 								Version History
 							</div>
 							{versionsQuery.isLoading ? (
-								<p className="text-xs text-[hsl(217,17%,40%)]">Loading…</p>
+								<p className="text-xs text-[var(--text-slate-dark)]">Loading…</p>
 							) : versions.length === 0 ? (
-								<p className="text-xs text-[hsl(217,17%,40%)]">No saved versions yet.</p>
+								<p className="text-xs text-[var(--text-slate-dark)]">No saved versions yet.</p>
 							) : (
 								<div className="space-y-1 max-h-48 overflow-y-auto pr-1">
 									{versions.map((v) => (
 										<div
 											key={v.id}
-											className="flex items-start justify-between gap-2 rounded-lg p-2 bg-[hsl(222,44%,13%)] border border-[hsl(216,33%,20%)]"
+											className="flex items-start justify-between gap-2 rounded-lg p-2 bg-[var(--bg-oxford-blue)] border border-[var(--bg-prussian-blue)]"
 										>
 											<div className="min-w-0 flex-1">
-												<p className="text-xs text-[hsl(216,100%,95%)] truncate leading-tight">{v.title}</p>
-												<p className="text-[10px] text-[hsl(217,17%,40%)] mt-0.5">
+												<p className="text-xs text-[var(--text-alice-blue)] truncate leading-tight">{v.title}</p>
+												<p className="text-[10px] text-[var(--text-slate-dark)] mt-0.5">
 													{new Date(v.createdAt).toLocaleString(undefined, {
 														month: "short",
 														day: "numeric",
@@ -562,7 +573,7 @@ function PostEditorPage() {
 												type="button"
 												disabled={restoring}
 												onClick={() => handleRestore(v.id)}
-												className="shrink-0 p-1 rounded text-[hsl(217,17%,48%)] hover:text-[hsl(199,89%,49%)] transition-colors disabled:opacity-50"
+												className="shrink-0 p-1 rounded text-[var(--text-slate-gray)] hover:text-[var(--bg-carolina-blue)] transition-colors disabled:opacity-50"
 												title="Restore this version"
 											>
 												<RotateCcw className="h-3 w-3" />

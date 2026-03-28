@@ -1,5 +1,4 @@
 import type { LucideIcon } from "lucide-react";
-import { FileText } from "lucide-react";
 import { ROUTES } from "@/constants";
 import {
 	type AppRole,
@@ -50,31 +49,28 @@ const NAV_STRUCTURE: NavStructureItem[] = [
 		routes: [ROUTES.DASHBOARD],
 	},
 	{
-		section: "Admin",
+		section: "Content",
 		routes: [
-			ROUTES.ADMIN.USERS,
-			ROUTES.ADMIN.STORAGE,
+			ROUTES.ADMIN.BLOG.POSTS,
+			ROUTES.ADMIN.BLOG.CATEGORIES,
+			ROUTES.ADMIN.BLOG.TAGS,
+			ROUTES.ADMIN.BLOG.COMMENTS,
+			ROUTES.ADMIN.BLOG.NEWSLETTER,
 		],
 	},
 	{
-		section: "Blog",
-		collapsible: [
-			{
-				title: "Blog",
-				icon: FileText,
-				routes: [
-					ROUTES.ADMIN.BLOG.POSTS,
-					ROUTES.ADMIN.BLOG.CATEGORIES,
-					ROUTES.ADMIN.BLOG.TAGS,
-					ROUTES.ADMIN.BLOG.COMMENTS,
-					ROUTES.ADMIN.BLOG.AUTHORS,
-					ROUTES.ADMIN.BLOG.ANALYTICS,
-					ROUTES.ADMIN.BLOG.MEDIA,
-					ROUTES.ADMIN.BLOG.NEWSLETTER,
-					ROUTES.ADMIN.BLOG.SITES,
-					ROUTES.ADMIN.API.BASE,
-				],
-			},
+		section: "People",
+		routes: [ROUTES.ADMIN.USERS],
+	},
+	{
+		section: "Media",
+		routes: [ROUTES.ADMIN.STORAGE],
+	},
+	{
+		section: "Settings",
+		routes: [
+			ROUTES.ADMIN.BLOG.SITES,
+			ROUTES.ADMIN.API.BASE,
 		],
 	},
 ];

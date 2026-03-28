@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { and, asc, count, desc, eq, lt, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, lt, notInArray, sql, gte } from "drizzle-orm";
 import { accessMiddleware } from "@/lib/auth/middleware";
 import { getSession, normalizePagination, paginatedResult } from "@/lib/auth/server";
 import { db } from "@/lib/db";
@@ -20,7 +20,12 @@ import {
 	bookmarks,
 	follows,
 	newsletterSubscribers,
+	notifications,
+	readingLists,
+	userMutes,
+	userInterests,
 } from "@/lib/db/schema/cms.schema";
+import { freeReads } from "@/lib/db/schema/commerce.schema";
 import { user } from "@/lib/db/schema/auth.schema";
 import { POST_SCHEMA_VERSION, PostBlockSchema, PostContentSchema, PostMetaSchema } from "@/lib/blog/content-schema";
 import { generateMdx } from "@/lib/blog/mdx-generator";
@@ -61,6 +66,8 @@ const PostFiltersSchema = z.object({
 	status: z.enum(["draft", "review", "scheduled", "published", "archived"]).optional(),
 	sortBy: z.enum(["publishedAt", "updatedAt", "title", "viewCount"]).optional(),
 	sortOrder: z.enum(["asc", "desc"]).optional(),
+	followedByUserId: z.string().optional(),
+	excludeMutedFor: z.string().optional(),
 });
 
 const UpsertPostSchema = z
@@ -228,12 +235,36 @@ export const $listPublishedPosts = createServerFn({ method: "GET" })
 			const cursor = data.data.cursor;
 			const useCursor = !!cursor && !data.data.sortBy;
 
+			// For "Following" feed: resolve followed author IDs
+			let followedAuthorIds: string[] | undefined;
+			if (data.data.followedByUserId) {
+				const rows = await db.query.follows.findMany({
+					where: eq(follows.followerId, data.data.followedByUserId),
+					columns: { followingId: true },
+				});
+				followedAuthorIds = rows.map((r) => r.followingId);
+			}
+
+			// Exclude muted authors
+			let mutedAuthorIds: string[] = [];
+			if (data.data.excludeMutedFor) {
+				const muteRows = await db.query.userMutes.findMany({
+					where: eq(userMutes.userId, data.data.excludeMutedFor),
+					columns: { mutedUserId: true },
+				});
+				mutedAuthorIds = muteRows.map((r) => r.mutedUserId);
+			}
+
 			const baseWhere = and(
 				eq(posts.status, "published"),
 				sql`${posts.visibility} IN ('public', 'both')`,
 				params.search ? ftsCondition(params.search) : undefined,
 				data.data.authorId ? eq(posts.authorId, data.data.authorId) : undefined,
 				data.data.isFeatured !== undefined ? eq(posts.isFeatured, data.data.isFeatured) : undefined,
+				followedAuthorIds !== undefined
+					? (followedAuthorIds.length > 0 ? inArray(posts.authorId, followedAuthorIds) : sql`false`)
+					: undefined,
+				mutedAuthorIds.length > 0 ? notInArray(posts.authorId, mutedAuthorIds) : undefined,
 			);
 
 			const whereClause = useCursor
@@ -257,6 +288,7 @@ export const $listPublishedPosts = createServerFn({ method: "GET" })
 				offset: useCursor ? 0 : (params.page - 1) * params.limit,
 				with: {
 					author: true,
+					authorProfile: true,
 					category: true,
 				},
 			});
@@ -311,8 +343,12 @@ export const $getPostBySlug = createServerFn({ method: "GET" })
 
 		const canonicalPost = withCanonicalContent(post as NormalizedPost);
 
+		const FREE_READS_PER_MONTH = 3;
+
 		// Paywall gating
 		let isLocked = false;
+		let freeReadGranted = false;
+		let freeReadsRemaining = 0;
 		if (post.isPremium) {
 			const session = await getSession();
 			const userId = session?.user?.id;
@@ -325,15 +361,54 @@ export const $getPostBySlug = createServerFn({ method: "GET" })
 					.limit(1);
 				hasAccess =
 					userRecord?.subscriptionStatus === true ||
-					["admin", "superAdmin", "editor"].includes(userRecord?.role ?? "");
+					["admin", "superAdmin", "author", "moderator"].includes(userRecord?.role ?? "");
+
+				// Free reads metering for non-subscribers
+				if (!hasAccess) {
+					const now = new Date();
+					const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+					// Count reads used this month
+					const [monthlyCount] = await db
+						.select({ cnt: count() })
+						.from(freeReads)
+						.where(and(
+							eq(freeReads.userId, userId),
+							gte(freeReads.periodStart, periodStart),
+						));
+					const usedThisMonth = Number(monthlyCount?.cnt ?? 0);
+
+					if (usedThisMonth < FREE_READS_PER_MONTH) {
+						// Check if this specific post already recorded
+						const existing = await db.query.freeReads.findFirst({
+							where: and(
+								eq(freeReads.userId, userId),
+								eq(freeReads.postId, post.id),
+								gte(freeReads.periodStart, periodStart),
+							),
+						});
+						if (!existing) {
+							await db.insert(freeReads).values({
+								userId,
+								postId: post.id,
+								periodStart,
+							}).onConflictDoNothing();
+						}
+						hasAccess = true;
+						freeReadGranted = true;
+						// Remaining after this read
+						freeReadsRemaining = FREE_READS_PER_MONTH - (usedThisMonth + 1);
+					}
+				}
 			}
 			if (!hasAccess) {
 				isLocked = true;
 				canonicalPost.blocks = canonicalPost.blocks?.slice(0, post.previewBlocks ?? 3) ?? [];
+				(canonicalPost as any).content = null;
 			}
 		}
 
-		return { ...canonicalPost, authorProfile: authorProfile ?? null, isLocked };
+		return { ...canonicalPost, authorProfile: authorProfile ?? null, isLocked, freeReadGranted, freeReadsRemaining };
 		});
 	});
 
@@ -371,6 +446,10 @@ export const $listAdminPosts = createServerFn({ method: "GET" })
 		return safe(async () => {
 			if (!data.ok) throw data.error;
 
+			const session = await getSession();
+			const userRole = (session?.user as any)?.role as string ?? "user";
+			const isAuthorOnly = userRole === "author";
+
 			const params = normalizePagination({
 				page: data.data.page,
 				limit: data.data.limit,
@@ -384,6 +463,8 @@ export const $listAdminPosts = createServerFn({ method: "GET" })
 			const whereClause = and(
 				data.data.status ? eq(posts.status, data.data.status) : undefined,
 				params.search ? ftsCondition(params.search) : undefined,
+				// Authors only see their own posts
+				isAuthorOnly && session?.user?.id ? eq(posts.authorId, session.user.id) : undefined,
 			);
 
 			const [{ total = 0 } = {}] = whereClause
@@ -410,14 +491,41 @@ export const $upsertPost = createServerFn({ method: "POST" })
 			async () => {
 				if (!data.ok) throw data.error;
 				const { id, tagIds, publishedAt, scheduledAt, schemaVersion, blocks, ...rest } = data.data;
-				const normalizedContent = normalizeContentEnvelope({ schemaVersion, blocks });
+
+				// Authors can only write their own posts
+				const session = await getSession();
+				const userRole = (session?.user as any)?.role as string ?? "user";
+				if (userRole === "author" && id) {
+					const existing = await db.query.posts.findFirst({ where: eq(posts.id, id), columns: { authorId: true } });
+					if (!existing || existing.authorId !== session?.user?.id) {
+						throw new Error("Forbidden: you can only edit your own posts");
+					}
+				}
+
+				// Only process blocks when explicitly provided — a partial update (e.g. toggling
+				// isPremium from the posts list) must never wipe blocks/content in the DB.
+				const hasBlocks = blocks !== undefined;
+				const normalizedContent = hasBlocks
+					? normalizeContentEnvelope({ schemaVersion, blocks })
+					: null;
 
 				const publishedAtDate = publishedAt ? new Date(publishedAt) : undefined;
 				const scheduledAtDate = scheduledAt ? new Date(scheduledAt) : undefined;
 
-				// Generate MDX when publishing
+				// Calculate read time only when blocks are present
+				const readTimeMinutes = normalizedContent
+					? Math.max(1, Math.round(
+							normalizedContent.blocks
+								.map((b) => (b as any).content ?? "")
+								.join(" ")
+								.split(/\s+/)
+								.filter(Boolean).length / 200,
+						))
+					: undefined;
+
+				// Generate MDX only when blocks are present and post is being published
 				const mdxContent =
-					rest.status === "published"
+					normalizedContent && rest.status === "published"
 						? generateMdx(normalizedContent.blocks, {
 								title: rest.title,
 								slug: rest.slug,
@@ -434,10 +542,11 @@ export const $upsertPost = createServerFn({ method: "POST" })
 						.update(posts)
 						.set({
 							...rest,
-							blocks: normalizedContent.blocks,
+							...(normalizedContent ? { blocks: normalizedContent.blocks } : {}),
 							...(mdxContent !== undefined ? { content: mdxContent } : {}),
 							publishedAt: publishedAtDate,
 							scheduledAt: scheduledAtDate,
+							...(readTimeMinutes !== undefined ? { readTimeMinutes } : {}),
 							updatedAt: new Date(),
 						})
 						.where(eq(posts.id, id));
@@ -460,6 +569,7 @@ export const $upsertPost = createServerFn({ method: "POST" })
 						...(mdxContent !== undefined ? { content: mdxContent } : {}),
 						publishedAt: publishedAtDate,
 						scheduledAt: scheduledAtDate,
+						readTimeMinutes,
 					})
 					.returning({ id: posts.id });
 
@@ -501,6 +611,35 @@ export const $upsertPost = createServerFn({ method: "POST" })
 		);
 	});
 
+export const $generatePreviewToken = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(PostIdSchema, data))
+	.middleware([accessMiddleware({ permissions: { content: ["write"] } })])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const token = crypto.randomBytes(32).toString("hex");
+			await db.update(posts).set({ previewToken: token }).where(eq(posts.id, data.data.id));
+			return { token };
+		});
+	});
+
+export const $getPostByPreviewToken = createServerFn({ method: "GET" })
+	.inputValidator((data: unknown) => validate(z.object({ token: z.string().min(1) }), data))
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const post = await db.query.posts.findFirst({
+				where: eq(posts.previewToken, data.data.token),
+				with: { author: true, category: true },
+			});
+			if (!post) throw { status: 404, message: "Preview not found or expired" };
+			const authorProfile = await db.query.authorProfiles.findFirst({
+				where: eq(authorProfiles.userId, post.authorId),
+			});
+			return { ...withCanonicalContent(post as NormalizedPost), authorProfile: authorProfile ?? null, isLocked: false };
+		});
+	});
+
 export const $deletePost = createServerFn({ method: "POST" })
 	.inputValidator((data: unknown) => validate(PostIdSchema, data))
 	.middleware([accessMiddleware({ permissions: { content: ["delete"] } })])
@@ -525,7 +664,8 @@ export const $deletePost = createServerFn({ method: "POST" })
 //   any authenticated user: review → draft (retract submission — own posts only)
 //   admin/superAdmin (posts:publish): review → published, published → archived,
 //                                     archived → draft, draft → published (direct)
-const PUBLISH_ROLES = ["admin", "superAdmin"] as const;
+//   author (posts:publish): same transitions but only for own posts
+const PUBLISH_ROLES = ["admin", "superAdmin", "author"] as const;
 
 export const $transitionPostStatus = createServerFn({ method: "POST" })
 	.inputValidator((data: unknown) =>
@@ -552,6 +692,12 @@ export const $transitionPostStatus = createServerFn({ method: "POST" })
 
 			const from = post.status;
 			const to = data.data.to;
+
+			const isAuthor = userRole === "author";
+			// Authors can only transition their own posts
+			if (isAuthor && post.authorId !== session?.user?.id) {
+				throw { status: 403, message: "You can only manage your own posts" };
+			}
 
 			const canPublish = PUBLISH_ROLES.includes(userRole as (typeof PUBLISH_ROLES)[number]);
 
@@ -885,6 +1031,21 @@ export const $createComment = createServerFn({ method: "POST" })
 					parentId: data.data.parentId,
 					status: "pending",
 				}).returning();
+				// Notify post author or parent comment author — fire-and-forget
+				const post = await db.query.posts.findFirst({ where: eq(posts.id, data.data.postId), columns: { authorId: true } });
+				const notifyUserId = data.data.parentId
+					? (await db.query.comments.findFirst({ where: eq(comments.id, data.data.parentId!), columns: { authorId: true } }))?.authorId
+					: post?.authorId;
+				if (notifyUserId && notifyUserId !== data.data.authorId) {
+					await db.insert(notifications).values({
+						userId: notifyUserId,
+						actorId: data.data.authorId,
+						type: data.data.parentId ? "comment_reply" : "post_comment",
+						postId: data.data.postId,
+						commentId: inserted.id,
+						message: data.data.parentId ? "Someone replied to your comment." : "Someone commented on your post.",
+					}).catch(() => void 0);
+				}
 				return inserted;
 			},
 			{ successMessage: "Comment submitted for review!" },
@@ -1202,6 +1363,13 @@ export const $toggleFollow = createServerFn({ method: "POST" })
 				.update(authorProfiles)
 				.set({ followersCount: sql`${authorProfiles.followersCount} + 1` })
 				.where(eq(authorProfiles.userId, validated.followingId));
+			// Notify the followed user
+			await db.insert(notifications).values({
+				userId: validated.followingId,
+				actorId: validated.followerId,
+				type: "new_follower",
+				message: "Someone started following you.",
+			}).catch(() => void 0);
 			return { following: true };
 		});
 	});
@@ -1683,5 +1851,341 @@ export const $getPageBySlug = createServerFn({ method: "GET" })
 			});
 			if (!page) throw new Error("Page not found");
 			return { site, page };
+		});
+	});
+
+// =============================================================================
+// Notifications
+// =============================================================================
+
+export const $getNotifications = createServerFn({ method: "GET" })
+	.inputValidator((data: unknown) => validate(z.object({ limit: z.number().int().min(1).max(50).default(20) }), data))
+	.middleware([accessMiddleware({})])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			const userId = session.user.id;
+			const limit = data.ok ? (data.data.limit ?? 20) : 20;
+			const rows = await db.query.notifications.findMany({
+				where: eq(notifications.userId, userId),
+				orderBy: [desc(notifications.createdAt)],
+				limit,
+				with: {
+					actor: { columns: { id: true, name: true, image: true } },
+					post: { columns: { id: true, title: true, slug: true } },
+				},
+			});
+			const unreadCount = rows.filter((n) => !n.read).length;
+			return { items: rows, unreadCount };
+		});
+	});
+
+export const $markNotificationRead = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(z.object({ id: z.string().uuid() }), data))
+	.middleware([accessMiddleware({})])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			await db
+				.update(notifications)
+				.set({ read: true })
+				.where(and(eq(notifications.id, data.data.id), eq(notifications.userId, session.user.id)));
+			return { ok: true };
+		});
+	});
+
+export const $markAllNotificationsRead = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(z.object({}), data))
+	.middleware([accessMiddleware({})])
+	.handler(async (_ctx) => {
+		return safe(async () => {
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			await db
+				.update(notifications)
+				.set({ read: true })
+				.where(eq(notifications.userId, session.user.id));
+			return { ok: true };
+		});
+	});
+
+// =============================================================================
+// Reading Lists
+// =============================================================================
+
+export const $getMyReadingLists = createServerFn({ method: "GET" })
+	.inputValidator((data: unknown) => validate(z.object({}), data))
+	.middleware([accessMiddleware({})])
+	.handler(async (_ctx) => {
+		return safe(async () => {
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			const lists = await db.query.readingLists.findMany({
+				where: eq(readingLists.userId, session.user.id),
+				orderBy: [desc(readingLists.createdAt)],
+			});
+			// Ensure default list exists
+			if (lists.length === 0 || !lists.some((l) => l.isDefault)) {
+				const [created] = await db.insert(readingLists).values({
+					userId: session.user.id,
+					name: "Reading List",
+					isDefault: true,
+				}).returning();
+				return [created, ...lists.filter((l) => !l.isDefault)];
+			}
+			return lists;
+		});
+	});
+
+export const $createReadingList = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(z.object({ name: z.string().min(1).max(200), description: z.string().optional(), isPublic: z.boolean().optional() }), data))
+	.middleware([accessMiddleware({})])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			const [list] = await db.insert(readingLists).values({
+				userId: session.user.id,
+				name: data.data.name,
+				description: data.data.description,
+				isPublic: data.data.isPublic ?? false,
+			}).returning();
+			return list;
+		});
+	});
+
+export const $getReadingListPosts = createServerFn({ method: "GET" })
+	.inputValidator((data: unknown) => validate(z.object({ listId: z.string().uuid() }), data))
+	.middleware([accessMiddleware({})])
+	// @ts-ignore handler type inference
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			const list = await db.query.readingLists.findFirst({
+				where: and(eq(readingLists.id, data.data.listId), eq(readingLists.userId, session.user.id)),
+			});
+			if (!list) throw new Error("List not found");
+			const items = await db.query.bookmarks.findMany({
+				where: and(eq(bookmarks.listId, data.data.listId), eq(bookmarks.userId, session.user.id)),
+				orderBy: [desc(bookmarks.createdAt)],
+				with: { post: { with: { author: true, authorProfile: true, category: true } } },
+			});
+			return { list, items };
+		});
+	});
+
+export const $addToReadingList = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(z.object({ postId: z.string().uuid(), listId: z.string().uuid().optional() }), data))
+	.middleware([accessMiddleware({})])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			let listId = data.data.listId;
+			if (!listId) {
+				// Get or create default list
+				let defaultList = await db.query.readingLists.findFirst({
+					where: and(eq(readingLists.userId, session.user.id), eq(readingLists.isDefault, true)),
+				});
+				if (!defaultList) {
+					[defaultList] = await db.insert(readingLists).values({
+						userId: session.user.id,
+						name: "Reading List",
+						isDefault: true,
+					}).returning();
+				}
+				listId = defaultList.id;
+			}
+			// Upsert bookmark with list
+			const existing = await db.query.bookmarks.findFirst({
+				where: and(eq(bookmarks.postId, data.data.postId), eq(bookmarks.userId, session.user.id)),
+			});
+			if (existing) {
+				await db.update(bookmarks).set({ listId }).where(eq(bookmarks.id, existing.id));
+				return { action: "updated", listId };
+			}
+			await db.insert(bookmarks).values({ postId: data.data.postId, userId: session.user.id, listId });
+			return { action: "added", listId };
+		});
+	});
+
+// =============================================================================
+// Mute / Ignore
+// =============================================================================
+
+export const $toggleMute = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(z.object({ mutedUserId: z.string().min(1) }), data))
+	.middleware([accessMiddleware({ requireAuth: true })])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			const userId = session.user.id;
+
+			const existing = await db.query.userMutes.findFirst({
+				where: and(eq(userMutes.userId, userId), eq(userMutes.mutedUserId, data.data.mutedUserId)),
+			});
+
+			if (existing) {
+				await db.delete(userMutes).where(eq(userMutes.id, existing.id));
+				return { muted: false };
+			}
+
+			await db.insert(userMutes).values({ userId, mutedUserId: data.data.mutedUserId });
+			return { muted: true };
+		});
+	});
+
+export const $getMutedUsers = createServerFn({ method: "GET" })
+	.inputValidator((data: unknown) => validate(z.object({}), data))
+	.middleware([accessMiddleware({})])
+	.handler(async (_ctx) => {
+		return safe(async () => {
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			const rows = await db.query.userMutes.findMany({
+				where: eq(userMutes.userId, session.user.id),
+				with: {
+					mutedUser: { columns: { id: true, name: true, image: true } },
+				},
+				orderBy: [desc(userMutes.createdAt)],
+			});
+			return rows;
+		});
+	});
+
+export const $getUserInterests = createServerFn({ method: "GET" })
+	.inputValidator((data: unknown) => validate(z.object({}), data))
+	.middleware([accessMiddleware({})])
+	.handler(async (_ctx) => {
+		return safe(async () => {
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			const rows = await db.query.userInterests.findMany({
+				where: eq(userInterests.userId, session.user.id),
+				with: { category: true },
+			});
+			return rows;
+		});
+	});
+
+export const $setUserInterests = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(z.object({ categoryIds: z.array(z.string().uuid()) }), data))
+	.middleware([accessMiddleware({})])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			const userId = session.user.id;
+			// Replace all interests
+			await db.delete(userInterests).where(eq(userInterests.userId, userId));
+			if (data.data.categoryIds.length > 0) {
+				await db.insert(userInterests).values(
+					data.data.categoryIds.map((categoryId) => ({ userId, categoryId })),
+				);
+			}
+			return { ok: true };
+		});
+	});
+
+export const $getPublicReadingListsByUser = createServerFn({ method: "GET" })
+	.inputValidator((data: unknown) => validate(z.object({ userId: z.string() }), data))
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const lists = await db.query.readingLists.findMany({
+				where: and(
+					eq(readingLists.userId, data.data.userId),
+					eq(readingLists.isPublic, true),
+				),
+				orderBy: [desc(readingLists.createdAt)],
+			});
+			return lists;
+		});
+	});
+
+// =============================================================================
+// Post interaction state (reaction + bookmark status)
+// =============================================================================
+
+export const $getUserPostReaction = createServerFn({ method: "GET" })
+	.inputValidator((data: unknown) => validate(z.object({ postId: z.string().uuid() }), data))
+	.middleware([accessMiddleware({})])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) return { liked: false };
+			const reaction = await db.query.reactions.findFirst({
+				where: and(
+					eq(reactions.postId, data.data.postId),
+					eq(reactions.userId, session.user.id),
+					eq(reactions.type, "like"),
+				),
+			});
+			return { liked: !!reaction };
+		});
+	});
+
+export const $getPostBookmarkStatus = createServerFn({ method: "GET" })
+	.inputValidator((data: unknown) => validate(z.object({ postId: z.string().uuid() }), data))
+	.middleware([accessMiddleware({})])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) return { bookmarked: false, listId: null };
+			const bookmark = await db.query.bookmarks.findFirst({
+				where: and(
+					eq(bookmarks.postId, data.data.postId),
+					eq(bookmarks.userId, session.user.id),
+				),
+			});
+			return { bookmarked: !!bookmark, listId: bookmark?.listId ?? null };
+		});
+	});
+
+export const $removeFromReadingList = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(z.object({ postId: z.string().uuid() }), data))
+	.middleware([accessMiddleware({})])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			await db.delete(bookmarks).where(
+				and(
+					eq(bookmarks.postId, data.data.postId),
+					eq(bookmarks.userId, session.user.id),
+				),
+			);
+			return { removed: true };
+		});
+	});
+
+export const $deleteReadingList = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(z.object({ listId: z.string().uuid() }), data))
+	.middleware([accessMiddleware({})])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const session = await getSession();
+			if (!session?.user?.id) throw new Error("Unauthorized");
+			await db.delete(readingLists).where(
+				and(
+					eq(readingLists.id, data.data.listId),
+					eq(readingLists.userId, session.user.id),
+				),
+			);
+			return { deleted: true };
 		});
 	});

@@ -7,24 +7,19 @@ import {
 	Search,
 	ArrowUp,
 	ChevronRight,
-	User,
-	FileText,
-	Settings,
-	LogOut,
 	PenLine,
+	Bell,
+	Check,
+	Sparkles,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useHasCapability, useCanAccessRoute } from "@/hooks/auth-hooks";
+import { ProfileMenu } from "@/components/shared/profile-menu";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants";
-import { useSubscribeNewsletter } from "@/lib/blog/queries";
+import { useSubscribeNewsletter, useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/lib/blog/queries";
+import { useBilling } from "@/hooks/use-billing";
 import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/(blog)")({
 	component: BlogLayout,
@@ -34,8 +29,80 @@ const navLinks = [
 	{ href: "/", label: "Home" },
 	{ href: "/topics", label: "Topics" },
 	{ href: "/authors", label: "Authors" },
+	{ href: "/pricing", label: "Pricing" },
 	{ href: "/about", label: "About" },
 ];
+
+function NotificationBell() {
+	const [open, setOpen] = useState(false);
+	const notificationsQuery = useNotifications(20);
+	const markRead = useMarkNotificationRead();
+	const markAllRead = useMarkAllNotificationsRead();
+
+	const result = notificationsQuery.data?.ok ? notificationsQuery.data.data : null;
+	const items = result?.items ?? [];
+	const unreadCount = result?.unreadCount ?? 0;
+
+	return (
+		<div className="relative">
+			<button
+				type="button"
+				onClick={() => setOpen((p) => !p)}
+				className="relative text-wild-blue-yonder hover:text-carolina-blue transition-colors"
+				aria-label="Notifications"
+			>
+				<Bell className="h-5 w-5" />
+				{unreadCount > 0 && (
+					<span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 flex items-center justify-center rounded-full bg-carolina-blue text-white text-[9px] font-bold px-0.5">
+						{unreadCount > 9 ? "9+" : unreadCount}
+					</span>
+				)}
+			</button>
+			{open && (
+				<div className="absolute right-0 top-8 w-80 rounded-xl border border-prussian-blue bg-oxford-blue shadow-xl z-50">
+					<div className="flex items-center justify-between px-4 py-3 border-b border-prussian-blue">
+						<span className="text-sm font-semibold text-alice-blue">Notifications</span>
+						{unreadCount > 0 && (
+							<button
+								type="button"
+								onClick={() => markAllRead.mutate({})}
+								className="flex items-center gap-1 text-[10px] text-carolina-blue hover:underline"
+							>
+								<Check className="h-3 w-3" />
+								Mark all read
+							</button>
+						)}
+					</div>
+					<div className="max-h-80 overflow-y-auto">
+						{items.length === 0 ? (
+							<p className="px-4 py-6 text-center text-xs text-slate-gray">No notifications yet.</p>
+						) : (
+							items.map((n: any) => (
+								<button
+									key={n.id}
+									type="button"
+									onClick={() => { if (!n.read) markRead.mutate(n.id); }}
+									className={`w-full text-left px-4 py-3 border-b border-prussian-blue/50 hover:bg-prussian-blue/20 transition-colors ${n.read ? "" : "bg-carolina-blue/5"}`}
+								>
+									<div className="flex items-start gap-2">
+										{!n.read && <span className="mt-1.5 flex-shrink-0 h-1.5 w-1.5 rounded-full bg-carolina-blue" />}
+										<div className={!n.read ? "" : "pl-3.5"}>
+											<p className="text-xs text-alice-blue leading-snug">{n.message ?? n.type.replace(/_/g, " ")}</p>
+											{n.post?.title && <p className="text-[10px] text-slate-gray mt-0.5 truncate">{n.post.title}</p>}
+											<p className="text-[10px] text-prussian-blue-dark mt-0.5">
+												{formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+											</p>
+										</div>
+									</div>
+								</button>
+							))
+						)}
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
 
 function BlogLayout() {
 	return (
@@ -53,6 +120,10 @@ function BlogLayout() {
 function BlogHeader() {
 	const { data: session } = useSession();
 	const user = session?.user;
+	const canAccessAdmin = useHasCapability("canAccessAdmin");
+	const canWrite = useCanAccessRoute(ROUTES.EDITOR.NEW);
+	const { isBillingEnabled, hasSubscription, currentPlan } = useBilling();
+	const showUpgradePill = !!user && isBillingEnabled && (!hasSubscription || currentPlan?.id === "free");
 	const routerState = useRouterState();
 	const currentPath = routerState.location.pathname;
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -109,78 +180,38 @@ function BlogHeader() {
 
 					{user ? (
 						<>
-							<Link
-								to={ROUTES.EDITOR.NEW as string}
-								className="navy-blue-blog-btn px-4 py-2 rounded-md text-sm flex items-center gap-2"
-							>
-								<PenLine className="w-4 h-4" />
-								Write
-							</Link>
-							<DropdownMenu>
-								<DropdownMenuTrigger {...{asChild: true} as any}>
-									<button
-										type="button"
-										className="h-10 w-10 rounded-full overflow-hidden border-2 border-carolina-blue"
-									>
-										<Avatar className="h-10 w-10">
-											<AvatarImage
-												src={user.image ?? undefined}
-												alt={`${user.name ?? "User"}'s avatar`}
-											/>
-											<AvatarFallback className="bg-prussian-blue text-alice-blue">
-												{user.name?.charAt(0)?.toUpperCase() ?? "U"}
-											</AvatarFallback>
-										</Avatar>
-									</button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent
-									align="end"
-									className="w-56 bg-oxford-blue border-prussian-blue"
+							<NotificationBell />
+							{showUpgradePill && (
+								<Link
+									to={"/pricing" as string}
+									className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[hsl(199,89%,49%)] to-[hsl(180,70%,45%)] text-white text-xs font-semibold hover:opacity-90 transition-opacity"
 								>
-									<div className="px-3 py-2 border-b border-prussian-blue">
-										<p className="text-sm font-medium text-columbia-blue">
-											{user.name}
-										</p>
-										<p className="text-xs text-slate-gray">{user.email}</p>
-									</div>
-									<DropdownMenuItem className="text-alice-blue hover:bg-prussian-blue cursor-pointer">
-										<User className="mr-2 h-4 w-4" />
-										Profile
-									</DropdownMenuItem>
-									<DropdownMenuItem {...{asChild: true} as any}>
-										<Link
-											to={ROUTES.ADMIN.BLOG.POSTS as string}
-											className="flex items-center text-alice-blue cursor-pointer"
-										>
-											<FileText className="mr-2 h-4 w-4" />
-											My Posts
-										</Link>
-									</DropdownMenuItem>
-									<DropdownMenuItem {...{asChild: true} as any}>
-										<Link
-											to={ROUTES.ACCOUNT.BASE as string}
-											className="flex items-center text-alice-blue cursor-pointer"
-										>
-											<Settings className="mr-2 h-4 w-4" />
-											Settings
-										</Link>
-									</DropdownMenuItem>
-									<DropdownMenuSeparator className="bg-prussian-blue" />
-									<DropdownMenuItem {...{asChild: true} as any}>
-										<Link
-											to={ROUTES.LOGOUT}
-											className="flex items-center text-alice-blue cursor-pointer"
-										>
-											<LogOut className="mr-2 h-4 w-4" />
-											Sign Out
-										</Link>
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
+									<Sparkles className="w-3 h-3" />
+									Upgrade
+								</Link>
+							)}
+							{canWrite ? (
+								<Link
+									to={ROUTES.EDITOR.NEW as string}
+									className="navy-blue-blog-btn px-4 py-2 rounded-md text-sm flex items-center gap-2"
+								>
+									<PenLine className="w-4 h-4" />
+									Write
+								</Link>
+							) : (
+								<Link
+									to={ROUTES.BLOG.AUTHOR_ONBOARDING as string}
+									className="border border-[hsl(216,33%,30%)] text-[hsl(216,33%,68%)] hover:border-[hsl(199,89%,49%)] hover:text-white px-4 py-2 rounded-md text-sm flex items-center gap-2 transition-colors"
+								>
+									<PenLine className="w-4 h-4" />
+									Become an Author
+								</Link>
+							)}
+							<ProfileMenu user={user} canAccessAdmin={canAccessAdmin} />
 						</>
 					) : (
 						<Link to={ROUTES.LOGIN} className="navy-blue-blog-btn px-4 py-2 rounded-md text-sm">
-							Get Started
+							Start Writing
 						</Link>
 					)}
 				</div>
@@ -229,13 +260,40 @@ function BlogHeader() {
 				</nav>
 				{user ? (
 					<div className="space-y-2">
+						{canWrite && (
+							<Link
+								to={ROUTES.EDITOR.NEW as string}
+								onClick={() => setMobileMenuOpen(false)}
+								className="block py-2 text-alice-blue hover:text-carolina-blue"
+							>
+								Write
+							</Link>
+						)}
+						{!canWrite && (
+							<Link
+								to={ROUTES.BLOG.AUTHOR_ONBOARDING as string}
+								onClick={() => setMobileMenuOpen(false)}
+								className="block py-2 text-alice-blue hover:text-carolina-blue"
+							>
+								Become an Author
+							</Link>
+						)}
 						<Link
-							to={ROUTES.EDITOR.NEW as string}
+							to={ROUTES.ACCOUNT.PROFILE as string}
 							onClick={() => setMobileMenuOpen(false)}
 							className="block py-2 text-alice-blue hover:text-carolina-blue"
 						>
-							Write
+							Profile
 						</Link>
+						{canWrite && (
+							<Link
+								to={ROUTES.ADMIN.BLOG.POSTS as string}
+								onClick={() => setMobileMenuOpen(false)}
+								className="block py-2 text-alice-blue hover:text-carolina-blue"
+							>
+								My Posts
+							</Link>
+						)}
 						<Link
 							to={ROUTES.ACCOUNT.BASE as string}
 							onClick={() => setMobileMenuOpen(false)}
@@ -243,6 +301,15 @@ function BlogHeader() {
 						>
 							Settings
 						</Link>
+						{canAccessAdmin && (
+							<Link
+								to={ROUTES.ADMIN.BASE as string}
+								onClick={() => setMobileMenuOpen(false)}
+								className="block py-2 text-alice-blue hover:text-carolina-blue"
+							>
+								Admin Dashboard
+							</Link>
+						)}
 						<Link
 							to={ROUTES.LOGOUT}
 							onClick={() => setMobileMenuOpen(false)}
@@ -257,7 +324,7 @@ function BlogHeader() {
 						onClick={() => setMobileMenuOpen(false)}
 						className="navy-blue-blog-btn block py-2.5 px-4 rounded-md text-sm text-center"
 					>
-						Get Started
+						Start Writing
 					</Link>
 				)}
 			</div>
