@@ -364,41 +364,46 @@ export const $getPostBySlug = createServerFn({ method: "GET" })
 					["admin", "superAdmin", "author", "moderator"].includes(userRecord?.role ?? "");
 
 				// Free reads metering for non-subscribers
-				if (!hasAccess) {
-					const now = new Date();
-					const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+				// Wrapped in try-catch: if free_reads table doesn't exist yet the post stays locked
+				try {
+					if (!hasAccess) {
+						const now = new Date();
+						const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-					// Count reads used this month
-					const [monthlyCount] = await db
-						.select({ cnt: count() })
-						.from(freeReads)
-						.where(and(
-							eq(freeReads.userId, userId),
-							gte(freeReads.periodStart, periodStart),
-						));
-					const usedThisMonth = Number(monthlyCount?.cnt ?? 0);
-
-					if (usedThisMonth < FREE_READS_PER_MONTH) {
-						// Check if this specific post already recorded
-						const existing = await db.query.freeReads.findFirst({
-							where: and(
+						// Count reads used this month
+						const [monthlyCount] = await db
+							.select({ cnt: count() })
+							.from(freeReads)
+							.where(and(
 								eq(freeReads.userId, userId),
-								eq(freeReads.postId, post.id),
 								gte(freeReads.periodStart, periodStart),
-							),
-						});
-						if (!existing) {
-							await db.insert(freeReads).values({
-								userId,
-								postId: post.id,
-								periodStart,
-							}).onConflictDoNothing();
+							));
+						const usedThisMonth = Number(monthlyCount?.cnt ?? 0);
+
+						if (usedThisMonth < FREE_READS_PER_MONTH) {
+							// Check if this specific post already recorded
+							const existing = await db.query.freeReads.findFirst({
+								where: and(
+									eq(freeReads.userId, userId),
+									eq(freeReads.postId, post.id),
+									gte(freeReads.periodStart, periodStart),
+								),
+							});
+							if (!existing) {
+								await db.insert(freeReads).values({
+									userId,
+									postId: post.id,
+									periodStart,
+								}).onConflictDoNothing();
+							}
+							hasAccess = true;
+							freeReadGranted = true;
+							// Remaining after this read
+							freeReadsRemaining = FREE_READS_PER_MONTH - (usedThisMonth + 1);
 						}
-						hasAccess = true;
-						freeReadGranted = true;
-						// Remaining after this read
-						freeReadsRemaining = FREE_READS_PER_MONTH - (usedThisMonth + 1);
 					}
+				} catch {
+					// free_reads table may not exist yet — post stays locked
 				}
 			}
 			if (!hasAccess) {
