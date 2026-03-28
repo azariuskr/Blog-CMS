@@ -4,7 +4,7 @@ import {
 	useQuery,
 } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants";
-import { $getUserFilesPaginated, $adminGetFiles } from "./server";
+import { $getUserFilesPaginated, $adminGetFiles, $getMyQuota } from "./server";
 
 export const filesPaginatedQueryOptions = (params: {
 	page: number;
@@ -48,4 +48,15 @@ export function useAdminFiles(params: {
 	search?: string;
 }) {
 	return useQuery(adminFilesPaginatedQueryOptions(params));
+}
+
+export const myQuotaQueryOptions = () =>
+	queryOptions({
+		queryKey: ["storage", "my-quota"],
+		queryFn: () => $getMyQuota(),
+		staleTime: 1000 * 60,
+	});
+
+export function useMyQuota() {
+	return useQuery(myQuotaQueryOptions());
 }

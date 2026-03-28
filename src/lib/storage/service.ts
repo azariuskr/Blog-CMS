@@ -72,6 +72,19 @@ const ROLE_QUOTA_LIMITS: Record<string, number> = {
 	user: 100 * 1024 * 1024,             // 100 MB
 };
 
+/**
+ * Compute the effective storage limit for a user.
+ * Returns null for admin/superAdmin (unlimited).
+ * Used by the upload endpoint and quota queries so the logic lives in one place.
+ */
+export function getUserStorageLimit(role: string | null, subscriptionStatus: boolean): number | null {
+	if (role === "admin" || role === "superAdmin") return null;
+	if (role === "moderator") return 2 * 1024 * 1024 * 1024;                    // 2 GB
+	if (role === "author" && subscriptionStatus) return 10 * 1024 * 1024 * 1024; // Pro: 10 GB
+	if (role === "author") return 100 * 1024 * 1024;                             // Free: 100 MB
+	return 100 * 1024 * 1024;                                                     // user: 100 MB
+}
+
 /** Get or create a quota record for a user or org */
 async function getOrCreateQuota(ownerType: "user" | "org", ownerId: string): Promise<typeof storageQuota.$inferSelect> {
 	const existing = await db

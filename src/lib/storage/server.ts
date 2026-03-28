@@ -4,7 +4,8 @@ import { z } from "zod";
 import { PAGINATION, STORAGE_API, STORAGE_PATHS } from "@/constants";
 import { accessMiddleware, authMiddleware } from "@/lib/auth/middleware";
 import { db } from "@/lib/db";
-import { file } from "@/lib/db/schema";
+import { file, storageQuota, user as userTable } from "@/lib/db/schema";
+import { getSession } from "@/lib/auth/server";
 import type { HttpError, Result } from "@/lib/result";
 import { safe } from "@/lib/result";
 import {
@@ -20,6 +21,7 @@ import {
 	getAdminDownloadUrl as getAdminDownloadUrlService,
 	getDownloadUrl as getDownloadUrlService,
 	getPublicUrl,
+	getUserStorageLimit,
 } from "./service";
 
 // ============================================================================
@@ -519,4 +521,50 @@ export const $adminGetDownloadUrl = createServerFn({ method: "POST" })
 				errorMessage: "Failed to generate download URL",
 			},
 		);
+	});
+
+// ============================================================================
+// User quota — current user
+// ============================================================================
+
+/**
+ * Get the current user's media quota info.
+ * Returns used bytes, the effective limit (based on role + subscription),
+ * file count, and a human-readable plan label.
+ */
+export const $getMyQuota = createServerFn({ method: "GET" })
+	.middleware([authMiddleware])
+	.handler(async () => {
+		return safe(async () => {
+			const session = await getSession();
+			const userId = session?.user?.id;
+			if (!userId) throw new Error("Not authenticated");
+
+			const [userRecord] = await db
+				.select({ role: userTable.role, subscriptionStatus: userTable.subscriptionStatus })
+				.from(userTable)
+				.where(eq(userTable.id, userId))
+				.limit(1);
+
+			const role = userRecord?.role ?? "user";
+			const subscriptionStatus = userRecord?.subscriptionStatus ?? false;
+			const limitBytes = getUserStorageLimit(role, subscriptionStatus);
+
+			const [quotaRow] = await db
+				.select({ usedBytes: storageQuota.usedBytes, fileCount: storageQuota.fileCount })
+				.from(storageQuota)
+				.where(and(eq(storageQuota.ownerType, "user"), eq(storageQuota.ownerId, userId)))
+				.limit(1);
+
+			const usedBytes = Number(quotaRow?.usedBytes ?? 0);
+			const fileCount = Number(quotaRow?.fileCount ?? 0);
+			const percentUsed = limitBytes ? Math.min(100, Math.round((usedBytes / limitBytes) * 100)) : 0;
+
+			const planLabel =
+				role === "admin" || role === "superAdmin" ? "Admin (Unlimited)" :
+				role === "moderator" ? "Moderator (2 GB)" :
+				subscriptionStatus ? "Pro (10 GB)" : "Free (100 MB)";
+
+			return { usedBytes, limitBytes, fileCount, percentUsed, planLabel, role };
+		});
 	});

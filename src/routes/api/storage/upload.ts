@@ -1,7 +1,10 @@
 import crypto from "node:crypto";
+import { and, eq, sql } from "drizzle-orm";
 import { createFileRoute } from "@tanstack/react-router";
 import { STORAGE_PATHS, VALID_UPLOAD_PREFIXES } from "@/constants";
 import { auth } from "@/lib/auth/auth";
+import { db } from "@/lib/db";
+import { file, storageQuota, user as userTable } from "@/lib/db/schema";
 import { getStorage } from "@/lib/storage/client";
 import {
 	isAllowedImageSize,
@@ -10,28 +13,29 @@ import {
 	processImage,
 	IMAGE_PRESETS,
 } from "@/lib/storage/image-processing";
+import { getPublicUrl, getUserStorageLimit } from "@/lib/storage/service";
 
 export const Route = createFileRoute("/api/storage/upload")({
 	server: {
 		handlers: {
 			POST: async ({ request }) => {
-				// Auth check
-				const session = await auth.api.getSession({
-					headers: request.headers,
-				});
-
-				const user = session?.user;
-				if (!user) {
+				// ---------------------------------------------------------------
+				// 1. Authentication
+				// ---------------------------------------------------------------
+				const session = await auth.api.getSession({ headers: request.headers });
+				const sessionUser = session?.user;
+				if (!sessionUser) {
 					return new Response("Unauthorized", { status: 401 });
 				}
 
-				// Parse form data
+				// ---------------------------------------------------------------
+				// 2. Parse form data
+				// ---------------------------------------------------------------
 				const formData = await request.formData();
 				const storagePath = formData.get("storagePath");
 				const uploadedFile = formData.get("file");
 				const contentType = formData.get("contentType");
 
-				// Validate inputs
 				if (typeof storagePath !== "string" || !storagePath.length) {
 					return new Response("Missing storagePath", { status: 400 });
 				}
@@ -39,7 +43,9 @@ export const Route = createFileRoute("/api/storage/upload")({
 					return new Response("Missing file", { status: 400 });
 				}
 
-				// Validate path structure: {category}/{userId}/...
+				// ---------------------------------------------------------------
+				// 3. Validate path structure: {category}/{userId}/...
+				// ---------------------------------------------------------------
 				const pathParts = storagePath.split("/");
 				const category = pathParts[0];
 				const pathUserId = pathParts[1];
@@ -50,50 +56,87 @@ export const Route = createFileRoute("/api/storage/upload")({
 					(VALID_UPLOAD_PREFIXES as readonly string[]).includes(value);
 
 				if (!isValidCategory(category)) {
-					return new Response(`Invalid storage category: ${category}`, {
-						status: 400,
-					});
+					return new Response(`Invalid storage category: ${category}`, { status: 400 });
 				}
 
-				if (pathUserId !== user.id) {
-					return new Response("Invalid storagePath - user mismatch", {
-						status: 403,
-					});
+				if (pathUserId !== sessionUser.id) {
+					return new Response("Invalid storagePath - user mismatch", { status: 403 });
 				}
 
-				// Get file buffer
-				const mimeType =
-					typeof contentType === "string" ? contentType : uploadedFile.type;
-				const arrayBuffer = await uploadedFile.arrayBuffer();
-				let buffer = Buffer.from(new Uint8Array(arrayBuffer));
+				// ---------------------------------------------------------------
+				// 4. Role-based category access
+				//    Regular users (role = "user") may only upload avatars.
+				//    Media / attachment / document require author role or above.
+				// ---------------------------------------------------------------
+				const [userRecord] = await db
+					.select({ role: userTable.role, subscriptionStatus: userTable.subscriptionStatus })
+					.from(userTable)
+					.where(eq(userTable.id, sessionUser.id))
+					.limit(1);
+
+				const role = userRecord?.role ?? "user";
+				const subscriptionStatus = userRecord?.subscriptionStatus ?? false;
+
+				const MEDIA_CATEGORIES = [STORAGE_PATHS.MEDIA, STORAGE_PATHS.ATTACHMENT, STORAGE_PATHS.DOCUMENT];
+				if (MEDIA_CATEGORIES.includes(category as any) && role === "user") {
+					return new Response("Media uploads require an author account or higher.", { status: 403 });
+				}
+
+				// ---------------------------------------------------------------
+				// 5. Quota enforcement (server-side, cannot be bypassed)
+				// ---------------------------------------------------------------
+				const rawBuffer = Buffer.from(new Uint8Array(await uploadedFile.arrayBuffer()));
+				const incomingBytes = rawBuffer.length;
+				const limitBytes = getUserStorageLimit(role, subscriptionStatus);
+
+				if (limitBytes !== null) {
+					// Get current usage (or 0 if no record yet)
+					const [quotaRow] = await db
+						.select({ usedBytes: storageQuota.usedBytes })
+						.from(storageQuota)
+						.where(
+							and(
+								eq(storageQuota.ownerType, "user"),
+								eq(storageQuota.ownerId, sessionUser.id),
+							),
+						)
+						.limit(1);
+
+					const usedBytes = Number(quotaRow?.usedBytes ?? 0);
+
+					if (usedBytes + incomingBytes > limitBytes) {
+						const usedMb = (usedBytes / 1024 / 1024).toFixed(1);
+						const limitMb = limitBytes >= 1024 * 1024 * 1024
+							? `${(limitBytes / 1024 / 1024 / 1024).toFixed(0)}GB`
+							: `${(limitBytes / 1024 / 1024).toFixed(0)}MB`;
+						return new Response(
+							`Storage quota exceeded: ${usedMb} MB used of ${limitMb} limit`,
+							{ status: 413 },
+						);
+					}
+				}
+
+				// ---------------------------------------------------------------
+				// 6. Process image (Sharp optimisation / format conversion)
+				// ---------------------------------------------------------------
+				const mimeType = typeof contentType === "string" ? contentType : uploadedFile.type;
+				let buffer = rawBuffer;
 				let finalMimeType = mimeType;
 				let finalPath = storagePath;
 
-				// Process avatars with Sharp
-				if (
-					category === STORAGE_PATHS.AVATAR &&
-					mimeType.startsWith("image/")
-				) {
-					// Validate image type
+				if (category === STORAGE_PATHS.AVATAR && mimeType.startsWith("image/")) {
 					if (!isAllowedImageType(mimeType)) {
-						return new Response("Invalid image type for avatar", {
-							status: 400,
-						});
+						return new Response("Invalid image type for avatar", { status: 400 });
 					}
-
-					// Validate size
 					if (!isAllowedImageSize(buffer.length)) {
 						return new Response("Image too large for avatar", { status: 400 });
 					}
-
-					// Process
 					const processed = await processAvatar(buffer);
 					buffer = Buffer.from(processed.buffer);
 					finalMimeType = processed.mimeType;
 					finalPath = storagePath.replace(/\.\w+$/, ".webp");
 				}
 
-				// Process media/attachment images with Sharp (optimize for web)
 				if (
 					(category === STORAGE_PATHS.MEDIA || category === STORAGE_PATHS.ATTACHMENT) &&
 					mimeType.startsWith("image/")
@@ -101,25 +144,71 @@ export const Route = createFileRoute("/api/storage/upload")({
 					if (!isAllowedImageType(mimeType)) {
 						return new Response("Invalid image type", { status: 400 });
 					}
-
 					const processed = await processImage(buffer, IMAGE_PRESETS.optimized);
 					buffer = Buffer.from(processed.buffer);
 					finalMimeType = processed.mimeType;
 					finalPath = storagePath.replace(/\.\w+$/, ".webp");
 				}
 
-				// Upload to storage
+				// ---------------------------------------------------------------
+				// 7. Upload to storage backend
+				// ---------------------------------------------------------------
 				const storage = getStorage();
 				await storage.upload(finalPath, buffer, finalMimeType);
 
-				// Generate ETag
+				const finalSizeBytes = buffer.length;
+
+				// ---------------------------------------------------------------
+				// 8. Record file in DB + update quota (best-effort, non-blocking)
+				// ---------------------------------------------------------------
+				const originalName = uploadedFile.name || finalPath.split("/").pop() || finalPath;
+				db.insert(file)
+					.values({
+						userId: sessionUser.id,
+						filename: finalPath.split("/").pop() || finalPath,
+						originalName,
+						mimeType: finalMimeType,
+						sizeBytes: finalSizeBytes,
+						storagePath: finalPath,
+						storageUrl: getPublicUrl(finalPath),
+						isPublic: category === STORAGE_PATHS.MEDIA,
+						metadata: JSON.stringify({ category, uploadedAt: new Date().toISOString() }),
+					})
+					.onConflictDoNothing()
+					.returning()
+					.then(() => {
+						// Update quota usage
+						return db
+							.insert(storageQuota)
+							.values({
+								ownerType: "user",
+								ownerId: sessionUser.id,
+								usedBytes: finalSizeBytes,
+								limitBytes: limitBytes ?? 10 * 1024 * 1024 * 1024,
+								fileCount: 1,
+							})
+							.onConflictDoUpdate({
+								target: [storageQuota.ownerType, storageQuota.ownerId],
+								set: {
+									usedBytes: sql`GREATEST(0, ${storageQuota.usedBytes} + ${finalSizeBytes})`,
+									fileCount: sql`GREATEST(0, ${storageQuota.fileCount} + 1)`,
+									limitBytes: limitBytes ?? sql`${storageQuota.limitBytes}`,
+									updatedAt: new Date(),
+								},
+							});
+					})
+					.catch((err) => console.error("[upload] quota/DB update failed:", err));
+
+				// ---------------------------------------------------------------
+				// 9. Return result
+				// ---------------------------------------------------------------
 				const etag = crypto.createHash("md5").update(buffer).digest("hex");
 
 				return Response.json({
 					ok: true,
 					storagePath: finalPath,
 					contentType: finalMimeType,
-					sizeBytes: buffer.length,
+					sizeBytes: finalSizeBytes,
 					etag,
 				});
 			},
