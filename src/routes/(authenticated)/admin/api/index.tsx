@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Key, MoreHorizontal, ShieldOff, ExternalLink, Globe, ArrowRight, Info } from "lucide-react";
+import { Key, MoreHorizontal, ShieldOff, ExternalLink, Globe, ArrowRight, Info, Copy, Check } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Table,
@@ -19,8 +20,40 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES, QUERY_KEYS } from "@/constants";
-import { $listApiKeys, $revokeApiKey } from "@/lib/api-keys/functions";
+import { $listApiKeys, $revokeApiKey, $copyApiKey } from "@/lib/api-keys/functions";
 import { toast } from "sonner";
+
+// ── Inline copy button for admin support use ──────────────────────────────────
+function AdminCopyKeyButton({ apiKeyId }: { apiKeyId: string }) {
+	const [copied, setCopied] = useState(false);
+	const [loading, setLoading] = useState(false);
+
+	async function handleCopy() {
+		if (loading) return;
+		setLoading(true);
+		try {
+			const res = await $copyApiKey({ data: { id: apiKeyId } });
+			if (!res?.ok) {
+				toast.error((res as any)?.error?.message ?? "Could not retrieve key");
+				return;
+			}
+			await navigator.clipboard.writeText(res.data.raw);
+			setCopied(true);
+			toast.success("API key copied to clipboard");
+			setTimeout(() => setCopied(false), 2000);
+		} catch {
+			toast.error("Clipboard access denied");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	return (
+		<Button variant="ghost" size="icon" onClick={handleCopy} title="Copy API key (admin)" disabled={loading}>
+			{copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+		</Button>
+	);
+}
 
 export const Route = createFileRoute("/(authenticated)/admin/api/")({
 	component: ApiKeysListPage,
@@ -115,6 +148,7 @@ function ApiKeysListPage() {
 							<TableHead>Rate Limit</TableHead>
 							<TableHead>Last Used</TableHead>
 							<TableHead>Status</TableHead>
+							<TableHead className="w-10">Copy</TableHead>
 							<TableHead className="w-10" />
 						</TableRow>
 					</TableHeader>
@@ -158,6 +192,9 @@ function ApiKeysListPage() {
 										>
 											{status}
 										</Badge>
+									</TableCell>
+									<TableCell>
+										{status === "active" && <AdminCopyKeyButton apiKeyId={key.id} />}
 									</TableCell>
 									<TableCell>
 										<DropdownMenu>

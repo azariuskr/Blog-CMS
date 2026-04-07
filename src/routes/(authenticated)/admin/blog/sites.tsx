@@ -8,7 +8,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useState, useCallback } from "react";
 import {
 	Plus, Globe, Trash2, CheckCircle2, AlertCircle,
-	ArrowLeft, FileText, Eye, Pencil, ExternalLink, Loader2,
+	ArrowLeft, FileText, Eye, Pencil, ExternalLink, Loader2, UserCog,
 } from "lucide-react";
 import { PageContainer } from "@/components/admin/app-layout";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ import {
 	usePages, useUpsertPage, useDeletePage,
 } from "@/lib/blog/queries";
 import { puckConfig } from "@/lib/puck/config";
-import { $adminGiftSite } from "@/lib/blog/functions";
+import { $adminGiftSite, $adminAssignSiteOwner } from "@/lib/blog/functions";
 import { $listUsers } from "@/lib/auth/functions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -107,6 +107,9 @@ function SitesView({ onOpenSite }: { onOpenSite: (s: SelectedSite) => void }) {
 	const queryClient = useQueryClient();
 	const [createOpen, setCreateOpen] = useState(false);
 	const [giftOpen, setGiftOpen] = useState(false);
+	const [assignOpen, setAssignOpen] = useState(false);
+	const [assignSite, setAssignSite] = useState<{ id: string; name: string } | null>(null);
+	const [assignUserId, setAssignUserId] = useState("");
 	const [form, setForm] = useState({ name: "", slug: "", description: "" });
 	const [giftForm, setGiftForm] = useState({ userId: "", name: "", subdomain: "", description: "", grantedUntil: "" });
 	const [saving, setSaving] = useState(false);
@@ -115,7 +118,7 @@ function SitesView({ onOpenSite }: { onOpenSite: (s: SelectedSite) => void }) {
 		queryKey: ["admin-users-list"],
 		queryFn: () => $listUsers(),
 		select: (r) => (r?.ok ? ((r.data as any)?.users ?? []) : []),
-		enabled: giftOpen,
+		enabled: giftOpen || assignOpen,
 	});
 	const users = usersQuery.data ?? [];
 
@@ -137,6 +140,21 @@ function SitesView({ onOpenSite }: { onOpenSite: (s: SelectedSite) => void }) {
 			setGiftForm({ userId: "", name: "", subdomain: "", description: "", grantedUntil: "" });
 		},
 		onError: () => toast.error("Failed to gift site"),
+	});
+
+	const assignMutation = useMutation({
+		mutationFn: () => $adminAssignSiteOwner({
+			data: { siteId: assignSite!.id, userId: assignUserId },
+		}),
+		onSuccess: (res) => {
+			if (!res?.ok) { toast.error((res as any)?.error?.message ?? "Failed to assign owner"); return; }
+			toast.success(`Site "${assignSite?.name}" reassigned`);
+			queryClient.invalidateQueries({ queryKey: ["sites"] });
+			setAssignOpen(false);
+			setAssignSite(null);
+			setAssignUserId("");
+		},
+		onError: () => toast.error("Failed to assign owner"),
 	});
 
 	const sites = sitesQuery.data?.ok ? sitesQuery.data.data : [];
@@ -222,6 +240,14 @@ function SitesView({ onOpenSite }: { onOpenSite: (s: SelectedSite) => void }) {
 								<Button size="sm" variant="outline" className="flex-1" onClick={() => onOpenSite({ id: s.id, name: s.name, slug: s.slug })}>
 									<FileText className="h-3.5 w-3.5 mr-1.5" /> Pages
 								</Button>
+								<Button
+									size="sm"
+									variant="ghost"
+									title="Assign owner"
+									onClick={() => { setAssignSite({ id: s.id, name: s.name }); setAssignOpen(true); }}
+								>
+									<UserCog className="h-3.5 w-3.5" />
+								</Button>
 								{s.subdomain && (
 									<Button size="sm" variant="ghost" {...{asChild: true} as any}>
 										<a href={`/${s.slug}`} target="_blank" rel="noopener noreferrer">
@@ -296,6 +322,42 @@ function SitesView({ onOpenSite }: { onOpenSite: (s: SelectedSite) => void }) {
 							disabled={!giftForm.userId || !giftForm.name.trim() || giftMutation.isPending}
 						>
 							{giftMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Gifting…</> : "Gift Site"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Assign Owner Dialog */}
+			<Dialog open={assignOpen} onOpenChange={(v) => { setAssignOpen(v); if (!v) { setAssignSite(null); setAssignUserId(""); } }}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Assign Site Owner</DialogTitle>
+					</DialogHeader>
+					<div className="space-y-4 py-2">
+						<p className="text-sm text-muted-foreground">
+							Reassign <strong>{assignSite?.name}</strong> to a different user. The new owner will see it in their Sites dashboard.
+						</p>
+						<div className="space-y-1.5">
+							<Label>New owner *</Label>
+							<select
+								className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+								value={assignUserId}
+								onChange={(e) => setAssignUserId(e.target.value)}
+							>
+								<option value="">Select a user…</option>
+								{users.map((u: any) => (
+									<option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+								))}
+							</select>
+						</div>
+					</div>
+					<DialogFooter>
+						<Button variant="outline" onClick={() => setAssignOpen(false)}>Cancel</Button>
+						<Button
+							onClick={() => assignMutation.mutate()}
+							disabled={!assignUserId || assignMutation.isPending}
+						>
+							{assignMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Assigning…</> : "Assign Owner"}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

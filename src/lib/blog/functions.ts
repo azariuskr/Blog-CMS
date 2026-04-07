@@ -1937,6 +1937,29 @@ export const $adminGiftSite = createServerFn({ method: "POST" })
 		});
 	});
 
+export const $adminAssignSiteOwner = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) =>
+		validate(z.object({ siteId: z.string().uuid(), userId: z.string() }), data),
+	)
+	.middleware([accessMiddleware({ minRole: "admin" })])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const { siteId, userId } = data.data;
+
+			const site = await db.query.sites.findFirst({ where: eq(sites.id, siteId), columns: { id: true } });
+			if (!site) throw { status: 404, message: "Site not found" };
+
+			const [updated] = await db
+				.update(sites)
+				.set({ ownerId: userId, grantedByAdmin: true })
+				.where(eq(sites.id, siteId))
+				.returning();
+
+			return updated;
+		});
+	});
+
 export const $upsertSite = createServerFn({ method: "POST" })
 	.inputValidator(
 		(data: unknown) =>
