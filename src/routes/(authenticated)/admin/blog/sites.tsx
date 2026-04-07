@@ -27,6 +27,9 @@ import {
 	usePages, useUpsertPage, useDeletePage,
 } from "@/lib/blog/queries";
 import { puckConfig } from "@/lib/puck/config";
+import { $adminGiftSite } from "@/lib/blog/functions";
+import { $listUsers } from "@/lib/auth/functions";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Lazy-load the Puck editor (heavy bundle, client-only)
 const PuckEditor = lazy(async () => {
@@ -101,9 +104,40 @@ function SitesView({ onOpenSite }: { onOpenSite: (s: SelectedSite) => void }) {
 	const sitesQuery = useSites();
 	const upsertSite = useUpsertSite();
 	const deleteSite = useDeleteSite();
+	const queryClient = useQueryClient();
 	const [createOpen, setCreateOpen] = useState(false);
+	const [giftOpen, setGiftOpen] = useState(false);
 	const [form, setForm] = useState({ name: "", slug: "", description: "" });
+	const [giftForm, setGiftForm] = useState({ userId: "", name: "", subdomain: "", description: "", grantedUntil: "" });
 	const [saving, setSaving] = useState(false);
+
+	const usersQuery = useQuery({
+		queryKey: ["admin-users-list"],
+		queryFn: () => $listUsers(),
+		select: (r) => (r?.ok ? ((r.data as any)?.users ?? []) : []),
+		enabled: giftOpen,
+	});
+	const users = usersQuery.data ?? [];
+
+	const giftMutation = useMutation({
+		mutationFn: () => $adminGiftSite({
+			data: {
+				userId: giftForm.userId,
+				name: giftForm.name,
+				subdomain: giftForm.subdomain || undefined,
+				description: giftForm.description || undefined,
+				grantedUntil: giftForm.grantedUntil || undefined,
+			},
+		}),
+		onSuccess: (res) => {
+			if (!res?.ok) { toast.error((res as any)?.error?.message ?? "Failed to gift site"); return; }
+			toast.success(`Site gifted to user`);
+			queryClient.invalidateQueries({ queryKey: ["sites"] });
+			setGiftOpen(false);
+			setGiftForm({ userId: "", name: "", subdomain: "", description: "", grantedUntil: "" });
+		},
+		onError: () => toast.error("Failed to gift site"),
+	});
 
 	const sites = sitesQuery.data?.ok ? sitesQuery.data.data : [];
 
@@ -145,9 +179,14 @@ function SitesView({ onOpenSite }: { onOpenSite: (s: SelectedSite) => void }) {
 			title="Sites"
 			description="Manage your sites and their pages"
 			actions={
-				<Button size="sm" onClick={() => setCreateOpen(true)}>
-					<Plus className="h-4 w-4 mr-2" /> New Site
-				</Button>
+				<div className="flex gap-2">
+					<Button size="sm" variant="outline" onClick={() => setGiftOpen(true)}>
+						<Globe className="h-4 w-4 mr-2" /> Gift Site
+					</Button>
+					<Button size="sm" onClick={() => setCreateOpen(true)}>
+						<Plus className="h-4 w-4 mr-2" /> New Site
+					</Button>
+				</div>
 			}
 		>
 			{sitesQuery.isLoading ? (
@@ -203,6 +242,64 @@ function SitesView({ onOpenSite }: { onOpenSite: (s: SelectedSite) => void }) {
 					))}
 				</div>
 			)}
+
+			{/* Gift Site Dialog */}
+			<Dialog open={giftOpen} onOpenChange={setGiftOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Gift Site to User</DialogTitle>
+					</DialogHeader>
+					<div className="space-y-4 py-2">
+						<div className="space-y-1.5">
+							<Label>Assign to user *</Label>
+							<select
+								className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+								value={giftForm.userId}
+								onChange={(e) => setGiftForm((p) => ({ ...p, userId: e.target.value }))}
+							>
+								<option value="">Select a user…</option>
+								{users.map((u: any) => (
+									<option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+								))}
+							</select>
+						</div>
+						<div className="space-y-1.5">
+							<Label>Site name *</Label>
+							<Input
+								placeholder="My Partner Site"
+								value={giftForm.name}
+								onChange={(e) => setGiftForm((p) => ({ ...p, name: e.target.value }))}
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label>Subdomain (optional)</Label>
+							<Input
+								placeholder="partner-blog"
+								value={giftForm.subdomain}
+								onChange={(e) => setGiftForm((p) => ({ ...p, subdomain: e.target.value }))}
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label>Expires (optional)</Label>
+							<Input
+								type="date"
+								value={giftForm.grantedUntil ? giftForm.grantedUntil.slice(0, 10) : ""}
+								onChange={(e) => setGiftForm((p) => ({ ...p, grantedUntil: e.target.value ? new Date(e.target.value).toISOString() : "" }))}
+							/>
+							<p className="text-xs text-muted-foreground">Leave empty for permanent access.</p>
+						</div>
+					</div>
+					<DialogFooter>
+						<Button variant="outline" onClick={() => setGiftOpen(false)}>Cancel</Button>
+						<Button
+							onClick={() => giftMutation.mutate()}
+							disabled={!giftForm.userId || !giftForm.name.trim() || giftMutation.isPending}
+						>
+							{giftMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Gifting…</> : "Gift Site"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 
 			{/* Create Site Dialog */}
 			<Dialog open={createOpen} onOpenChange={setCreateOpen}>

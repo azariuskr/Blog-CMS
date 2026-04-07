@@ -32,20 +32,26 @@ export const env = createEnv({
     STRIPE_SECRET_KEY: z.string().optional(),
     STRIPE_WEBHOOK_SECRET: z.string().optional(),
 
-    // Stripe Price IDs (configured per plan)
-    STRIPE_PRO_MONTHLY_PRICE_ID: z.string().optional(),
-    STRIPE_PRO_YEARLY_PRICE_ID: z.string().optional(),
-    STRIPE_ENTERPRISE_MONTHLY_PRICE_ID: z.string().optional(),
-    STRIPE_ENTERPRISE_YEARLY_PRICE_ID: z.string().optional(),
+    // Stripe Price IDs — one per plan per interval
+    STRIPE_AUTHOR_MONTHLY_PRICE_ID: z.string().optional(),
+    STRIPE_AUTHOR_YEARLY_PRICE_ID: z.string().optional(),
+    STRIPE_AUTHOR_PREMIUM_MONTHLY_PRICE_ID: z.string().optional(),
+    STRIPE_AUTHOR_PREMIUM_YEARLY_PRICE_ID: z.string().optional(),
+    STRIPE_SITE_BASIC_MONTHLY_PRICE_ID: z.string().optional(),
+    STRIPE_SITE_BASIC_YEARLY_PRICE_ID: z.string().optional(),
+    STRIPE_SITE_PRO_MONTHLY_PRICE_ID: z.string().optional(),
+    STRIPE_SITE_PRO_YEARLY_PRICE_ID: z.string().optional(),
 
     // Polar Configuration
     POLAR_ACCESS_TOKEN: z.string().optional(),
     POLAR_WEBHOOK_SECRET: z.string().optional(),
     POLAR_ORGANIZATION_ID: z.string().optional(),
 
-    // Polar Product IDs
-    POLAR_PRO_PRODUCT_ID: z.string().optional(),
-    POLAR_ENTERPRISE_PRODUCT_ID: z.string().optional(),
+    // Polar Product IDs (unused — Stripe is the active provider)
+    POLAR_AUTHOR_PRODUCT_ID: z.string().optional(),
+    POLAR_AUTHOR_PREMIUM_PRODUCT_ID: z.string().optional(),
+    POLAR_SITE_BASIC_PRODUCT_ID: z.string().optional(),
+    POLAR_SITE_PRO_PRODUCT_ID: z.string().optional(),
 
     // Billing Settings
     BILLING_TRIAL_DAYS: z.coerce.number().default(14),
@@ -113,6 +119,11 @@ export const env = createEnv({
     REDIS_DB: z.coerce.number().default(0),
 
     BLOG_DATA_MODE: z.enum(["live", "mock", "hybrid"]).default("hybrid"),
+
+    // API Key Encryption (AES-256-GCM) — 64-char hex string = 32 bytes
+    // Generate: openssl rand -hex 32
+    // Required when copy-key feature is used; app boots without it but $copyApiKey will throw at runtime.
+    API_KEY_ENCRYPTION_SECRET: z.string().length(64).default("0000000000000000000000000000000000000000000000000000000000000000"),
   },
   runtimeEnv: process.env,
 });

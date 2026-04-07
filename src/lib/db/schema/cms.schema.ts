@@ -140,6 +140,9 @@ export const sites = pgTable(
 			.default({ title: "", description: "", keywords: [], ogImage: "" }),
 		gitRepo: text("git_repo"),
 		gitBranch: text("git_branch").default("main"),
+		ownerId: text("owner_id").references(() => user.id, { onDelete: "set null" }),
+		grantedByAdmin: boolean("granted_by_admin").notNull().default(false),
+		grantedUntil: timestamp("granted_until"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.defaultNow()
@@ -148,6 +151,7 @@ export const sites = pgTable(
 	},
 	(t) => [
 		index("sites_org_idx").on(t.organizationId),
+		index("sites_owner_idx").on(t.ownerId),
 		uniqueIndex("sites_subdomain_idx").on(t.subdomain),
 	],
 );
@@ -595,6 +599,7 @@ export const apiKeys = pgTable(
 		lastUsedAt: timestamp("last_used_at"),
 		expiresAt: timestamp("expires_at"),
 		revokedAt: timestamp("revoked_at"),
+		keyEncrypted: text("key_encrypted"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.defaultNow()
@@ -707,6 +712,11 @@ export const authorProfilesRelations = relations(
 		}),
 	}),
 );
+
+export const pagesRelations = relations(pages, ({ one }) => ({
+	site: one(sites, { fields: [pages.siteId], references: [sites.id] }),
+	author: one(user, { fields: [pages.authorId], references: [user.id] }),
+}));
 
 export const apiKeysRelations = relations(apiKeys, ({ one, many }) => ({
 	site: one(sites, { fields: [apiKeys.siteId], references: [sites.id] }),

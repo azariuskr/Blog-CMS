@@ -494,7 +494,10 @@ export const $upsertPost = createServerFn({ method: "POST" })
 	.handler(async ({ data }) => {
 		return safe(
 			async () => {
-				if (!data.ok) throw data.error;
+				if (!data.ok) {
+					console.error("[upsertPost] Validation failed:", JSON.stringify(data.error));
+					throw data.error;
+				}
 				const { id, tagIds, publishedAt, scheduledAt, schemaVersion, blocks, ...rest } = data.data;
 
 				// Authors can only write their own posts
@@ -613,7 +616,10 @@ export const $upsertPost = createServerFn({ method: "POST" })
 			return { id: inserted.id };
 			},
 			{ successMessage: "Post saved successfully" },
-		);
+		).then((result) => {
+			if (!result.ok) console.error("[upsertPost] safe() returned error:", JSON.stringify(result));
+			return result;
+		});
 	});
 
 export const $generatePreviewToken = createServerFn({ method: "POST" })
@@ -652,6 +658,19 @@ export const $deletePost = createServerFn({ method: "POST" })
 		return safe(
 			async () => {
 				if (!data.ok) throw data.error;
+
+				const session = await getSession();
+				const userRole = (session?.user as any)?.role as string ?? "user";
+
+				if (userRole === "author") {
+					const post = await db.query.posts.findFirst({
+						where: eq(posts.id, data.data.id),
+						columns: { authorId: true },
+					});
+					if (!post || post.authorId !== session?.user?.id) {
+						throw { status: 403, message: "You can only delete your own posts" };
+					}
+				}
 
 				await db.delete(posts).where(eq(posts.id, data.data.id));
 				return { id: data.data.id };
@@ -932,14 +951,26 @@ export const $listComments = createServerFn({ method: "GET" })
 		return safe(async () => {
 			if (!data.ok) throw data.error;
 
+			const session = await getSession();
+			const userRole = (session?.user as any)?.role as string ?? "user";
+			const isAuthorOnly = userRole === "author";
+
 			const params = normalizePagination({
 				page: data.data.page,
 				limit: data.data.limit,
 			});
 
+			// Authors only see comments on their own posts
+			let authorPostIds: string[] | null = null;
+			if (isAuthorOnly && session?.user?.id) {
+				const ownPosts = await db.select({ id: posts.id }).from(posts).where(eq(posts.authorId, session.user.id));
+				authorPostIds = ownPosts.map((p) => p.id);
+			}
+
 			const whereClause = and(
 				data.data.postId ? eq(comments.postId, data.data.postId) : undefined,
 				data.data.status ? eq(comments.status, data.data.status) : undefined,
+				authorPostIds !== null ? (authorPostIds.length > 0 ? inArray(comments.postId, authorPostIds) : sql`false`) : undefined,
 			);
 
 			const [{ total = 0 } = {}] = whereClause
@@ -948,6 +979,7 @@ export const $listComments = createServerFn({ method: "GET" })
 
 			const items = await db.query.comments.findMany({
 				where: whereClause,
+				with: { post: { columns: { id: true, title: true, slug: true } } },
 				orderBy: [desc(comments.createdAt)],
 				limit: params.limit,
 				offset: (params.page - 1) * params.limit,
@@ -964,6 +996,19 @@ export const $approveComment = createServerFn({ method: "POST" })
 		return safe(
 			async () => {
 				if (!data.ok) throw data.error;
+
+				const session = await getSession();
+				const userRole = (session?.user as any)?.role as string ?? "user";
+
+				if (userRole === "author") {
+					const comment = await db.query.comments.findFirst({
+						where: eq(comments.id, data.data.id),
+						with: { post: { columns: { authorId: true } } },
+					});
+					if (!comment || comment.post?.authorId !== session?.user?.id) {
+						throw { status: 403, message: "You can only moderate comments on your own posts" };
+					}
+				}
 
 				const [updated] = await db.update(comments).set({ status: "approved" }).where(eq(comments.id, data.data.id)).returning({ postId: comments.postId });
 				if (updated?.postId) {
@@ -992,11 +1037,24 @@ export const $spamComment = createServerFn({ method: "POST" })
 
 export const $deleteComment = createServerFn({ method: "POST" })
 	.inputValidator((data: unknown) => validate(CommentIdSchema, data))
-	.middleware([accessMiddleware({ permissions: { content: ["delete"] } })])
+	.middleware([accessMiddleware({ permissions: { content: ["write"] } })])
 	.handler(async ({ data }) => {
 		return safe(
 			async () => {
 				if (!data.ok) throw data.error;
+
+				const session = await getSession();
+				const userRole = (session?.user as any)?.role as string ?? "user";
+
+				if (userRole === "author") {
+					const comment = await db.query.comments.findFirst({
+						where: eq(comments.id, data.data.id),
+						with: { post: { columns: { authorId: true } } },
+					});
+					if (!comment || comment.post?.authorId !== session?.user?.id) {
+						throw { status: 403, message: "You can only delete comments on your own posts" };
+					}
+				}
 
 				const [deleted] = await db.delete(comments).where(eq(comments.id, data.data.id)).returning({ postId: comments.postId, status: comments.status });
 				if (deleted?.postId && deleted.status === "approved") {
@@ -1174,12 +1232,17 @@ export const $applyForAuthor = createServerFn({ method: "POST" })
 	.inputValidator((data: unknown) => validate(ApplyForAuthorSchema, data))
 	.middleware([accessMiddleware({ requireAuth: true })])
 	.handler(async ({ data }) => {
-		return safe(async () => {
-			if (!data.ok) throw data.error;
-			const session = await getSession();
-			const userId = session?.user?.id;
-			if (!userId) throw new Error("Not authenticated");
+		if (!data.ok) throw data.error;
+		const session = await getSession();
+		const userId = session?.user?.id;
+		if (!userId) throw new Error("Not authenticated");
 
+		// Auto-approve if user already has the author role (granted by subscription webhook)
+		const AUTHOR_ROLES = new Set(["author", "moderator", "admin", "superAdmin"]);
+		const userRole = (session?.user as any)?.role as string | undefined;
+		const autoApprove = AUTHOR_ROLES.has(userRole ?? "");
+
+		return safe(async () => {
 			const existing = await db.query.authorProfiles.findFirst({
 				where: eq(authorProfiles.userId, userId),
 			});
@@ -1194,7 +1257,7 @@ export const $applyForAuthor = createServerFn({ method: "POST" })
 				bio: data.data.bio,
 				avatarUrl: data.data.avatarUrl || null,
 				acceptedPolicy: true,
-				applicationStatus: "pending" as const,
+				applicationStatus: autoApprove ? "approved" as const : "pending" as const,
 				updatedAt: new Date(),
 			};
 
@@ -1208,11 +1271,13 @@ export const $applyForAuthor = createServerFn({ method: "POST" })
 			}
 
 			const [inserted] = await db
-					.insert(authorProfiles)
-					.values({ userId, ...values })
-					.returning();
+				.insert(authorProfiles)
+				.values({ userId, ...values })
+				.returning();
 			return inserted;
-		}, { successMessage: "Application submitted! An admin will review it shortly." });
+		}, {
+			successMessage: autoApprove ? "Profile created! Start writing." : "Application submitted! An admin will review it shortly.",
+		});
 	});
 
 const ReviewAuthorApplicationSchema = z.object({
@@ -1563,6 +1628,70 @@ export const $getBlogStats = createServerFn({ method: "GET" })
 		});
 	});
 
+export const $getAuthorStats = createServerFn({ method: "GET" })
+	.middleware([accessMiddleware({ permissions: { content: ["write"] } })])
+	.handler(async () => {
+		return safe(async () => {
+			const session = await getSession();
+			if (!session?.user?.id) throw { status: 401, message: "Not authenticated" };
+			const authorId = session.user.id;
+
+			const [totalPostsRow] = await db
+				.select({ count: count() })
+				.from(posts)
+				.where(eq(posts.authorId, authorId));
+
+			const [publishedRow] = await db
+				.select({ count: count() })
+				.from(posts)
+				.where(and(eq(posts.authorId, authorId), eq(posts.status, "published")));
+
+			const [viewsRow] = await db
+				.select({ total: sql<number>`coalesce(sum(${posts.viewCount}), 0)` })
+				.from(posts)
+				.where(and(eq(posts.authorId, authorId), eq(posts.status, "published")));
+
+			const [reactionsRow] = await db
+				.select({ count: count() })
+				.from(reactions)
+				.innerJoin(posts, eq(reactions.postId, posts.id))
+				.where(eq(posts.authorId, authorId));
+
+			const authorPostIds = (
+				await db.select({ id: posts.id }).from(posts).where(eq(posts.authorId, authorId))
+			).map((p) => p.id);
+
+			const commentsRow = authorPostIds.length > 0
+				? await db
+						.select({ count: count() })
+						.from(comments)
+						.where(and(inArray(comments.postId, authorPostIds), eq(comments.status, "approved")))
+				: [{ count: 0 }];
+
+			const topPosts = await db.query.posts.findMany({
+				where: and(eq(posts.authorId, authorId), eq(posts.status, "published")),
+				orderBy: [desc(posts.viewCount)],
+				limit: 5,
+				with: { category: true },
+			});
+
+			return {
+				totalPosts: totalPostsRow?.count ?? 0,
+				publishedPosts: publishedRow?.count ?? 0,
+				totalViews: Number(viewsRow?.total ?? 0),
+				totalReactions: reactionsRow?.count ?? 0,
+				totalComments: commentsRow[0]?.count ?? 0,
+				topPosts: topPosts.map((p) => ({
+					id: p.id,
+					title: p.title,
+					slug: p.slug,
+					viewCount: p.viewCount,
+					categoryName: p.category?.name ?? null,
+				})),
+			};
+		});
+	});
+
 // =============================================================================
 // Post Versions
 // =============================================================================
@@ -1695,13 +1824,116 @@ import { sites, pages } from "@/lib/db/schema/cms.schema";
 
 export const $listSites = createServerFn({ method: "GET" })
 	.middleware([accessMiddleware({ permissions: { content: ["read"] } })])
-	.handler(async () => {
+	.handler(async ({ context }) => {
 		return safe(async () => {
-			const items = await db.query.sites.findMany({
+			const u = (context as any).user;
+			const userRole = u?.role as string | undefined;
+			const isAdmin = userRole === "admin" || userRole === "superAdmin";
+
+			if (isAdmin) {
+				return db.query.sites.findMany({ orderBy: [desc(sites.createdAt)] });
+			}
+
+			const activeOrgId = u?.activeOrganizationId as string | undefined;
+			return db.query.sites.findMany({
+				where: activeOrgId
+					? eq(sites.organizationId, activeOrgId)
+					: eq(sites.ownerId, u.id),
 				orderBy: [desc(sites.createdAt)],
-				with: { pages: { columns: { id: true } } },
 			});
-			return items;
+		});
+	});
+
+const CreateSiteSchema = z.object({
+	name: z.string().min(1).max(255),
+	subdomain: z.string().max(63).optional(),
+	allowedOrigins: z.array(z.string()).optional(),
+});
+
+export const $createSite = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(CreateSiteSchema, data))
+	.middleware([accessMiddleware({ permissions: { content: ["read"] } })])
+	.handler(async ({ data, context }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const input = data.data;
+			const u = (context as any).user;
+			const userRole = u?.role as string | undefined;
+			const isAdmin = userRole === "admin" || userRole === "superAdmin";
+			const activeOrgId = u?.activeOrganizationId as string | undefined;
+
+			if (!isAdmin) {
+				const planLimit = (u?.planSitesLimit as number | undefined) ?? 0;
+				const existing = await db.$count(
+					sites,
+					activeOrgId
+						? eq(sites.organizationId, activeOrgId)
+						: and(eq(sites.ownerId, u.id), eq(sites.grantedByAdmin, false)),
+				);
+				if (existing >= planLimit) {
+					throw { status: 403, message: "Site limit reached. Upgrade your plan to add more sites." };
+				}
+			}
+
+			const slug = input.name
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, "-")
+				.replace(/(^-|-$)/g, "")
+				.slice(0, 63);
+
+			const [inserted] = await db
+				.insert(sites)
+				.values({
+					name: input.name,
+					slug,
+					subdomain: input.subdomain ?? null,
+					ownerId: activeOrgId ? null : u.id,
+					organizationId: activeOrgId ?? null,
+				})
+				.returning();
+
+			return inserted;
+		});
+	});
+
+const AdminGiftSiteSchema = z.object({
+	userId: z.string(),
+	name: z.string().min(1).max(255),
+	subdomain: z.string().max(63).optional(),
+	description: z.string().optional(),
+	organizationId: z.string().optional(),
+	grantedUntil: z.string().datetime().optional(),
+});
+
+export const $adminGiftSite = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(AdminGiftSiteSchema, data))
+	.middleware([accessMiddleware({ minRole: "admin" })])
+	.handler(async ({ data }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+			const input = data.data;
+
+			const slug = input.name
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, "-")
+				.replace(/(^-|-$)/g, "")
+				.slice(0, 63);
+
+			const [inserted] = await db
+				.insert(sites)
+				.values({
+					name: input.name,
+					slug,
+					subdomain: input.subdomain ?? null,
+					description: input.description ?? null,
+					ownerId: input.userId,
+					organizationId: input.organizationId ?? null,
+					grantedByAdmin: true,
+					grantedUntil: input.grantedUntil ? new Date(input.grantedUntil) : null,
+				})
+				.returning();
+
+			return inserted;
 		});
 	});
 

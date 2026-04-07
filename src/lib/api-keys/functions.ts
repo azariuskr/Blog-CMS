@@ -7,6 +7,7 @@ import { accessMiddleware } from "@/lib/auth/middleware";
 import { db } from "@/lib/db";
 import { apiKeys, apiWebhooks, sites } from "@/lib/db/schema";
 import { generateApiKey } from "./service";
+import { encryptKey, decryptKey } from "./encryption";
 
 // ── Schemas ─────────────────────────────────────────────────────────────────
 
@@ -33,25 +34,57 @@ const UpsertWebhookSchema = z.object({
 	events: z.array(z.string()).min(1).optional(),
 });
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Verify the calling user has access to a site.
+ * Passes for: site owner, active-org site member, admin/superAdmin.
+ */
+async function assertSiteAccess(siteId: string, user: any): Promise<void> {
+	const site = await db.query.sites.findFirst({
+		where: eq(sites.id, siteId),
+		columns: { id: true, ownerId: true, organizationId: true },
+	});
+	if (!site) throw { status: 404, message: "Site not found" };
+
+	const userRole = user?.role as string | undefined;
+	if (userRole === "admin" || userRole === "superAdmin") return;
+
+	const isOwner = site.ownerId === user.id;
+	const activeOrgId = user?.activeOrganizationId as string | undefined;
+	const isOrgSite = !!site.organizationId && site.organizationId === activeOrgId;
+
+	if (!isOwner && !isOrgSite) throw { status: 403, message: "Forbidden" };
+}
+
+/**
+ * Same as assertSiteAccess but resolves via an api key id.
+ * Returns the site id for further use.
+ */
+async function assertSiteAccessByKey(apiKeyId: string, user: any): Promise<string> {
+	const key = await db.query.apiKeys.findFirst({
+		where: eq(apiKeys.id, apiKeyId),
+		columns: { id: true, siteId: true },
+	});
+	if (!key) throw { status: 404, message: "API key not found" };
+	await assertSiteAccess(key.siteId, user);
+	return key.siteId;
+}
+
 // ── Server Functions ────────────────────────────────────────────────────────
 
 export const $createApiKey = createServerFn({ method: "POST" })
 	.inputValidator((data: unknown) => validate(CreateApiKeySchema, data))
-	.middleware([accessMiddleware({ minRole: "admin" })])
+	.middleware([accessMiddleware({ permissions: { content: ["read"] } })])
 	.handler(async ({ data, context }) => {
 		return safe(async () => {
 			if (!data.ok) throw data.error;
 			const input = data.data;
 
-			// Verify site exists
-			const [site] = await db
-				.select({ id: sites.id })
-				.from(sites)
-				.where(eq(sites.id, input.siteId))
-				.limit(1);
-			if (!site) throw { status: 404, message: "Site not found" };
+			await assertSiteAccess(input.siteId, (context as any).user);
 
 			const { raw, hash, prefix } = generateApiKey();
+			const keyEncrypted = encryptKey(raw);
 
 			const [inserted] = await db
 				.insert(apiKeys)
@@ -59,6 +92,7 @@ export const $createApiKey = createServerFn({ method: "POST" })
 					name: input.name,
 					keyHash: hash,
 					keyPrefix: prefix,
+					keyEncrypted,
 					siteId: input.siteId,
 					createdBy: (context as any).user.id,
 					rateLimitRpm: input.rateLimitRpm,
@@ -69,7 +103,7 @@ export const $createApiKey = createServerFn({ method: "POST" })
 
 			return {
 				...inserted,
-				rawKey: raw, // shown only once
+				rawKey: raw, // returned once — caller writes to clipboard
 			};
 		});
 	});
@@ -172,47 +206,81 @@ export const $revokeApiKey = createServerFn({ method: "POST" })
 
 export const $rotateApiKey = createServerFn({ method: "POST" })
 	.inputValidator((data: unknown) => validate(KeyIdSchema, data))
-	.middleware([accessMiddleware({ minRole: "admin" })])
-	.handler(async ({ data }) => {
+	.middleware([accessMiddleware({ permissions: { content: ["read"] } })])
+	.handler(async ({ data, context }) => {
 		return safe(async () => {
 			if (!data.ok) throw data.error;
 
+			await assertSiteAccessByKey(data.data.id, (context as any).user);
+
 			const { raw, hash, prefix } = generateApiKey();
+			const keyEncrypted = encryptKey(raw);
 
 			const [updated] = await db
 				.update(apiKeys)
-				.set({ keyHash: hash, keyPrefix: prefix })
+				.set({ keyHash: hash, keyPrefix: prefix, keyEncrypted })
 				.where(and(eq(apiKeys.id, data.data.id), isNull(apiKeys.revokedAt)))
 				.returning({ id: apiKeys.id });
 
 			if (!updated) throw { status: 404, message: "API key not found or revoked" };
-			return { rawKey: raw }; // shown only once
+			return { rawKey: raw }; // returned once — caller writes to clipboard
 		});
 	});
 
 export const $upsertWebhook = createServerFn({ method: "POST" })
 	.inputValidator((data: unknown) => validate(UpsertWebhookSchema, data))
-	.middleware([accessMiddleware({ minRole: "admin" })])
-	.handler(async ({ data }) => {
+	.middleware([accessMiddleware({ permissions: { content: ["read"] } })])
+	.handler(async ({ data, context }) => {
 		return safe(async () => {
 			if (!data.ok) throw data.error;
 			const input = data.data;
 
-			// Generate HMAC secret
+			await assertSiteAccessByKey(input.apiKeyId, (context as any).user);
+
+			// Secret is generated once at insert and preserved on updates.
+			// Rotating the secret requires rotating the API key itself.
 			const { randomBytes } = await import("node:crypto");
-			const secret = randomBytes(32).toString("hex");
+			const newSecret = randomBytes(32).toString("hex");
 
 			const [webhook] = await db
 				.insert(apiWebhooks)
 				.values({
 					apiKeyId: input.apiKeyId,
 					url: input.url,
-					secret,
+					secret: newSecret,
 					events: input.events ?? ["post.published", "post.updated", "post.deleted"],
 				})
-				.onConflictDoNothing()
+				.onConflictDoUpdate({
+					target: apiWebhooks.apiKeyId,
+					set: {
+						url: sql`excluded.url`,
+						events: sql`excluded.events`,
+						// secret is intentionally NOT updated — preserve receiver's existing secret
+					},
+				})
 				.returning();
 
-			return { ...webhook, secret }; // secret shown only once
+			return webhook; // secret is never returned after initial creation
+		});
+	});
+
+export const $copyApiKey = createServerFn({ method: "POST" })
+	.inputValidator((data: unknown) => validate(KeyIdSchema, data))
+	.middleware([accessMiddleware({ permissions: { content: ["read"] } })])
+	.handler(async ({ data, context }) => {
+		return safe(async () => {
+			if (!data.ok) throw data.error;
+
+			const key = await db.query.apiKeys.findFirst({
+				where: and(eq(apiKeys.id, data.data.id), isNull(apiKeys.revokedAt)),
+				columns: { id: true, siteId: true, keyEncrypted: true },
+			});
+			if (!key) throw { status: 404, message: "API key not found or revoked" };
+			if (!key.keyEncrypted) throw { status: 409, message: "Key was created before encrypted storage was enabled. Rotate it to enable copy." };
+
+			await assertSiteAccess(key.siteId, (context as any).user);
+
+			const raw = decryptKey(key.keyEncrypted);
+			return { raw };
 		});
 	});

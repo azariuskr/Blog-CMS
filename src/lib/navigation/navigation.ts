@@ -46,25 +46,29 @@ interface NavStructureItem {
 const NAV_STRUCTURE: NavStructureItem[] = [
 	{
 		section: "General",
-		routes: [ROUTES.DASHBOARD],
+		routes: [ROUTES.DASHBOARD, ROUTES.ADMIN.USERS],
 	},
 	{
-		section: "Content",
+		// Visible to authors and above — each route gated by canAccessRoute()
+		section: "Publishing",
 		routes: [
 			ROUTES.ADMIN.BLOG.POSTS,
-			ROUTES.ADMIN.BLOG.CATEGORIES,
-			ROUTES.ADMIN.BLOG.TAGS,
-			ROUTES.ADMIN.BLOG.COMMENTS,
-			ROUTES.ADMIN.BLOG.NEWSLETTER,
+			ROUTES.DASHBOARD_CALENDAR,
+			ROUTES.DASHBOARD_COMMENTS,
+			ROUTES.ACCOUNT.READING_LISTS,
+			ROUTES.DASHBOARD_ASSETS,
+			ROUTES.ADMIN.STORAGE,
+			ROUTES.DASHBOARD_SITES,
 		],
 	},
 	{
-		section: "People",
-		routes: [ROUTES.ADMIN.USERS],
-	},
-	{
-		section: "Media",
-		routes: [ROUTES.ADMIN.STORAGE],
+		// Admin-only content management
+		section: "Content",
+		routes: [
+			ROUTES.ADMIN.BLOG.CATEGORIES,
+			ROUTES.ADMIN.BLOG.TAGS,
+			ROUTES.ADMIN.BLOG.NEWSLETTER,
+		],
 	},
 	{
 		section: "Settings",

@@ -2,14 +2,17 @@ import { createAccessControl } from "better-auth/plugins/access";
 import type { LucideIcon } from "lucide-react";
 import {
 	BarChart3,
+	BookMarked,
 	Bot,
 	Building2,
+	CalendarDays,
 	CreditCard,
 	FileText,
 	FolderOpen,
 	Globe,
 	HardDrive,
 	Home,
+	Images,
 	MessageCircle,
 	PenLine,
 	LayoutDashboard,
@@ -246,6 +249,7 @@ export interface RouteConfig {
 	icon?: LucideIcon;
 	permissions?: Record<string, string[]>;
 	minRole?: AppRole;
+	maxRole?: AppRole;
 	noIndex?: boolean;
 	showInNav?: boolean;
 	parent?: string;
@@ -403,7 +407,7 @@ export const routeConfig: Record<string, RouteConfig> = {
 		title: "Media",
 		icon: HardDrive,
 		description: "Manage media files",
-		minRole: ROLES.SUPER_ADMIN,
+		minRole: ROLES.ADMIN,
 		noIndex: true,
 		showInNav: true,
 		parent: ROUTES.ADMIN.BASE,
@@ -506,9 +510,9 @@ export const routeConfig: Record<string, RouteConfig> = {
 		title: "Comments",
 		icon: MessageCircle,
 		description: "Moderate comments",
-		minRole: ROLES.ADMIN,
+		permissions: { content: ["write"] },
 		noIndex: true,
-		showInNav: true,
+		showInNav: false, // replaced by DASHBOARD_COMMENTS in sidebar
 		parent: ROUTES.ADMIN.BLOG.BASE,
 	},
 	[ROUTES.ADMIN.BLOG.MEDIA]: {
@@ -533,9 +537,9 @@ export const routeConfig: Record<string, RouteConfig> = {
 		title: "Analytics",
 		icon: BarChart3,
 		description: "Blog performance analytics",
-		minRole: ROLES.ADMIN,
+		permissions: { content: ["write"] },
 		noIndex: true,
-		showInNav: false,
+		showInNav: true,
 		parent: ROUTES.ADMIN.BLOG.BASE,
 	},
 	[ROUTES.ADMIN.BLOG.NEWSLETTER]: {
@@ -574,6 +578,47 @@ export const routeConfig: Record<string, RouteConfig> = {
 		minRole: ROLES.AUTHOR,
 		noIndex: true,
 		showInNav: false,
+	},
+
+	// Author workspace routes
+	[ROUTES.DASHBOARD_ASSETS]: {
+		title: "Media",
+		icon: Images,
+		description: "Your media files and uploads",
+		permissions: { content: ["write"] },
+		maxRole: ROLES.MODERATOR,
+		noIndex: true,
+		showInNav: true,
+	},
+	[ROUTES.ACCOUNT.READING_LISTS]: {
+		title: "Reading Lists",
+		icon: BookMarked,
+		description: "Your saved reading lists",
+		noIndex: true,
+		showInNav: true,
+	},
+	[ROUTES.DASHBOARD_CALENDAR]: {
+		title: "Calendar",
+		icon: CalendarDays,
+		description: "Scheduled and published post timeline",
+		minRole: ROLES.AUTHOR,
+		noIndex: true,
+		showInNav: true,
+	},
+	[ROUTES.DASHBOARD_COMMENTS]: {
+		title: "Comments",
+		icon: MessageCircle,
+		description: "Comments on your posts",
+		permissions: { content: ["write"] },
+		noIndex: true,
+		showInNav: true,
+	},
+	[ROUTES.DASHBOARD_SITES]: {
+		title: "My Sites",
+		icon: Globe,
+		description: "Manage your headless CMS sites and API keys",
+		noIndex: true,
+		showInNav: true,
 	},
 };
 
@@ -625,6 +670,7 @@ export function canAccessRoute(route: string, userRole?: AppRole): boolean {
 	}
 	if (!userRole) return !config.permissions && !config.minRole;
 	if (config.minRole && !hasMinimumRole(userRole, config.minRole)) return false;
+	if (config.maxRole && !hasMinimumRole(config.maxRole, userRole)) return false;
 	if (config.permissions && !checkPermission(userRole, config.permissions))
 		return false;
 	return true;

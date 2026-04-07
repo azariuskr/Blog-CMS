@@ -25,6 +25,7 @@ import { Route as errors403RouteImport } from './routes/(errors)/403'
 import { Route as errors401RouteImport } from './routes/(errors)/401'
 import { Route as blogTopicsRouteImport } from './routes/(blog)/topics'
 import { Route as blogSearchRouteImport } from './routes/(blog)/search'
+import { Route as blogPricingRouteImport } from './routes/(blog)/pricing'
 import { Route as blogAuthorsRouteImport } from './routes/(blog)/authors'
 import { Route as blogAuthorOnboardingRouteImport } from './routes/(blog)/author-onboarding'
 import { Route as blogAboutRouteImport } from './routes/(blog)/about'
@@ -37,7 +38,7 @@ import { Route as authenticatedDashboardRouteRouteImport } from './routes/(authe
 import { Route as authenticatedBillingRouteRouteImport } from './routes/(authenticated)/billing/route'
 import { Route as authenticatedAdminRouteRouteImport } from './routes/(authenticated)/admin/route'
 import { Route as authenticatedAccountRouteRouteImport } from './routes/(authenticated)/account/route'
-import { Route as blogAtusernameIndexRouteImport } from './routes/(blog)/@$username/index'
+import { Route as blogAtChar123usernameChar125IndexRouteImport } from './routes/(blog)/@{$username}/index'
 import { Route as authenticatedDashboardIndexRouteImport } from './routes/(authenticated)/dashboard/index'
 import { Route as authenticatedBillingIndexRouteImport } from './routes/(authenticated)/billing/index'
 import { Route as authenticatedAdminIndexRouteImport } from './routes/(authenticated)/admin/index'
@@ -50,9 +51,13 @@ import { Route as ApiV1AuthorsRouteImport } from './routes/api/v1/authors'
 import { Route as ApiStorageUploadRouteImport } from './routes/api/storage/upload'
 import { Route as ApiInngestInngestRouteImport } from './routes/api/inngest/inngest'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as blogPreviewTokenRouteImport } from './routes/(blog)/preview.$token'
 import { Route as authenticatedOrgOrganizationViewRouteImport } from './routes/(authenticated)/org/$organizationView'
 import { Route as authenticatedErrorsErrorRouteImport } from './routes/(authenticated)/errors/$error'
 import { Route as authenticatedEditorNewRouteImport } from './routes/(authenticated)/editor/new'
+import { Route as authenticatedDashboardSitesRouteImport } from './routes/(authenticated)/dashboard/sites'
+import { Route as authenticatedDashboardCommentsRouteImport } from './routes/(authenticated)/dashboard/comments'
+import { Route as authenticatedDashboardCalendarRouteImport } from './routes/(authenticated)/dashboard/calendar'
 import { Route as authenticatedDashboardBecomeAuthorRouteImport } from './routes/(authenticated)/dashboard/become-author'
 import { Route as authenticatedDashboardAssetsRouteImport } from './routes/(authenticated)/dashboard/assets'
 import { Route as authenticatedBillingSuccessRouteImport } from './routes/(authenticated)/billing/success'
@@ -60,6 +65,9 @@ import { Route as authenticatedBillingCancelRouteImport } from './routes/(authen
 import { Route as authenticatedAdminUsersRouteImport } from './routes/(authenticated)/admin/users'
 import { Route as authenticatedAdminStorageRouteImport } from './routes/(authenticated)/admin/storage'
 import { Route as authenticatedAdminRbacRouteImport } from './routes/(authenticated)/admin/rbac'
+import { Route as authenticatedAccountTopicsRouteImport } from './routes/(authenticated)/account/topics'
+import { Route as authenticatedAccountReadingListsRouteImport } from './routes/(authenticated)/account/reading-lists'
+import { Route as authenticatedAccountMutedUsersRouteImport } from './routes/(authenticated)/account/muted-users'
 import { Route as authenticatedAccountAccountViewRouteImport } from './routes/(authenticated)/account/$accountView'
 import { Route as authPagesAuthAuthViewRouteImport } from './routes/(auth-pages)/auth/$authView'
 import { Route as authenticatedAdminBillingRouteRouteImport } from './routes/(authenticated)/admin/billing/route'
@@ -75,6 +83,7 @@ import { Route as ApiAuthPasskeyRegistrationOptionsRouteImport } from './routes/
 import { Route as ApiAuthPasskeyAddPasskeyRouteImport } from './routes/api/auth/passkey/add-passkey'
 import { Route as blogSitesSiteSlugPageSlugRouteImport } from './routes/(blog)/sites/$siteSlug/$pageSlug'
 import { Route as authenticatedOrgSlugOrganizationViewRouteImport } from './routes/(authenticated)/org/$slug/$organizationView'
+import { Route as authenticatedDashboardSitesSiteIdRouteImport } from './routes/(authenticated)/dashboard/sites/$siteId'
 import { Route as authenticatedAdminOrganizationOrganizationViewRouteImport } from './routes/(authenticated)/admin/organization/$organizationView'
 import { Route as authenticatedAdminBlogTagsRouteImport } from './routes/(authenticated)/admin/blog/tags'
 import { Route as authenticatedAdminBlogSitesRouteImport } from './routes/(authenticated)/admin/blog/sites'
@@ -176,6 +185,11 @@ const blogSearchRoute = blogSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => blogRouteRoute,
 } as any)
+const blogPricingRoute = blogPricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => blogRouteRoute,
+} as any)
 const blogAuthorsRoute = blogAuthorsRouteImport.update({
   id: '/authors',
   path: '/authors',
@@ -240,11 +254,12 @@ const authenticatedAccountRouteRoute =
     path: '/account',
     getParentRoute: () => authenticatedRouteRoute,
   } as any)
-const blogAtusernameIndexRoute = blogAtusernameIndexRouteImport.update({
-  id: '/@$username/',
-  path: '/@$username/',
-  getParentRoute: () => blogRouteRoute,
-} as any)
+const blogAtChar123usernameChar125IndexRoute =
+  blogAtChar123usernameChar125IndexRouteImport.update({
+    id: '/@{$username}/',
+    path: '/@{$username}/',
+    getParentRoute: () => blogRouteRoute,
+  } as any)
 const authenticatedDashboardIndexRoute =
   authenticatedDashboardIndexRouteImport.update({
     id: '/',
@@ -308,6 +323,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const blogPreviewTokenRoute = blogPreviewTokenRouteImport.update({
+  id: '/preview/$token',
+  path: '/preview/$token',
+  getParentRoute: () => blogRouteRoute,
+} as any)
 const authenticatedOrgOrganizationViewRoute =
   authenticatedOrgOrganizationViewRouteImport.update({
     id: '/org/$organizationView',
@@ -325,6 +345,24 @@ const authenticatedEditorNewRoute = authenticatedEditorNewRouteImport.update({
   path: '/new',
   getParentRoute: () => authenticatedEditorRouteRoute,
 } as any)
+const authenticatedDashboardSitesRoute =
+  authenticatedDashboardSitesRouteImport.update({
+    id: '/sites',
+    path: '/sites',
+    getParentRoute: () => authenticatedDashboardRouteRoute,
+  } as any)
+const authenticatedDashboardCommentsRoute =
+  authenticatedDashboardCommentsRouteImport.update({
+    id: '/comments',
+    path: '/comments',
+    getParentRoute: () => authenticatedDashboardRouteRoute,
+  } as any)
+const authenticatedDashboardCalendarRoute =
+  authenticatedDashboardCalendarRouteImport.update({
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => authenticatedDashboardRouteRoute,
+  } as any)
 const authenticatedDashboardBecomeAuthorRoute =
   authenticatedDashboardBecomeAuthorRouteImport.update({
     id: '/become-author',
@@ -365,6 +403,24 @@ const authenticatedAdminRbacRoute = authenticatedAdminRbacRouteImport.update({
   path: '/rbac',
   getParentRoute: () => authenticatedAdminRouteRoute,
 } as any)
+const authenticatedAccountTopicsRoute =
+  authenticatedAccountTopicsRouteImport.update({
+    id: '/topics',
+    path: '/topics',
+    getParentRoute: () => authenticatedAccountRouteRoute,
+  } as any)
+const authenticatedAccountReadingListsRoute =
+  authenticatedAccountReadingListsRouteImport.update({
+    id: '/reading-lists',
+    path: '/reading-lists',
+    getParentRoute: () => authenticatedAccountRouteRoute,
+  } as any)
+const authenticatedAccountMutedUsersRoute =
+  authenticatedAccountMutedUsersRouteImport.update({
+    id: '/muted-users',
+    path: '/muted-users',
+    getParentRoute: () => authenticatedAccountRouteRoute,
+  } as any)
 const authenticatedAccountAccountViewRoute =
   authenticatedAccountAccountViewRouteImport.update({
     id: '/$accountView',
@@ -449,6 +505,12 @@ const authenticatedOrgSlugOrganizationViewRoute =
     id: '/org/$slug/$organizationView',
     path: '/org/$slug/$organizationView',
     getParentRoute: () => authenticatedRouteRoute,
+  } as any)
+const authenticatedDashboardSitesSiteIdRoute =
+  authenticatedDashboardSitesSiteIdRouteImport.update({
+    id: '/$siteId',
+    path: '/$siteId',
+    getParentRoute: () => authenticatedDashboardSitesRoute,
   } as any)
 const authenticatedAdminOrganizationOrganizationViewRoute =
   authenticatedAdminOrganizationOrganizationViewRouteImport.update({
@@ -606,6 +668,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof blogAboutRoute
   '/author-onboarding': typeof blogAuthorOnboardingRoute
   '/authors': typeof blogAuthorsRoute
+  '/pricing': typeof blogPricingRoute
   '/search': typeof blogSearchRoute
   '/topics': typeof blogTopicsRoute
   '/401': typeof errors401Route
@@ -618,6 +681,9 @@ export interface FileRoutesByFullPath {
   '/admin/billing': typeof authenticatedAdminBillingRouteRouteWithChildren
   '/auth/$authView': typeof authPagesAuthAuthViewRoute
   '/account/$accountView': typeof authenticatedAccountAccountViewRoute
+  '/account/muted-users': typeof authenticatedAccountMutedUsersRoute
+  '/account/reading-lists': typeof authenticatedAccountReadingListsRoute
+  '/account/topics': typeof authenticatedAccountTopicsRoute
   '/admin/rbac': typeof authenticatedAdminRbacRoute
   '/admin/storage': typeof authenticatedAdminStorageRoute
   '/admin/users': typeof authenticatedAdminUsersRoute
@@ -625,9 +691,13 @@ export interface FileRoutesByFullPath {
   '/billing/success': typeof authenticatedBillingSuccessRoute
   '/dashboard/assets': typeof authenticatedDashboardAssetsRoute
   '/dashboard/become-author': typeof authenticatedDashboardBecomeAuthorRoute
+  '/dashboard/calendar': typeof authenticatedDashboardCalendarRoute
+  '/dashboard/comments': typeof authenticatedDashboardCommentsRoute
+  '/dashboard/sites': typeof authenticatedDashboardSitesRouteWithChildren
   '/editor/new': typeof authenticatedEditorNewRoute
   '/errors/$error': typeof authenticatedErrorsErrorRoute
   '/org/$organizationView': typeof authenticatedOrgOrganizationViewRoute
+  '/preview/$token': typeof blogPreviewTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/inngest/inngest': typeof ApiInngestInngestRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
@@ -640,7 +710,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof authenticatedAdminIndexRoute
   '/billing/': typeof authenticatedBillingIndexRoute
   '/dashboard/': typeof authenticatedDashboardIndexRoute
-  '/@$username/': typeof blogAtusernameIndexRoute
+  '/@{$username}/': typeof blogAtChar123usernameChar125IndexRoute
   '/auth/callback/accept-invitation': typeof authPagesAuthCallbackAcceptInvitationRoute
   '/auth/callback/verify-email': typeof authPagesAuthCallbackVerifyEmailRoute
   '/account/organization/$organizationView': typeof authenticatedAccountOrganizationOrganizationViewRoute
@@ -659,6 +729,7 @@ export interface FileRoutesByFullPath {
   '/admin/blog/sites': typeof authenticatedAdminBlogSitesRoute
   '/admin/blog/tags': typeof authenticatedAdminBlogTagsRoute
   '/admin/organization/$organizationView': typeof authenticatedAdminOrganizationOrganizationViewRoute
+  '/dashboard/sites/$siteId': typeof authenticatedDashboardSitesSiteIdRoute
   '/org/$slug/$organizationView': typeof authenticatedOrgSlugOrganizationViewRoute
   '/sites/$siteSlug/$pageSlug': typeof blogSitesSiteSlugPageSlugRoute
   '/api/auth/passkey/add-passkey': typeof ApiAuthPasskeyAddPasskeyRoute
@@ -690,6 +761,7 @@ export interface FileRoutesByTo {
   '/about': typeof blogAboutRoute
   '/author-onboarding': typeof blogAuthorOnboardingRoute
   '/authors': typeof blogAuthorsRoute
+  '/pricing': typeof blogPricingRoute
   '/search': typeof blogSearchRoute
   '/topics': typeof blogTopicsRoute
   '/401': typeof errors401Route
@@ -701,6 +773,9 @@ export interface FileRoutesByTo {
   '/': typeof blogIndexRoute
   '/auth/$authView': typeof authPagesAuthAuthViewRoute
   '/account/$accountView': typeof authenticatedAccountAccountViewRoute
+  '/account/muted-users': typeof authenticatedAccountMutedUsersRoute
+  '/account/reading-lists': typeof authenticatedAccountReadingListsRoute
+  '/account/topics': typeof authenticatedAccountTopicsRoute
   '/admin/rbac': typeof authenticatedAdminRbacRoute
   '/admin/storage': typeof authenticatedAdminStorageRoute
   '/admin/users': typeof authenticatedAdminUsersRoute
@@ -708,9 +783,13 @@ export interface FileRoutesByTo {
   '/billing/success': typeof authenticatedBillingSuccessRoute
   '/dashboard/assets': typeof authenticatedDashboardAssetsRoute
   '/dashboard/become-author': typeof authenticatedDashboardBecomeAuthorRoute
+  '/dashboard/calendar': typeof authenticatedDashboardCalendarRoute
+  '/dashboard/comments': typeof authenticatedDashboardCommentsRoute
+  '/dashboard/sites': typeof authenticatedDashboardSitesRouteWithChildren
   '/editor/new': typeof authenticatedEditorNewRoute
   '/errors/$error': typeof authenticatedErrorsErrorRoute
   '/org/$organizationView': typeof authenticatedOrgOrganizationViewRoute
+  '/preview/$token': typeof blogPreviewTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/inngest/inngest': typeof ApiInngestInngestRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
@@ -723,7 +802,7 @@ export interface FileRoutesByTo {
   '/admin': typeof authenticatedAdminIndexRoute
   '/billing': typeof authenticatedBillingIndexRoute
   '/dashboard': typeof authenticatedDashboardIndexRoute
-  '/@$username': typeof blogAtusernameIndexRoute
+  '/@{$username}': typeof blogAtChar123usernameChar125IndexRoute
   '/auth/callback/accept-invitation': typeof authPagesAuthCallbackAcceptInvitationRoute
   '/auth/callback/verify-email': typeof authPagesAuthCallbackVerifyEmailRoute
   '/account/organization/$organizationView': typeof authenticatedAccountOrganizationOrganizationViewRoute
@@ -742,6 +821,7 @@ export interface FileRoutesByTo {
   '/admin/blog/sites': typeof authenticatedAdminBlogSitesRoute
   '/admin/blog/tags': typeof authenticatedAdminBlogTagsRoute
   '/admin/organization/$organizationView': typeof authenticatedAdminOrganizationOrganizationViewRoute
+  '/dashboard/sites/$siteId': typeof authenticatedDashboardSitesSiteIdRoute
   '/org/$slug/$organizationView': typeof authenticatedOrgSlugOrganizationViewRoute
   '/sites/$siteSlug/$pageSlug': typeof blogSitesSiteSlugPageSlugRoute
   '/api/auth/passkey/add-passkey': typeof ApiAuthPasskeyAddPasskeyRoute
@@ -781,6 +861,7 @@ export interface FileRoutesById {
   '/(blog)/about': typeof blogAboutRoute
   '/(blog)/author-onboarding': typeof blogAuthorOnboardingRoute
   '/(blog)/authors': typeof blogAuthorsRoute
+  '/(blog)/pricing': typeof blogPricingRoute
   '/(blog)/search': typeof blogSearchRoute
   '/(blog)/topics': typeof blogTopicsRoute
   '/(errors)/401': typeof errors401Route
@@ -793,6 +874,9 @@ export interface FileRoutesById {
   '/(authenticated)/admin/billing': typeof authenticatedAdminBillingRouteRouteWithChildren
   '/(auth-pages)/auth/$authView': typeof authPagesAuthAuthViewRoute
   '/(authenticated)/account/$accountView': typeof authenticatedAccountAccountViewRoute
+  '/(authenticated)/account/muted-users': typeof authenticatedAccountMutedUsersRoute
+  '/(authenticated)/account/reading-lists': typeof authenticatedAccountReadingListsRoute
+  '/(authenticated)/account/topics': typeof authenticatedAccountTopicsRoute
   '/(authenticated)/admin/rbac': typeof authenticatedAdminRbacRoute
   '/(authenticated)/admin/storage': typeof authenticatedAdminStorageRoute
   '/(authenticated)/admin/users': typeof authenticatedAdminUsersRoute
@@ -800,9 +884,13 @@ export interface FileRoutesById {
   '/(authenticated)/billing/success': typeof authenticatedBillingSuccessRoute
   '/(authenticated)/dashboard/assets': typeof authenticatedDashboardAssetsRoute
   '/(authenticated)/dashboard/become-author': typeof authenticatedDashboardBecomeAuthorRoute
+  '/(authenticated)/dashboard/calendar': typeof authenticatedDashboardCalendarRoute
+  '/(authenticated)/dashboard/comments': typeof authenticatedDashboardCommentsRoute
+  '/(authenticated)/dashboard/sites': typeof authenticatedDashboardSitesRouteWithChildren
   '/(authenticated)/editor/new': typeof authenticatedEditorNewRoute
   '/(authenticated)/errors/$error': typeof authenticatedErrorsErrorRoute
   '/(authenticated)/org/$organizationView': typeof authenticatedOrgOrganizationViewRoute
+  '/(blog)/preview/$token': typeof blogPreviewTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/inngest/inngest': typeof ApiInngestInngestRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
@@ -815,7 +903,7 @@ export interface FileRoutesById {
   '/(authenticated)/admin/': typeof authenticatedAdminIndexRoute
   '/(authenticated)/billing/': typeof authenticatedBillingIndexRoute
   '/(authenticated)/dashboard/': typeof authenticatedDashboardIndexRoute
-  '/(blog)/@$username/': typeof blogAtusernameIndexRoute
+  '/(blog)/@{$username}/': typeof blogAtChar123usernameChar125IndexRoute
   '/(auth-pages)/auth/callback/accept-invitation': typeof authPagesAuthCallbackAcceptInvitationRoute
   '/(auth-pages)/auth/callback/verify-email': typeof authPagesAuthCallbackVerifyEmailRoute
   '/(authenticated)/account/organization/$organizationView': typeof authenticatedAccountOrganizationOrganizationViewRoute
@@ -834,6 +922,7 @@ export interface FileRoutesById {
   '/(authenticated)/admin/blog/sites': typeof authenticatedAdminBlogSitesRoute
   '/(authenticated)/admin/blog/tags': typeof authenticatedAdminBlogTagsRoute
   '/(authenticated)/admin/organization/$organizationView': typeof authenticatedAdminOrganizationOrganizationViewRoute
+  '/(authenticated)/dashboard/sites/$siteId': typeof authenticatedDashboardSitesSiteIdRoute
   '/(authenticated)/org/$slug/$organizationView': typeof authenticatedOrgSlugOrganizationViewRoute
   '/(blog)/sites/$siteSlug/$pageSlug': typeof blogSitesSiteSlugPageSlugRoute
   '/api/auth/passkey/add-passkey': typeof ApiAuthPasskeyAddPasskeyRoute
@@ -871,6 +960,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/author-onboarding'
     | '/authors'
+    | '/pricing'
     | '/search'
     | '/topics'
     | '/401'
@@ -883,6 +973,9 @@ export interface FileRouteTypes {
     | '/admin/billing'
     | '/auth/$authView'
     | '/account/$accountView'
+    | '/account/muted-users'
+    | '/account/reading-lists'
+    | '/account/topics'
     | '/admin/rbac'
     | '/admin/storage'
     | '/admin/users'
@@ -890,9 +983,13 @@ export interface FileRouteTypes {
     | '/billing/success'
     | '/dashboard/assets'
     | '/dashboard/become-author'
+    | '/dashboard/calendar'
+    | '/dashboard/comments'
+    | '/dashboard/sites'
     | '/editor/new'
     | '/errors/$error'
     | '/org/$organizationView'
+    | '/preview/$token'
     | '/api/auth/$'
     | '/api/inngest/inngest'
     | '/api/storage/upload'
@@ -905,7 +1002,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/billing/'
     | '/dashboard/'
-    | '/@$username/'
+    | '/@{$username}/'
     | '/auth/callback/accept-invitation'
     | '/auth/callback/verify-email'
     | '/account/organization/$organizationView'
@@ -924,6 +1021,7 @@ export interface FileRouteTypes {
     | '/admin/blog/sites'
     | '/admin/blog/tags'
     | '/admin/organization/$organizationView'
+    | '/dashboard/sites/$siteId'
     | '/org/$slug/$organizationView'
     | '/sites/$siteSlug/$pageSlug'
     | '/api/auth/passkey/add-passkey'
@@ -955,6 +1053,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/author-onboarding'
     | '/authors'
+    | '/pricing'
     | '/search'
     | '/topics'
     | '/401'
@@ -966,6 +1065,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth/$authView'
     | '/account/$accountView'
+    | '/account/muted-users'
+    | '/account/reading-lists'
+    | '/account/topics'
     | '/admin/rbac'
     | '/admin/storage'
     | '/admin/users'
@@ -973,9 +1075,13 @@ export interface FileRouteTypes {
     | '/billing/success'
     | '/dashboard/assets'
     | '/dashboard/become-author'
+    | '/dashboard/calendar'
+    | '/dashboard/comments'
+    | '/dashboard/sites'
     | '/editor/new'
     | '/errors/$error'
     | '/org/$organizationView'
+    | '/preview/$token'
     | '/api/auth/$'
     | '/api/inngest/inngest'
     | '/api/storage/upload'
@@ -988,7 +1094,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/billing'
     | '/dashboard'
-    | '/@$username'
+    | '/@{$username}'
     | '/auth/callback/accept-invitation'
     | '/auth/callback/verify-email'
     | '/account/organization/$organizationView'
@@ -1007,6 +1113,7 @@ export interface FileRouteTypes {
     | '/admin/blog/sites'
     | '/admin/blog/tags'
     | '/admin/organization/$organizationView'
+    | '/dashboard/sites/$siteId'
     | '/org/$slug/$organizationView'
     | '/sites/$siteSlug/$pageSlug'
     | '/api/auth/passkey/add-passkey'
@@ -1045,6 +1152,7 @@ export interface FileRouteTypes {
     | '/(blog)/about'
     | '/(blog)/author-onboarding'
     | '/(blog)/authors'
+    | '/(blog)/pricing'
     | '/(blog)/search'
     | '/(blog)/topics'
     | '/(errors)/401'
@@ -1057,6 +1165,9 @@ export interface FileRouteTypes {
     | '/(authenticated)/admin/billing'
     | '/(auth-pages)/auth/$authView'
     | '/(authenticated)/account/$accountView'
+    | '/(authenticated)/account/muted-users'
+    | '/(authenticated)/account/reading-lists'
+    | '/(authenticated)/account/topics'
     | '/(authenticated)/admin/rbac'
     | '/(authenticated)/admin/storage'
     | '/(authenticated)/admin/users'
@@ -1064,9 +1175,13 @@ export interface FileRouteTypes {
     | '/(authenticated)/billing/success'
     | '/(authenticated)/dashboard/assets'
     | '/(authenticated)/dashboard/become-author'
+    | '/(authenticated)/dashboard/calendar'
+    | '/(authenticated)/dashboard/comments'
+    | '/(authenticated)/dashboard/sites'
     | '/(authenticated)/editor/new'
     | '/(authenticated)/errors/$error'
     | '/(authenticated)/org/$organizationView'
+    | '/(blog)/preview/$token'
     | '/api/auth/$'
     | '/api/inngest/inngest'
     | '/api/storage/upload'
@@ -1079,7 +1194,7 @@ export interface FileRouteTypes {
     | '/(authenticated)/admin/'
     | '/(authenticated)/billing/'
     | '/(authenticated)/dashboard/'
-    | '/(blog)/@$username/'
+    | '/(blog)/@{$username}/'
     | '/(auth-pages)/auth/callback/accept-invitation'
     | '/(auth-pages)/auth/callback/verify-email'
     | '/(authenticated)/account/organization/$organizationView'
@@ -1098,6 +1213,7 @@ export interface FileRouteTypes {
     | '/(authenticated)/admin/blog/sites'
     | '/(authenticated)/admin/blog/tags'
     | '/(authenticated)/admin/organization/$organizationView'
+    | '/(authenticated)/dashboard/sites/$siteId'
     | '/(authenticated)/org/$slug/$organizationView'
     | '/(blog)/sites/$siteSlug/$pageSlug'
     | '/api/auth/passkey/add-passkey'
@@ -1260,6 +1376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof blogSearchRouteImport
       parentRoute: typeof blogRouteRoute
     }
+    '/(blog)/pricing': {
+      id: '/(blog)/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof blogPricingRouteImport
+      parentRoute: typeof blogRouteRoute
+    }
     '/(blog)/authors': {
       id: '/(blog)/authors'
       path: '/authors'
@@ -1344,11 +1467,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authenticatedAccountRouteRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
-    '/(blog)/@$username/': {
-      id: '/(blog)/@$username/'
-      path: '/@$username'
-      fullPath: '/@$username/'
-      preLoaderRoute: typeof blogAtusernameIndexRouteImport
+    '/(blog)/@{$username}/': {
+      id: '/(blog)/@{$username}/'
+      path: '/@{$username}'
+      fullPath: '/@{$username}/'
+      preLoaderRoute: typeof blogAtChar123usernameChar125IndexRouteImport
       parentRoute: typeof blogRouteRoute
     }
     '/(authenticated)/dashboard/': {
@@ -1435,6 +1558,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(blog)/preview/$token': {
+      id: '/(blog)/preview/$token'
+      path: '/preview/$token'
+      fullPath: '/preview/$token'
+      preLoaderRoute: typeof blogPreviewTokenRouteImport
+      parentRoute: typeof blogRouteRoute
+    }
     '/(authenticated)/org/$organizationView': {
       id: '/(authenticated)/org/$organizationView'
       path: '/org/$organizationView'
@@ -1455,6 +1585,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/editor/new'
       preLoaderRoute: typeof authenticatedEditorNewRouteImport
       parentRoute: typeof authenticatedEditorRouteRoute
+    }
+    '/(authenticated)/dashboard/sites': {
+      id: '/(authenticated)/dashboard/sites'
+      path: '/sites'
+      fullPath: '/dashboard/sites'
+      preLoaderRoute: typeof authenticatedDashboardSitesRouteImport
+      parentRoute: typeof authenticatedDashboardRouteRoute
+    }
+    '/(authenticated)/dashboard/comments': {
+      id: '/(authenticated)/dashboard/comments'
+      path: '/comments'
+      fullPath: '/dashboard/comments'
+      preLoaderRoute: typeof authenticatedDashboardCommentsRouteImport
+      parentRoute: typeof authenticatedDashboardRouteRoute
+    }
+    '/(authenticated)/dashboard/calendar': {
+      id: '/(authenticated)/dashboard/calendar'
+      path: '/calendar'
+      fullPath: '/dashboard/calendar'
+      preLoaderRoute: typeof authenticatedDashboardCalendarRouteImport
+      parentRoute: typeof authenticatedDashboardRouteRoute
     }
     '/(authenticated)/dashboard/become-author': {
       id: '/(authenticated)/dashboard/become-author'
@@ -1504,6 +1655,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/rbac'
       preLoaderRoute: typeof authenticatedAdminRbacRouteImport
       parentRoute: typeof authenticatedAdminRouteRoute
+    }
+    '/(authenticated)/account/topics': {
+      id: '/(authenticated)/account/topics'
+      path: '/topics'
+      fullPath: '/account/topics'
+      preLoaderRoute: typeof authenticatedAccountTopicsRouteImport
+      parentRoute: typeof authenticatedAccountRouteRoute
+    }
+    '/(authenticated)/account/reading-lists': {
+      id: '/(authenticated)/account/reading-lists'
+      path: '/reading-lists'
+      fullPath: '/account/reading-lists'
+      preLoaderRoute: typeof authenticatedAccountReadingListsRouteImport
+      parentRoute: typeof authenticatedAccountRouteRoute
+    }
+    '/(authenticated)/account/muted-users': {
+      id: '/(authenticated)/account/muted-users'
+      path: '/muted-users'
+      fullPath: '/account/muted-users'
+      preLoaderRoute: typeof authenticatedAccountMutedUsersRouteImport
+      parentRoute: typeof authenticatedAccountRouteRoute
     }
     '/(authenticated)/account/$accountView': {
       id: '/(authenticated)/account/$accountView'
@@ -1609,6 +1781,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/org/$slug/$organizationView'
       preLoaderRoute: typeof authenticatedOrgSlugOrganizationViewRouteImport
       parentRoute: typeof authenticatedRouteRoute
+    }
+    '/(authenticated)/dashboard/sites/$siteId': {
+      id: '/(authenticated)/dashboard/sites/$siteId'
+      path: '/$siteId'
+      fullPath: '/dashboard/sites/$siteId'
+      preLoaderRoute: typeof authenticatedDashboardSitesSiteIdRouteImport
+      parentRoute: typeof authenticatedDashboardSitesRoute
     }
     '/(authenticated)/admin/organization/$organizationView': {
       id: '/(authenticated)/admin/organization/$organizationView'
@@ -1801,6 +1980,9 @@ const authPagesRouteRouteWithChildren = authPagesRouteRoute._addFileChildren(
 
 interface authenticatedAccountRouteRouteChildren {
   authenticatedAccountAccountViewRoute: typeof authenticatedAccountAccountViewRoute
+  authenticatedAccountMutedUsersRoute: typeof authenticatedAccountMutedUsersRoute
+  authenticatedAccountReadingListsRoute: typeof authenticatedAccountReadingListsRoute
+  authenticatedAccountTopicsRoute: typeof authenticatedAccountTopicsRoute
   authenticatedAccountIndexRoute: typeof authenticatedAccountIndexRoute
   authenticatedAccountOrganizationOrganizationViewRoute: typeof authenticatedAccountOrganizationOrganizationViewRoute
   authenticatedAccountOrganizationsOrganizationViewRoute: typeof authenticatedAccountOrganizationsOrganizationViewRoute
@@ -1811,6 +1993,10 @@ interface authenticatedAccountRouteRouteChildren {
 const authenticatedAccountRouteRouteChildren: authenticatedAccountRouteRouteChildren =
   {
     authenticatedAccountAccountViewRoute: authenticatedAccountAccountViewRoute,
+    authenticatedAccountMutedUsersRoute: authenticatedAccountMutedUsersRoute,
+    authenticatedAccountReadingListsRoute:
+      authenticatedAccountReadingListsRoute,
+    authenticatedAccountTopicsRoute: authenticatedAccountTopicsRoute,
     authenticatedAccountIndexRoute: authenticatedAccountIndexRoute,
     authenticatedAccountOrganizationOrganizationViewRoute:
       authenticatedAccountOrganizationOrganizationViewRoute,
@@ -1928,9 +2114,27 @@ const authenticatedBillingRouteRouteWithChildren =
     authenticatedBillingRouteRouteChildren,
   )
 
+interface authenticatedDashboardSitesRouteChildren {
+  authenticatedDashboardSitesSiteIdRoute: typeof authenticatedDashboardSitesSiteIdRoute
+}
+
+const authenticatedDashboardSitesRouteChildren: authenticatedDashboardSitesRouteChildren =
+  {
+    authenticatedDashboardSitesSiteIdRoute:
+      authenticatedDashboardSitesSiteIdRoute,
+  }
+
+const authenticatedDashboardSitesRouteWithChildren =
+  authenticatedDashboardSitesRoute._addFileChildren(
+    authenticatedDashboardSitesRouteChildren,
+  )
+
 interface authenticatedDashboardRouteRouteChildren {
   authenticatedDashboardAssetsRoute: typeof authenticatedDashboardAssetsRoute
   authenticatedDashboardBecomeAuthorRoute: typeof authenticatedDashboardBecomeAuthorRoute
+  authenticatedDashboardCalendarRoute: typeof authenticatedDashboardCalendarRoute
+  authenticatedDashboardCommentsRoute: typeof authenticatedDashboardCommentsRoute
+  authenticatedDashboardSitesRoute: typeof authenticatedDashboardSitesRouteWithChildren
   authenticatedDashboardIndexRoute: typeof authenticatedDashboardIndexRoute
 }
 
@@ -1939,6 +2143,10 @@ const authenticatedDashboardRouteRouteChildren: authenticatedDashboardRouteRoute
     authenticatedDashboardAssetsRoute: authenticatedDashboardAssetsRoute,
     authenticatedDashboardBecomeAuthorRoute:
       authenticatedDashboardBecomeAuthorRoute,
+    authenticatedDashboardCalendarRoute: authenticatedDashboardCalendarRoute,
+    authenticatedDashboardCommentsRoute: authenticatedDashboardCommentsRoute,
+    authenticatedDashboardSitesRoute:
+      authenticatedDashboardSitesRouteWithChildren,
     authenticatedDashboardIndexRoute: authenticatedDashboardIndexRoute,
   }
 
@@ -1993,10 +2201,12 @@ interface blogRouteRouteChildren {
   blogAboutRoute: typeof blogAboutRoute
   blogAuthorOnboardingRoute: typeof blogAuthorOnboardingRoute
   blogAuthorsRoute: typeof blogAuthorsRoute
+  blogPricingRoute: typeof blogPricingRoute
   blogSearchRoute: typeof blogSearchRoute
   blogTopicsRoute: typeof blogTopicsRoute
   blogIndexRoute: typeof blogIndexRoute
-  blogAtusernameIndexRoute: typeof blogAtusernameIndexRoute
+  blogPreviewTokenRoute: typeof blogPreviewTokenRoute
+  blogAtChar123usernameChar125IndexRoute: typeof blogAtChar123usernameChar125IndexRoute
   blogSitesSiteSlugPageSlugRoute: typeof blogSitesSiteSlugPageSlugRoute
 }
 
@@ -2005,10 +2215,13 @@ const blogRouteRouteChildren: blogRouteRouteChildren = {
   blogAboutRoute: blogAboutRoute,
   blogAuthorOnboardingRoute: blogAuthorOnboardingRoute,
   blogAuthorsRoute: blogAuthorsRoute,
+  blogPricingRoute: blogPricingRoute,
   blogSearchRoute: blogSearchRoute,
   blogTopicsRoute: blogTopicsRoute,
   blogIndexRoute: blogIndexRoute,
-  blogAtusernameIndexRoute: blogAtusernameIndexRoute,
+  blogPreviewTokenRoute: blogPreviewTokenRoute,
+  blogAtChar123usernameChar125IndexRoute:
+    blogAtChar123usernameChar125IndexRoute,
   blogSitesSiteSlugPageSlugRoute: blogSitesSiteSlugPageSlugRoute,
 }
 
@@ -2060,3 +2273,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

@@ -5,6 +5,10 @@ export const ROUTES = {
     LOGOUT: "/logout",
     DASHBOARD: "/dashboard",
     DASHBOARD_ASSETS: "/dashboard/assets",
+    DASHBOARD_CALENDAR: "/dashboard/calendar",
+    DASHBOARD_COMMENTS: "/dashboard/comments",
+    DASHBOARD_SITES: "/dashboard/sites",
+    DASHBOARD_SITE_DETAIL: (id: string) => `/dashboard/sites/${id}`,
     TERMS: "/terms",
     PRIVACY: "/privacy",
     COOKIES: "/cookies",
@@ -456,6 +460,7 @@ export const PAGINATION = {
 
 // Centralized role definitions - single source of truth
 export const ROLES = {
+    READER: "reader",
     USER: "user",
     AUTHOR: "author",
     MODERATOR: "moderator",
@@ -466,6 +471,7 @@ export const ROLES = {
 export type AppRole = (typeof ROLES)[keyof typeof ROLES];
 
 export const ROLE_HIERARCHY: readonly AppRole[] = [
+    ROLES.READER,
     ROLES.USER,
     ROLES.AUTHOR,
     ROLES.MODERATOR,
@@ -474,6 +480,7 @@ export const ROLE_HIERARCHY: readonly AppRole[] = [
 ] as const;
 
 export const ROLE_LABELS: Record<AppRole, string> = {
+    [ROLES.READER]: "Reader",
     [ROLES.USER]: "User",
     [ROLES.AUTHOR]: "Author",
     [ROLES.MODERATOR]: "Moderator",
@@ -483,6 +490,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 
 import {
     Building2,
+    BookOpen,
     type LucideIcon,
     Settings,
     Shield,
@@ -499,6 +507,7 @@ export const ROLE_OPTIONS = ROLE_HIERARCHY.map((role) => {
         moderator: Users,
         author: User,
         user: Wallet,
+        reader: BookOpen,
     };
 
     return {
