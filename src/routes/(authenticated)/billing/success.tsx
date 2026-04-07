@@ -41,8 +41,10 @@ function BillingSuccessPage() {
             </div>
             <CardTitle className="text-2xl">Payment Successful!</CardTitle>
             <CardDescription>
-              {return_to
-                ? "You now have full access. Taking you back to the article…"
+              {(plan === "author" || plan === "author_premium")
+                ? "Your author subscription is active. Redirecting to profile setup…"
+                : return_to
+                ? "You now have full access. Taking you back…"
                 : "Thank you for your purchase. Your subscription is now active."}
             </CardDescription>
           </CardHeader>

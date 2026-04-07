@@ -6,9 +6,9 @@ import { UpgradeButton } from "@/components/billing/upgrade-button";
 import { PLANS, formatPrice } from "@/lib/billing/plans";
 import { ROUTES } from "@/constants";
 
-const proPlan = PLANS.find((p) => p.id === "pro");
-const proPrice = proPlan ? formatPrice(proPlan.priceMonthly) : "$19";
-const trialDays = proPlan?.trialDays ?? 14;
+const authorPlan = PLANS.find((p) => p.id === "author");
+const authorPrice = authorPlan ? formatPrice(authorPlan.priceMonthly) : "$5";
+const trialDays = authorPlan?.trialDays ?? 0;
 
 export function MemberCTA() {
 	const { data: session } = useSession();
@@ -45,7 +45,7 @@ export function MemberCTA() {
 							</h3>
 							<p className="text-sm text-[hsl(216,33%,68%)] leading-relaxed">
 								Get unlimited access to all premium articles, courses, and more for just{" "}
-								<strong className="text-white">{proPrice}/month</strong>.
+								<strong className="text-white">{authorPrice}/month</strong>.
 								{trialDays > 0 && ` Start with a ${trialDays}-day free trial.`}
 							</p>
 						</>
@@ -56,7 +56,7 @@ export function MemberCTA() {
 							</h3>
 							<p className="text-sm text-[hsl(216,33%,68%)] leading-relaxed">
 								Sign up free and get 3 premium articles per month. Upgrade to Pro for{" "}
-								<strong className="text-white">{proPrice}/month</strong> and unlock everything.
+								<strong className="text-white">{authorPrice}/month</strong> and unlock everything.
 							</p>
 						</>
 					)}
@@ -66,7 +66,7 @@ export function MemberCTA() {
 				<div className="flex flex-col sm:flex-row md:flex-col lg:flex-row items-stretch sm:items-center gap-3 shrink-0">
 					{session?.user ? (
 						<UpgradeButton
-							planId="pro"
+							planId="author"
 							interval="month"
 							returnTo={returnTo}
 							className="px-6 py-2.5 rounded-xl text-sm font-semibold"

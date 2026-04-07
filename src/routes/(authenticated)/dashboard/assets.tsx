@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { PageContainer } from "@/components/admin/app-layout";
-import { AdminStorageView } from "@/components/admin/storage/admin-storage-view";
-import { UserMediaView } from "@/components/blog/UserMediaView";
+import { MediaLibraryView } from "@/components/admin/storage/media-library-view";
 import { ROLES, ROUTES } from "@/constants";
 import { useRole } from "@/hooks/auth-hooks";
 
@@ -30,7 +29,7 @@ function DashboardAssetsPage() {
 				title="Media & Assets"
 				description="Manage all user media and storage."
 			>
-				<AdminStorageView />
+				<MediaLibraryView mode="admin" />
 			</PageContainer>
 		);
 	}
@@ -41,7 +40,7 @@ function DashboardAssetsPage() {
 			title="My Media"
 			description="Upload and manage images for your posts."
 		>
-			<UserMediaView />
+			<MediaLibraryView mode="user" />
 		</PageContainer>
 	);
 }

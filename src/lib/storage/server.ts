@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { PAGINATION, STORAGE_API, STORAGE_PATHS } from "@/constants";
+import { PAGINATION, ROLES, STORAGE_API, STORAGE_PATHS } from "@/constants";
 import { accessMiddleware, authMiddleware } from "@/lib/auth/middleware";
 import { db } from "@/lib/db";
 import { file, storageQuota, user as userTable } from "@/lib/db/schema";
@@ -398,6 +398,7 @@ const adminListFilesSchema = z.object({
 		.optional(),
 	category: z.enum(["all", "avatar", "media", "document", "attachment"]).optional(),
 	search: z.string().optional(),
+	userId: z.string().optional(), // filter to a specific user's files
 });
 
 const adminGetDownloadUrlSchema = z.object({
@@ -410,7 +411,7 @@ const adminGetDownloadUrlSchema = z.object({
  */
 export const $adminGetFiles = createServerFn({ method: "GET" })
 	.inputValidator((data: unknown) => adminListFilesSchema.parse(data))
-	.middleware([accessMiddleware({ permissions: { products: ["read"] } })])
+	.middleware([accessMiddleware({ minRole: ROLES.ADMIN })])
 	.handler(async ({ data }) => {
 		const page = Math.max(1, data.page ?? PAGINATION.DEFAULT_PAGE);
 		const limit = Math.min(
@@ -426,6 +427,11 @@ export const $adminGetFiles = createServerFn({ method: "GET" })
 			conditions.push(
 				sql`${file.metadata}::jsonb->>'category' = ${data.category}`,
 			);
+		}
+
+		// Filter to specific user
+		if (data.userId) {
+			conditions.push(eq(file.userId, data.userId));
 		}
 
 		// Search by filename
@@ -483,7 +489,7 @@ export const $adminGetFiles = createServerFn({ method: "GET" })
  */
 export const $adminDeleteFile = createServerFn({ method: "POST" })
 	.inputValidator((data: unknown) => fileIdSchema.parse(data))
-	.middleware([accessMiddleware({ permissions: { products: ["delete"] } })])
+	.middleware([accessMiddleware({ minRole: ROLES.ADMIN })])
 	.handler(
 		async ({ data }): Promise<Result<{ success: boolean }, HttpError>> => {
 			return safe(async () => {
@@ -513,7 +519,7 @@ export const $adminDeleteFile = createServerFn({ method: "POST" })
  */
 export const $adminGetDownloadUrl = createServerFn({ method: "POST" })
 	.inputValidator((data: unknown) => adminGetDownloadUrlSchema.parse(data))
-	.middleware([accessMiddleware({ permissions: { products: ["read"] } })])
+	.middleware([accessMiddleware({ minRole: ROLES.ADMIN })])
 	.handler(async ({ data }) => {
 		return safe(
 			() => getAdminDownloadUrlService(data.fileId, data.expiresIn ?? 3600),
@@ -566,5 +572,55 @@ export const $getMyQuota = createServerFn({ method: "GET" })
 				subscriptionStatus ? "Pro (10 GB)" : "Free (100 MB)";
 
 			return { usedBytes, limitBytes, fileCount, percentUsed, planLabel, role };
+		});
+	});
+
+// ============================================================================
+// Admin: users with quota summary (for admin user-picker)
+// ============================================================================
+
+/**
+ * Admin: Get paginated list of users with their quota info.
+ * Used by the admin media view user-picker.
+ */
+export const $getUsersWithQuota = createServerFn({ method: "GET" })
+	.middleware([accessMiddleware({ minRole: ROLES.ADMIN })])
+	.handler(async () => {
+		return safe(async () => {
+			const users = await db
+				.select({
+					id: userTable.id,
+					name: userTable.name,
+					email: userTable.email,
+					image: userTable.image,
+					role: userTable.role,
+					subscriptionStatus: userTable.subscriptionStatus,
+				})
+				.from(userTable)
+				.orderBy(userTable.name)
+				.limit(200);
+
+			// Fetch all quota rows in one query
+			const quotaRows = await db
+				.select()
+				.from(storageQuota)
+				.where(eq(storageQuota.ownerType, "user"));
+
+			const quotaMap = new Map(quotaRows.map((q) => [q.ownerId, q]));
+
+			return users.map((u) => {
+				const quota = quotaMap.get(u.id);
+				const usedBytes = Number(quota?.usedBytes ?? 0);
+				const limitBytes = getUserStorageLimit(u.role, u.subscriptionStatus ?? false);
+				const fileCount = Number(quota?.fileCount ?? 0);
+				const percentUsed = limitBytes
+					? Math.min(100, Math.round((usedBytes / limitBytes) * 100))
+					: 0;
+				const planLabel =
+					u.role === "admin" || u.role === "superAdmin" ? "Admin" :
+					u.role === "moderator" ? "Moderator" :
+					u.subscriptionStatus ? "Pro" : "Free";
+				return { id: u.id, name: u.name, email: u.email, image: u.image, role: u.role, usedBytes, limitBytes, fileCount, percentUsed, planLabel };
+			});
 		});
 	});

@@ -1,8 +1,10 @@
 /**
  * Billing Plans Configuration
  *
- * Code-based plan definitions that integrate with Better Auth plugins.
- * Plans are defined here and mapped to provider-specific product/price IDs.
+ * Blog-specific plans that map to Stripe price IDs.
+ * Role plans (author, author_premium) grant writing access on the main blog.
+ * Site plans (site_basic, site_pro) grant headless CMS API access — they stack
+ * independently on top of any role.
  */
 
 import { env } from "@/env/server";
@@ -11,28 +13,28 @@ export type BillingInterval = "month" | "year";
 export type BillingProvider = "stripe" | "polar" | "none";
 
 export interface PlanLimits {
-  /** Maximum AI messages per month (null = unlimited) */
-  aiMessagesPerMonth: number | null;
-  /** Maximum file storage in bytes (null = unlimited) */
-  storageBytes: number | null;
-  /** Maximum team members (null = unlimited) */
-  teamMembers: number | null;
-  /** Access to priority support */
+  /** Can write posts on the main blog */
+  canWriteMainBlog: boolean;
+  /** Verified badge shown on author profile */
+  isVerified: boolean;
+  /** Number of sites allowed (0 = none) */
+  sitesAllowed: number;
+  /** API keys per site */
+  apiKeysPerSite: number;
+  /** Priority support */
   prioritySupport: boolean;
-  /** Access to API */
-  apiAccess: boolean;
-  /** Custom branding */
-  customBranding: boolean;
+  /** Max file storage in bytes (null = unlimited) */
+  storageBytes: number | null;
 }
 
 export interface Plan {
-  /** Internal plan identifier */
+  /** Internal plan identifier — matches user.plan in DB */
   id: string;
   /** Display name */
   name: string;
   /** Short description */
   description: string;
-  /** Feature list for display */
+  /** Feature list for pricing page */
   features: string[];
   /** Monthly price in cents (0 for free) */
   priceMonthly: number;
@@ -40,7 +42,7 @@ export interface Plan {
   priceYearly: number;
   /** Currency code */
   currency: string;
-  /** Plan limits and quotas */
+  /** Plan limits and capabilities */
   limits: PlanLimits;
   /** Trial period in days (0 = no trial) */
   trialDays: number;
@@ -57,213 +59,191 @@ export interface Plan {
 export const PLANS: Plan[] = [
   {
     id: "free",
-    name: "Free",
-    description: "Get started with basic features",
+    name: "Reader",
+    description: "Read, comment, and follow your favourite authors",
     features: [
-      "5 AI messages per day",
-      "100MB storage",
-      "1 team member",
-      "Community support",
+      "Read all public posts",
+      "Leave comments",
+      "Follow authors",
+      "Bookmark posts",
     ],
     priceMonthly: 0,
     priceYearly: 0,
     currency: "usd",
     limits: {
-      aiMessagesPerMonth: 150, // ~5/day
-      storageBytes: 100 * 1024 * 1024, // 100MB
-      teamMembers: 1,
+      canWriteMainBlog: false,
+      isVerified: false,
+      sitesAllowed: 0,
+      apiKeysPerSite: 0,
       prioritySupport: false,
-      apiAccess: false,
-      customBranding: false,
+      storageBytes: null,
     },
     trialDays: 0,
     isPopular: false,
     sortOrder: 0,
   },
   {
-    id: "pro",
-    name: "Pro",
-    description: "For professionals and small teams",
+    id: "author",
+    name: "Author",
+    description: "Publish your own posts on the main blog",
     features: [
-      "Unlimited AI messages",
-      "10GB storage",
-      "5 team members",
-      "Priority support",
-      "API access",
+      "Write & publish posts",
+      "Author profile page",
+      "Post analytics",
+      "Scheduled publishing",
+      "Community support",
     ],
-    priceMonthly: 1900, // $19/month
-    priceYearly: 19000, // $190/year (~17% discount)
+    priceMonthly: 500,   // $5/mo
+    priceYearly: 5000,   // $50/yr
     currency: "usd",
     limits: {
-      aiMessagesPerMonth: null, // unlimited
-      storageBytes: 10 * 1024 * 1024 * 1024, // 10GB
-      teamMembers: 5,
-      prioritySupport: true,
-      apiAccess: true,
-      customBranding: false,
+      canWriteMainBlog: true,
+      isVerified: false,
+      sitesAllowed: 0,
+      apiKeysPerSite: 0,
+      prioritySupport: false,
+      storageBytes: 2 * 1024 * 1024 * 1024, // 2 GB
     },
-    trialDays: 14,
-    isPopular: true,
+    trialDays: 0,
+    isPopular: false,
     sortOrder: 1,
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
-    description: "For large organizations",
+    id: "author_premium",
+    name: "Author Premium",
+    description: "Everything in Author plus a verified badge and featured placement",
     features: [
-      "Everything in Pro",
-      "Unlimited storage",
-      "Unlimited team members",
-      "Custom branding",
-      "Dedicated support",
-      "SSO & advanced security",
+      "Everything in Author",
+      "Verified badge",
+      "Featured placement",
+      "Priority support",
+      "5 GB storage",
     ],
-    priceMonthly: 9900, // $99/month
-    priceYearly: 99000, // $990/year (~17% discount)
+    priceMonthly: 1000,   // $10/mo
+    priceYearly: 10000,   // $100/yr
     currency: "usd",
     limits: {
-      aiMessagesPerMonth: null,
-      storageBytes: null, // unlimited
-      teamMembers: null, // unlimited
+      canWriteMainBlog: true,
+      isVerified: true,
+      sitesAllowed: 0,
+      apiKeysPerSite: 0,
       prioritySupport: true,
-      apiAccess: true,
-      customBranding: true,
+      storageBytes: 5 * 1024 * 1024 * 1024, // 5 GB
     },
-    trialDays: 14,
-    isPopular: false,
+    trialDays: 0,
+    isPopular: true,
     sortOrder: 2,
+  },
+  {
+    id: "site_basic",
+    name: "Site Basic",
+    description: "Power one external website with headless blog content",
+    features: [
+      "1 site",
+      "2 API keys per site",
+      "Full REST API access",
+      "Site dashboard",
+      "Webhook support",
+      "Community support",
+    ],
+    priceMonthly: 1000,   // $10/mo
+    priceYearly: 10000,   // $100/yr
+    currency: "usd",
+    limits: {
+      canWriteMainBlog: false,
+      isVerified: false,
+      sitesAllowed: 1,
+      apiKeysPerSite: 2,
+      prioritySupport: false,
+      storageBytes: null,
+    },
+    trialDays: 0,
+    isPopular: false,
+    sortOrder: 3,
+  },
+  {
+    id: "site_pro",
+    name: "Site Pro",
+    description: "Run up to 5 sites with priority support",
+    features: [
+      "5 sites",
+      "10 API keys per site",
+      "Full REST API access",
+      "Site dashboard",
+      "Webhook support",
+      "Priority support",
+    ],
+    priceMonthly: 3000,   // $30/mo
+    priceYearly: 30000,   // $300/yr
+    currency: "usd",
+    limits: {
+      canWriteMainBlog: false,
+      isVerified: false,
+      sitesAllowed: 5,
+      apiKeysPerSite: 10,
+      prioritySupport: true,
+      storageBytes: null,
+    },
+    trialDays: 0,
+    isPopular: false,
+    sortOrder: 4,
   },
 ];
 
 // =============================================================================
-// Helper Functions
+// Helpers
 // =============================================================================
 
-/**
- * Get the active billing provider from environment
- */
 export function getBillingProvider(): BillingProvider {
-  return env.BILLING_PROVIDER;
+  return env.BILLING_PROVIDER as BillingProvider;
 }
 
-/**
- * Check if billing is enabled
- */
-export function isBillingEnabled(): boolean {
-  return env.BILLING_PROVIDER !== "none";
-}
-
-/**
- * Check if Stripe is the active provider
- */
 export function isStripeEnabled(): boolean {
-  return env.BILLING_PROVIDER === "stripe" && !!env.STRIPE_SECRET_KEY;
+  return getBillingProvider() === "stripe" && !!env.STRIPE_SECRET_KEY;
 }
 
-/**
- * Check if Polar is the active provider
- */
 export function isPolarEnabled(): boolean {
-  return env.BILLING_PROVIDER === "polar" && !!env.POLAR_ACCESS_TOKEN;
+  return getBillingProvider() === "polar" && !!env.POLAR_ACCESS_TOKEN;
 }
 
-/**
- * Get a plan by its internal ID
- */
-export function getPlan(planId: string): Plan | undefined {
-  return PLANS.find((p) => p.id === planId);
+export function getPlan(id: string): Plan | undefined {
+  return PLANS.find((p) => p.id === id);
 }
 
-/**
- * Get plan limits
- */
-export function getPlanLimits(planId: string): PlanLimits | undefined {
-  return getPlan(planId)?.limits;
-}
-
-/**
- * Get all active plans for display (sorted)
- */
 export function getActivePlans(): Plan[] {
-  return [...PLANS].sort((a, b) => a.sortOrder - b.sortOrder);
+  return PLANS.filter((p) => p.priceMonthly > 0);
 }
 
-/**
- * Check if a plan is free
- */
-export function isFreePlan(planId: string): boolean {
-  const plan = getPlan(planId);
-  return plan?.priceMonthly === 0;
-}
-
-/**
- * Get the default plan ID (free plan)
- */
-export function getDefaultPlanId(): string {
-  return "free";
-}
-
-/**
- * Get Stripe price ID for a plan
- */
-export function getStripePriceId(planId: string, interval: BillingInterval): string | undefined {
-  if (planId === "pro") {
-    return interval === "month"
-      ? env.STRIPE_PRO_MONTHLY_PRICE_ID
-      : env.STRIPE_PRO_YEARLY_PRICE_ID;
-  }
-  if (planId === "enterprise") {
-    return interval === "month"
-      ? env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID
-      : env.STRIPE_ENTERPRISE_YEARLY_PRICE_ID;
-  }
-  return undefined;
-}
-
-/**
- * Get Polar product ID for a plan
- */
-export function getPolarProductId(planId: string): string | undefined {
-  if (planId === "pro") {
-    return env.POLAR_PRO_PRODUCT_ID;
-  }
-  if (planId === "enterprise") {
-    return env.POLAR_ENTERPRISE_PRODUCT_ID;
-  }
-  return undefined;
-}
-
-/**
- * Format price for display
- */
-export function formatPrice(amountCents: number, currency: string = "usd"): string {
+export function formatPrice(cents: number, currency = "usd"): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: currency.toUpperCase(),
-  }).format(amountCents / 100);
+    minimumFractionDigits: 0,
+  }).format(cents / 100);
+}
+
+/** Map plan ID + interval to a Stripe price ID from env vars */
+export function getStripePriceId(
+  planId: string,
+  interval: BillingInterval
+): string | undefined {
+  const suffix = interval === "month" ? "MONTHLY" : "YEARLY";
+  const key = `STRIPE_${planId.toUpperCase()}_${suffix}_PRICE_ID` as keyof typeof env;
+  return env[key] as string | undefined;
 }
 
 /**
- * Get the Better Auth Stripe plugin plan configuration
+ * Determine what role a plan grants.
+ * Returns null if the plan doesn't change the role.
  */
-export function getStripePluginPlans() {
-  return PLANS.filter(p => p.priceMonthly > 0).map(plan => {
-    // Convert PlanLimits to Record<string, unknown> for Better Auth compatibility
-    const limitsRecord: Record<string, unknown> = {
-      aiMessagesPerMonth: plan.limits.aiMessagesPerMonth,
-      storageBytes: plan.limits.storageBytes,
-      teamMembers: plan.limits.teamMembers,
-      prioritySupport: plan.limits.prioritySupport,
-      apiAccess: plan.limits.apiAccess,
-      customBranding: plan.limits.customBranding,
-    };
+export function getPlanRole(planId: string): "author" | null {
+  if (planId === "author" || planId === "author_premium") return "author";
+  return null;
+}
 
-    return {
-      name: plan.id,
-      priceId: getStripePriceId(plan.id, "month") || "",
-      annualDiscountPriceId: getStripePriceId(plan.id, "year"),
-      limits: limitsRecord,
-      freeTrial: plan.trialDays > 0 ? { days: plan.trialDays } : undefined,
-    };
-  });
+/**
+ * Determine how many sites a plan grants.
+ */
+export function getPlanSitesLimit(planId: string): number {
+  return getPlan(planId)?.limits.sitesAllowed ?? 0;
 }

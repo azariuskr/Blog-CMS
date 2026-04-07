@@ -1,18 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { PageContainer } from "@/components/admin/app-layout";
-import { AdminStorageView } from "@/components/admin/storage/admin-storage-view";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { ROUTES } from "@/constants";
 
 export const Route = createFileRoute("/(authenticated)/admin/blog/media")({
-	component: BlogMediaPage,
+	beforeLoad: () => {
+		throw redirect({ to: ROUTES.DASHBOARD_ASSETS as string, replace: true });
+	},
+	component: () => null,
 });
-
-function BlogMediaPage() {
-	return (
-		<PageContainer
-			title="Media Library"
-			description="Upload and manage images and files for your blog posts."
-		>
-			<AdminStorageView />
-		</PageContainer>
-	);
-}

@@ -35,6 +35,7 @@ List published posts scoped to your API key's site.
 | `category` | string | — | Filter by category slug |
 | `tag` | string | — | Filter by tag slug |
 | `q` | string | — | Full-text search |
+
 | `fields` | string | — | Comma-separated sparse fieldset (e.g. `title,slug,excerpt`) |
 
 **Response:**

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import {
 	type ColumnFiltersState,
 	createColumnHelper,
@@ -32,9 +32,17 @@ import {
 	useDeleteComment,
 	useSpamComment,
 } from "@/lib/blog/queries";
+import { ROLES, ROUTES } from "@/constants";
 
-export const Route = createFileRoute("/(authenticated)/admin/blog/comments")({
-	component: AdminCommentsPage,
+export const Route = createFileRoute("/(authenticated)/dashboard/comments")({
+	beforeLoad: ({ context }) => {
+		const role = context.user?.user?.role;
+		const allowed = [ROLES.AUTHOR, ROLES.MODERATOR, ROLES.ADMIN, ROLES.SUPER_ADMIN];
+		if (!role || !allowed.includes(role as any)) {
+			throw redirect({ to: ROUTES.DASHBOARD as string, replace: true });
+		}
+	},
+	component: DashboardCommentsPage,
 });
 
 type CommentStatus = "pending" | "approved" | "spam";
@@ -69,7 +77,7 @@ function formatDate(value: string | Date | null | undefined) {
 
 const columnHelper = createColumnHelper<CommentRow>();
 
-function AdminCommentsPage() {
+function DashboardCommentsPage() {
 	const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -290,7 +298,7 @@ function AdminCommentsPage() {
 	);
 
 	return (
-		<PageContainer title="Comments" description="Review, approve, or remove reader comments.">
+		<PageContainer title="Comments" description="Approve or remove comments on your posts.">
 			{/* Toolbar row */}
 			<div className="flex items-center justify-between gap-3">
 				<DataTableToolbar

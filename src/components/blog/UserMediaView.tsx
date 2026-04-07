@@ -88,7 +88,7 @@ export function UserMediaView() {
 	const queryClient = useQueryClient();
 	const quotaQuery = useMyQuota();
 	const filesQuery = useFilesPaginated({ page, limit: 20 });
-	const deleteAction = useAction($deleteFile);
+	const deleteAction = useAction(async (vars: { fileId: string }) => $deleteFile({ data: vars }));
 
 	const quota = quotaQuery.data?.ok ? quotaQuery.data.data : null;
 	const filesData = filesQuery.data?.ok ? filesQuery.data.data : null;
@@ -102,7 +102,7 @@ export function UserMediaView() {
 	}
 
 	async function handleDelete(fileId: string) {
-		const result = await deleteAction.execute({ fileId });
+		const result = await deleteAction.mutateAsync({ fileId });
 		if (result?.ok) {
 			toast.success("File deleted");
 			queryClient.invalidateQueries({ queryKey: ["files"] });
@@ -147,7 +147,7 @@ export function UserMediaView() {
 				<div className="rounded-xl border border-[var(--bg-prussian-blue)] bg-[var(--bg-oxford-blue)] p-5">
 					<MultiFileUpload
 						category="media"
-						onUploadComplete={handleUploadComplete}
+						onUploadSuccess={() => handleUploadComplete()}
 					/>
 				</div>
 			)}

@@ -9,6 +9,7 @@ const handler = serve({
   client: inngest,
   functions: inngestFunctions,
   signingKey: env.INNGEST_SIGNING_KEY,
+  serveHost: env.INNGEST_APP_URL,
 });
 
 export const Route = createFileRoute("/api/inngest/inngest")({

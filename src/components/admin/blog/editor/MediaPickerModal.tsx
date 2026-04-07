@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { Image, Search, X, Loader2, Check } from "lucide-react";
-import { useAdminFiles } from "@/lib/storage/queries";
-import { STORAGE_API } from "@/constants";
-import { env } from "@/env/client";
-import { withBasePath } from "@/lib/url/with-base-path";
+import { useFilesPaginated } from "@/lib/storage/queries";
 import { formatFileSize } from "@/lib/storage/utils";
 
 interface MediaPickerModalProps {
@@ -16,34 +13,16 @@ export function MediaPickerModal({ onSelect, onClose }: MediaPickerModalProps) {
 	const [searchInput, setSearchInput] = useState("");
 	const [selected, setSelected] = useState<string | null>(null);
 
-	const filesQuery = useAdminFiles({
-		page: 1,
-		limit: 50,
-		category: "media",
-		search: search || undefined,
-	});
+	const filesQuery = useFilesPaginated({ page: 1, limit: 50 });
 
 	const files = filesQuery.data?.ok
-		? (filesQuery.data.data.items ?? []).filter((f) =>
-				f.mimeType?.startsWith("image/"),
+		? (filesQuery.data.data.items ?? []).filter(
+				(f) => f.mimeType?.startsWith("image/") &&
+					(!search || f.originalName?.toLowerCase().includes(search.toLowerCase())),
 			)
 		: [];
 
-	function getFileUrl(f: { storageUrl?: string | null; storagePath?: string }) {
-		if (f.storageUrl) return f.storageUrl;
-		if (f.storagePath) {
-			const path = withBasePath(
-				env.VITE_BASE_URL,
-				`${STORAGE_API.FILES}/${f.storagePath}`,
-			);
-			return path.startsWith("http")
-				? path
-				: `${window.location.origin}${path}`;
-		}
-		return null;
-	}
-
-	function handleConfirm() {
+function handleConfirm() {
 		if (selected) {
 			onSelect(selected);
 			onClose();
@@ -102,7 +81,7 @@ export function MediaPickerModal({ onSelect, onClose }: MediaPickerModalProps) {
 					) : (
 						<div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
 							{files.map((f) => {
-								const url = getFileUrl(f);
+								const url = f.storageUrl ?? null;
 								if (!url) return null;
 								const isSelected = selected === url;
 								return (

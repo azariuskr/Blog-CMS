@@ -4,9 +4,9 @@ import { useSession } from "@/lib/auth/auth-client";
 import { UpgradeButton } from "@/components/billing/upgrade-button";
 import { PLANS, formatPrice } from "@/lib/billing/plans";
 
-const proPlan = PLANS.find((p) => p.id === "pro");
-const proPrice = proPlan ? formatPrice(proPlan.priceMonthly) : "$19";
-const trialDays = proPlan?.trialDays ?? 14;
+const authorPlan = PLANS.find((p) => p.id === "author");
+const authorPrice = authorPlan ? formatPrice(authorPlan.priceMonthly) : "$5";
+const trialDays = authorPlan?.trialDays ?? 0;
 
 export function PaywallCard() {
 	const { data: session } = useSession();
@@ -39,7 +39,7 @@ export function PaywallCard() {
 				{/* Price + trial */}
 				<div className="flex items-center justify-center gap-3 mb-4">
 					<span className="text-[var(--text-wild-blue-yonder)] text-sm">
-						<span className="text-white font-semibold">{proPrice}/month</span> · Cancel anytime
+						<span className="text-white font-semibold">{authorPrice}/month</span> · Cancel anytime
 					</span>
 					{trialDays > 0 && (
 						<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--bg-carolina-blue)]/20 text-[var(--text-carolina-blue)] border border-[var(--bg-carolina-blue)]/30">
@@ -55,7 +55,7 @@ export function PaywallCard() {
 				{/* CTA */}
 				<div className="flex flex-col sm:flex-row items-center justify-center gap-3">
 					<UpgradeButton
-						planId="pro"
+						planId="author"
 						interval="month"
 						returnTo={returnTo}
 						className="px-8 py-2.5 rounded-xl text-sm font-semibold"

@@ -40,11 +40,11 @@ function NewApiKeyPage() {
 	const [copied, setCopied] = useState(false);
 
 	const sitesQuery = useQuery({
-		queryKey: QUERY_KEYS.BLOG.SITES.LIST,
+		queryKey: QUERY_KEYS.BLOG.SITES.BASE,
 		queryFn: () => $listSites(),
 	});
 
-	const sites = (sitesQuery.data as any)?.ok ? ((sitesQuery.data as any).data as any)?.items ?? [] : [];
+	const sites = (sitesQuery.data as any)?.ok ? (sitesQuery.data as any).data ?? [] : [];
 
 	const createMutation = useMutation({
 		mutationFn: (input: { name: string; siteId: string; rateLimitRpm: number; allowedOrigins?: string[] }) =>

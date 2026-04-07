@@ -30,6 +30,12 @@ export const user = pgTable("user", {
   polarCustomerId: text("polar_customer_id"),
   // Subscription status (synced via billing webhooks/events)
   subscriptionStatus: boolean("subscription_status").notNull().default(false),
+
+  // Plan & capabilities (set via billing webhooks)
+  plan: text("plan").notNull().default("free"),
+  planExpiresAt: timestamp("plan_expires_at"),
+  planSitesLimit: integer("plan_sites_limit").notNull().default(0),
+  isVerified: boolean("is_verified").notNull().default(false),
 });
 
 export const session = pgTable(

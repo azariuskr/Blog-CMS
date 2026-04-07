@@ -146,7 +146,7 @@ export function AppSidebarUser() {
 									<DropdownMenuGroup>
 										{showUpgrade && (
 											<DropdownMenuItem
-												onClick={() => upgrade("pro", "month")}
+												onClick={() => upgrade("author", "month")}
 												disabled={isUpgrading}
 											>
 												<Sparkles className="mr-2 size-4" />

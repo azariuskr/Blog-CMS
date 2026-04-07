@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageContainer } from "@/components/admin/app-layout";
-import { AdminStorageView } from "@/components/admin/storage/admin-storage-view";
+import { MediaLibraryView } from "@/components/admin/storage/media-library-view";
 
 export const Route = createFileRoute("/(authenticated)/admin/storage")({
 	component: StoragePage,
@@ -9,7 +9,7 @@ export const Route = createFileRoute("/(authenticated)/admin/storage")({
 function StoragePage() {
 	return (
 		<PageContainer title="Storage" description="Manage files and assets across all categories">
-			<AdminStorageView />
+			<MediaLibraryView mode="admin" />
 		</PageContainer>
 	);
 }

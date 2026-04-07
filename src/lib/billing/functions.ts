@@ -192,7 +192,7 @@ export const $getSubscription = createServerFn({ method: "GET" }).handler(async 
       return {
         provider: "stripe" as const,
         hasSubscription: true,
-        plan: matchedPlan || getPlan("pro"),
+        plan: matchedPlan || getPlan("author"),
         subscription: {
           id: sub.id,
           status: sub.status,
@@ -248,7 +248,7 @@ export const $getSubscription = createServerFn({ method: "GET" }).handler(async 
       return {
         provider: "polar" as const,
         hasSubscription: true,
-        plan: matchedPlan || getPlan("pro"),
+        plan: matchedPlan || getPlan("author"),
         subscription: {
           id: activeSub.id,
           status: activeSub.status,

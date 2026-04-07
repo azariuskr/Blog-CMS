@@ -3,8 +3,14 @@ import { ROUTES } from "@/constants";
 
 export const Route = createFileRoute("/(authenticated)/dashboard")({
 	beforeLoad: ({ context, location }) => {
-		// Allow become-author for all roles — even admins may want to set up an author profile
-		if (location.pathname === "/dashboard/become-author") return;
+		// Allow these routes for all roles, including admins
+		const adminPassthrough = [
+			"/dashboard/become-author",
+			"/dashboard/comments",
+			"/dashboard/calendar",
+			"/dashboard/assets",
+		];
+		if (adminPassthrough.includes(location.pathname)) return;
 
 		const role = context.user?.user?.role;
 		if (role === "admin" || role === "superAdmin") {

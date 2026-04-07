@@ -36,6 +36,7 @@ import {
 	$upsertAuthorProfile,
 	$subscribeNewsletter,
 	$getBlogStats,
+	$getAuthorStats,
 	$createPostVersion,
 	$listPostVersions,
 	$getPostVersion,
@@ -242,7 +243,7 @@ export const commentsQueryOptions = (
 		queryKey: params.postId
 			? QUERY_KEYS.BLOG.COMMENTS.BY_POST(params.postId)
 			: ["blog", "comments", "admin", params],
-		queryFn: () => $listComments({ data: { ...params, limit: 50 } }),
+		queryFn: () => $listComments({ data: { limit: 25, ...params } }),
 	});
 
 export const authorProfileQueryOptions = (username: string) =>
@@ -534,6 +535,17 @@ export const blogStatsQueryOptions = () =>
 
 export function useBlogStats() {
 	return useQuery(blogStatsQueryOptions());
+}
+
+export const authorStatsQueryOptions = () =>
+	queryOptions({
+		queryKey: ["blog", "author-stats"],
+		queryFn: () => $getAuthorStats(),
+		staleTime: 1000 * 60 * 5,
+	});
+
+export function useAuthorStats() {
+	return useQuery(authorStatsQueryOptions());
 }
 
 export const postVersionsQueryOptions = (postId: string) =>

@@ -11,7 +11,10 @@
 import Stripe from "stripe";
 import { stripe as stripePlugin } from "@better-auth/stripe";
 import { env } from "@/env/server";
-import { PLANS, getStripePriceId, isStripeEnabled } from "./plans";
+import { PLANS, getStripePriceId, isStripeEnabled, getPlanRole, getPlanSitesLimit } from "./plans";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { user } from "@/lib/db/schema";
 import { inngest } from "@/lib/inngest/client";
 
 /**
@@ -71,12 +74,12 @@ export function getStripePlugin() {
 
         // Convert PlanLimits to Record<string, unknown> for Better Auth compatibility
         const limitsRecord: Record<string, unknown> = {
-          aiMessagesPerMonth: plan.limits.aiMessagesPerMonth,
-          storageBytes: plan.limits.storageBytes,
-          teamMembers: plan.limits.teamMembers,
+          canWriteMainBlog: plan.limits.canWriteMainBlog,
+          isVerified: plan.limits.isVerified,
+          sitesAllowed: plan.limits.sitesAllowed,
+          apiKeysPerSite: plan.limits.apiKeysPerSite,
           prioritySupport: plan.limits.prioritySupport,
-          apiAccess: plan.limits.apiAccess,
-          customBranding: plan.limits.customBranding,
+          storageBytes: plan.limits.storageBytes,
         };
 
         return {
@@ -115,14 +118,29 @@ export function getStripePlugin() {
 
       // Subscription lifecycle hooks
       onSubscriptionComplete: async ({ subscription, plan }) => {
-        console.log(`[Billing] Subscription ${subscription.id} completed for plan ${plan.name}`);
+        const planId = plan.name; // plan.name = our plan id (e.g. "author")
+        console.log(`[Billing] Subscription ${subscription.id} completed for plan ${planId}`);
+
+        // Sync plan, role, and site limit to the user record
+        const grantedRole = getPlanRole(planId);
+        const sitesLimit = getPlanSitesLimit(planId);
+
+        const updateFields: Record<string, unknown> = { plan: planId };
+        if (grantedRole) updateFields.role = grantedRole;
+        if (sitesLimit > 0) updateFields.planSitesLimit = sitesLimit;
+
+        await db
+          .update(user)
+          .set(updateFields)
+          .where(eq(user.id, subscription.referenceId))
+          .catch((err) => console.error("[Billing] Failed to update user plan:", err));
 
         await inngest.send({
           name: "billing/subscription.activated",
           data: {
             subscriptionId: subscription.id,
             referenceId: subscription.referenceId,
-            plan: plan.name,
+            plan: planId,
             stripeSubscriptionId: subscription.stripeSubscriptionId,
           },
         }).catch(err => console.error("[Billing] Failed to send subscription.activated event:", err));
@@ -148,6 +166,13 @@ export function getStripePlugin() {
       onSubscriptionCancel: async ({ subscription, cancellationDetails }) => {
         console.log(`[Billing] Subscription ${subscription.id} canceled`);
 
+        // Downgrade user to free plan and reader role
+        await db
+          .update(user)
+          .set({ plan: "free", role: "user", planSitesLimit: 0, isVerified: false })
+          .where(eq(user.id, subscription.referenceId))
+          .catch((err) => console.error("[Billing] Failed to downgrade user on cancel:", err));
+
         await inngest.send({
           name: "billing/subscription.canceled",
           data: {
@@ -160,6 +185,13 @@ export function getStripePlugin() {
 
       onSubscriptionDeleted: async ({ subscription }) => {
         console.log(`[Billing] Subscription ${subscription.id} deleted`);
+
+        // Downgrade user to free plan
+        await db
+          .update(user)
+          .set({ plan: "free", role: "user", planSitesLimit: 0, isVerified: false })
+          .where(eq(user.id, subscription.referenceId))
+          .catch((err) => console.error("[Billing] Failed to downgrade user on delete:", err));
 
         await inngest.send({
           name: "billing/subscription.deleted",

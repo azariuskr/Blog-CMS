@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Key, Plus, MoreHorizontal, ShieldOff, ExternalLink } from "lucide-react";
+import { Key, MoreHorizontal, ShieldOff, ExternalLink, Globe, ArrowRight, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Table,
@@ -17,6 +17,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES, QUERY_KEYS } from "@/constants";
 import { $listApiKeys, $revokeApiKey } from "@/lib/api-keys/functions";
 import { toast } from "sonner";
@@ -30,7 +31,7 @@ function ApiKeysListPage() {
 
 	const { data, isLoading } = useQuery({
 		queryKey: QUERY_KEYS.BLOG.API_KEYS.LIST,
-		queryFn: () => $listApiKeys({ data: { page: 1, limit: 50 } }),
+		queryFn: () => $listApiKeys({ data: { page: 1, limit: 100 } }),
 	});
 
 	const revokeMutation = useMutation({
@@ -55,16 +56,41 @@ function ApiKeysListPage() {
 				<div>
 					<h1 className="text-2xl font-bold">API Integrations</h1>
 					<p className="text-muted-foreground text-sm mt-1">
-						Manage API keys for external applications to consume your blog content.
+						Overview of all API keys across all sites. Manage keys from the per-site dashboard.
 					</p>
 				</div>
-				<Link to={ROUTES.ADMIN.API.NEW as string}>
-					<Button>
-						<Plus className="w-4 h-4 mr-2" />
-						New API Key
-					</Button>
-				</Link>
+				<div className="flex gap-2">
+					<Link to={ROUTES.DASHBOARD_SITES as string}>
+						<Button variant="outline">
+							<Globe className="w-4 h-4 mr-2" />
+							My Sites
+						</Button>
+					</Link>
+					<Link to={ROUTES.ADMIN.BLOG.SITES as string}>
+						<Button>
+							<Key className="w-4 h-4 mr-2" />
+							Manage Sites
+							<ArrowRight className="w-4 h-4 ml-2" />
+						</Button>
+					</Link>
+				</div>
 			</div>
+
+			{/* Guidance banner */}
+			<Card className="border-blue-500/30 bg-blue-500/5">
+				<CardContent className="pt-4 pb-3">
+					<div className="flex gap-2 text-sm text-blue-700 dark:text-blue-400">
+						<Info className="h-4 w-4 shrink-0 mt-0.5" />
+						<span>
+							API keys are managed per-site. To create, rotate, copy, or revoke keys — go to{" "}
+							<Link to={ROUTES.DASHBOARD_SITES as string} className="font-medium underline">My Sites</Link>{" "}
+							and open the site you want to manage. Admins can also{" "}
+							<Link to={ROUTES.ADMIN.BLOG.SITES as string} className="font-medium underline">gift sites</Link>{" "}
+							to users.
+						</span>
+					</div>
+				</CardContent>
+			</Card>
 
 			{isLoading ? (
 				<div className="text-muted-foreground animate-pulse py-10 text-center">Loading...</div>
@@ -72,7 +98,12 @@ function ApiKeysListPage() {
 				<div className="text-center py-20 text-muted-foreground">
 					<Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
 					<p>No API keys yet.</p>
-					<p className="text-sm mt-1">Create one to let external apps access your blog content.</p>
+					<p className="text-sm mt-1">Create a site and generate an API key to get started.</p>
+					<Link to={ROUTES.DASHBOARD_SITES as string} className="mt-4 inline-block">
+						<Button variant="outline">
+							<Globe className="w-4 h-4 mr-2" /> Go to My Sites
+						</Button>
+					</Link>
 				</div>
 			) : (
 				<Table>
@@ -96,7 +127,19 @@ function ApiKeysListPage() {
 									<TableCell>
 										<code className="text-xs bg-muted px-1.5 py-0.5 rounded">{key.keyPrefix}...</code>
 									</TableCell>
-									<TableCell>{key.siteName}</TableCell>
+									<TableCell>
+										{key.siteId ? (
+											<Link
+												to={`/dashboard/sites/${key.siteId}` as string}
+												className="text-sm hover:underline text-primary flex items-center gap-1"
+											>
+												<Globe className="h-3 w-3" />
+												{key.siteName ?? key.siteId}
+											</Link>
+										) : (
+											<span className="text-muted-foreground text-sm">—</span>
+										)}
+									</TableCell>
 									<TableCell>{key.rateLimitRpm} req/min</TableCell>
 									<TableCell className="text-sm text-muted-foreground">
 										{key.lastUsedAt
@@ -126,12 +169,14 @@ function ApiKeysListPage() {
 												}
 											/>
 											<DropdownMenuContent align="end">
-												<DropdownMenuItem
-													render={<Link to={ROUTES.ADMIN.API.DETAIL(key.id) as string} />}
-												>
-													<ExternalLink className="w-4 h-4 mr-2" />
-													View Details
-												</DropdownMenuItem>
+												{key.siteId && (
+													<DropdownMenuItem
+														render={<Link to={`/dashboard/sites/${key.siteId}` as string} />}
+													>
+														<ExternalLink className="w-4 h-4 mr-2" />
+														Manage Site
+													</DropdownMenuItem>
+												)}
 												{status === "active" && (
 													<DropdownMenuItem
 														className="text-destructive"

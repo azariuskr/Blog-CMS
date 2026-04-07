@@ -555,7 +555,7 @@ export const routeConfig: Record<string, RouteConfig> = {
 		title: "Sites",
 		icon: Globe,
 		description: "Manage blog sites",
-		minRole: ROLES.SUPER_ADMIN,
+		minRole: ROLES.ADMIN,
 		noIndex: true,
 		showInNav: true,
 		parent: ROUTES.ADMIN.BLOG.BASE,

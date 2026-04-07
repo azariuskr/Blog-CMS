@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { Plus, FileText, Eye, Clock, BookOpen, User, ArrowRight, Edit, HardDrive, Feather, BookMarked, ListMusic, Compass } from "lucide-react";
 import { useSession } from "@/lib/auth/auth-client";
 import { useAdminPosts, useMyAuthorApplication, useMyReadingLists } from "@/lib/blog/queries";
@@ -12,13 +12,14 @@ export const Route = createFileRoute("/(authenticated)/dashboard/")({
 function DashboardRouter() {
 	const role = useRole();
 
-	// Admins and above go directly to the admin panel — no dashboard needed
-	if (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN || role === ROLES.MODERATOR) {
+	// Authors and above → unified admin dashboard
+	if (
+		role === ROLES.AUTHOR ||
+		role === ROLES.MODERATOR ||
+		role === ROLES.ADMIN ||
+		role === ROLES.SUPER_ADMIN
+	) {
 		return <AdminRedirect />;
-	}
-
-	if (role === ROLES.AUTHOR) {
-		return <AuthorDashboard />;
 	}
 
 	return <ReaderDashboard />;
@@ -29,11 +30,7 @@ function DashboardRouter() {
 // ---------------------------------------------------------------------------
 
 function AdminRedirect() {
-	// Use a useEffect-based redirect so it works inside the component tree
-	if (typeof window !== "undefined") {
-		window.location.replace(ROUTES.ADMIN.BLOG.BASE);
-	}
-	return null;
+	return <Navigate to={ROUTES.ADMIN.BASE as string} replace />;
 }
 
 // ---------------------------------------------------------------------------
@@ -50,6 +47,9 @@ function AuthorDashboard() {
 	const published = allPosts.filter((p: any) => p.status === "published");
 	const drafts = allPosts.filter((p: any) => p.status === "draft");
 	const inReview = allPosts.filter((p: any) => p.status === "review");
+
+	const applicationQuery = useMyAuthorApplication();
+	const authorProfile = applicationQuery.data?.ok ? (applicationQuery.data.data as any) : null;
 
 	function formatDate(val: string | Date | null | undefined) {
 		if (!val) return "—";
@@ -182,6 +182,59 @@ function AuthorDashboard() {
 					<p className="text-xs text-[var(--text-slate-gray)] text-center">
 						{drafts.length} draft{drafts.length > 1 ? "s" : ""} waiting to be finished
 					</p>
+				)}
+
+				{/* Author Profile Preview */}
+				{authorProfile && (
+					<div className="rounded-xl border border-[var(--bg-prussian-blue)] bg-[var(--bg-oxford-blue)] p-5">
+						<div className="flex items-start justify-between mb-4">
+							<h2 className="text-sm font-semibold text-[var(--text-alice-blue)]">Your Author Profile</h2>
+							<Link
+								to={ROUTES.ACCOUNT.BASE as string}
+								className="text-xs text-[var(--bg-carolina-blue)] hover:underline"
+							>
+								Edit Profile
+							</Link>
+						</div>
+						<div className="flex items-center gap-4">
+							<div className="h-12 w-12 rounded-full bg-[var(--bg-carolina-blue)]/10 border border-[var(--bg-carolina-blue)]/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+								{authorProfile.avatarUrl ? (
+									<img src={authorProfile.avatarUrl} alt={authorProfile.displayName ?? userName} className="w-full h-full object-cover" />
+								) : (
+									<User className="h-6 w-6 text-[var(--bg-carolina-blue)]" />
+								)}
+							</div>
+							<div className="flex-1 min-w-0">
+								<p className="text-sm font-semibold text-[var(--text-alice-blue)] truncate">
+									{authorProfile.displayName ?? userName}
+								</p>
+								{authorProfile.username && (
+									<Link
+										to={`/@${authorProfile.username}` as string}
+										target="_blank"
+										className="text-xs text-[var(--bg-carolina-blue)] hover:underline"
+									>
+										@{authorProfile.username}
+									</Link>
+								)}
+							</div>
+							<div className="flex gap-4 text-center shrink-0">
+								<div>
+									<p className="text-sm font-bold text-[var(--text-alice-blue)]">{published.length}</p>
+									<p className="text-[10px] text-[var(--text-slate-gray)]">Posts</p>
+								</div>
+								{authorProfile.followerCount !== undefined && (
+									<div>
+										<p className="text-sm font-bold text-[var(--text-alice-blue)]">{authorProfile.followerCount ?? 0}</p>
+										<p className="text-[10px] text-[var(--text-slate-gray)]">Followers</p>
+									</div>
+								)}
+							</div>
+						</div>
+						{authorProfile.bio && (
+							<p className="mt-3 text-xs text-[var(--text-slate-gray)] line-clamp-2">{authorProfile.bio}</p>
+						)}
+					</div>
 				)}
 			</div>
 		</div>

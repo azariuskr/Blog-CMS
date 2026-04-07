@@ -39,6 +39,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PageContainer } from "@/components/admin/app-layout";
+import { DataTableBulkActions, type BulkOperation } from "@/components/admin/data-table/bulk-actions";
 import { ROUTES } from "@/constants";
 import { useAdminPosts, useDeletePost, useTransitionPostStatus } from "@/lib/blog/queries";
 import { PremiumSwitch } from "@/components/admin/blog/PremiumSwitch";
@@ -49,27 +50,28 @@ export const Route = createFileRoute("/(authenticated)/admin/blog/posts/")({
 	component: AdminBlogPostsPage,
 });
 
-type PostStatus = "published" | "draft" | "review" | "archived";
+type PostStatus = "published" | "draft" | "review" | "archived" | "scheduled";
 
 const statusConfig: Record<PostStatus, { label: string; className: string }> = {
 	published: {
 		label: "Published",
-		className:
-			"bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400",
+		className: "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400",
 	},
 	draft: {
 		label: "Draft",
-		className:
-			"bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400",
+		className: "bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400",
 	},
 	review: {
 		label: "In Review",
-		className:
-			"bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400",
+		className: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400",
 	},
 	archived: {
 		label: "Archived",
 		className: "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400",
+	},
+	scheduled: {
+		label: "Scheduled",
+		className: "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400",
 	},
 };
 
@@ -344,8 +346,6 @@ function AdminBlogPostsPage() {
 		enableRowSelection: true,
 	});
 
-	const selectedCount = Object.keys(rowSelection).length;
-
 	const handleDelete = async (id: string, title: string) => {
 		if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
 		const result = await deletePost.mutateAsync(id);
@@ -356,29 +356,56 @@ function AdminBlogPostsPage() {
 		}
 	};
 
-	const handleBulkDelete = async () => {
-		const selectedRows = table.getSelectedRowModel().rows;
-		if (selectedRows.length === 0) return;
-		if (
-			!confirm(
-				`Delete ${selectedRows.length} post${selectedRows.length === 1 ? "" : "s"}? This cannot be undone.`,
-			)
-		)
-			return;
-
-		const results = await Promise.all(
-			selectedRows.map((row) => deletePost.mutateAsync(row.original.id)),
-		);
-		const failed = results.filter((r) => !r?.ok).length;
-		if (failed === 0) {
-			toast.success(
-				`Deleted ${selectedRows.length} post${selectedRows.length === 1 ? "" : "s"}.`,
-			);
-		} else {
-			toast.error(`${failed} post${failed === 1 ? "" : "s"} failed to delete.`);
-		}
-		setRowSelection({});
-	};
+	const bulkOperations = useMemo<BulkOperation<Post, { id: string }>[]>(
+		() => [
+			...(canPublish
+				? [
+						{
+							label: "Publish",
+							icon: CheckCircle,
+							variant: "outline" as const,
+							getItemData: (row: import("@tanstack/react-table").Row<Post>) => ({ id: row.original.id }),
+							execute: (vars: { id: string }) => transitionStatus.mutateAsync({ id: vars.id, to: "published" }),
+							onComplete: ({ successCount }: { successCount: number; failureCount: number }) =>
+								toast.success(`${successCount} post${successCount !== 1 ? "s" : ""} published`),
+						},
+						{
+							label: "Unpublish",
+							icon: RotateCcw,
+							variant: "outline" as const,
+							getItemData: (row: import("@tanstack/react-table").Row<Post>) => ({ id: row.original.id }),
+							execute: (vars: { id: string }) => transitionStatus.mutateAsync({ id: vars.id, to: "draft" }),
+							onComplete: ({ successCount }: { successCount: number; failureCount: number }) =>
+								toast.success(`${successCount} post${successCount !== 1 ? "s" : ""} moved to draft`),
+						},
+						{
+							label: "Archive",
+							icon: Archive,
+							variant: "outline" as const,
+							getItemData: (row: import("@tanstack/react-table").Row<Post>) => ({ id: row.original.id }),
+							execute: (vars: { id: string }) => transitionStatus.mutateAsync({ id: vars.id, to: "archived" }),
+							onComplete: ({ successCount }: { successCount: number; failureCount: number }) =>
+								toast.success(`${successCount} post${successCount !== 1 ? "s" : ""} archived`),
+						},
+					]
+				: []),
+			...(canDelete
+				? [
+						{
+							label: "Delete",
+							icon: Trash2,
+							variant: "destructive" as const,
+							requireConfirmation: true,
+							getItemData: (row: import("@tanstack/react-table").Row<Post>) => ({ id: row.original.id }),
+							execute: (vars: { id: string }) => deletePost.mutateAsync(vars.id),
+							onComplete: ({ successCount }: { successCount: number; failureCount: number }) =>
+								toast.success(`${successCount} post${successCount !== 1 ? "s" : ""} deleted`),
+						},
+					]
+				: []),
+		],
+		[canPublish, canDelete, transitionStatus, deletePost],
+	);
 
 	return (
 		<PageContainer
@@ -387,20 +414,7 @@ function AdminBlogPostsPage() {
 		>
 			{/* Toolbar */}
 			<div className="flex flex-wrap items-center gap-3 justify-between">
-				<div className="flex items-center gap-2 flex-1 max-w-sm">
-					{/* Bulk delete — shown only when rows selected and user can delete */}
-					{selectedCount > 0 && canDelete && (
-						<Button
-							variant="destructive"
-							size="sm"
-							onClick={handleBulkDelete}
-							disabled={deletePost.isPending}
-						>
-							<Trash2 className="mr-2 h-4 w-4" />
-							Delete {selectedCount}
-						</Button>
-					)}
-
+				<div className="flex items-center gap-2 flex-1 max-w-md">
 					<div className="relative flex-1">
 						<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 						<Input
@@ -416,19 +430,17 @@ function AdminBlogPostsPage() {
 								<Filter className="h-4 w-4 mr-2" />
 								{statusFilter === "all"
 									? "All Status"
-									: statusConfig[statusFilter].label}
+									: statusConfig[statusFilter as PostStatus]?.label ?? statusFilter}
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent>
-							{(
-								["all", "published", "draft", "review", "archived"] as const
-							).map((s) => (
+							{(["all", "published", "scheduled", "draft", "review", "archived"] as const).map((s) => (
 								<DropdownMenuItem
 									key={s}
-									onClick={() => setStatusFilter(s)}
+									onClick={() => setStatusFilter(s as PostStatus | "all")}
 									className={statusFilter === s ? "font-medium" : ""}
 								>
-									{s === "all" ? "All Status" : statusConfig[s].label}
+									{s === "all" ? "All Status" : statusConfig[s as PostStatus]?.label ?? s}
 								</DropdownMenuItem>
 							))}
 						</DropdownMenuContent>
@@ -566,6 +578,15 @@ function AdminBlogPostsPage() {
 					</div>
 				)}
 			</Card>
+
+			{bulkOperations.length > 0 && (
+				<DataTableBulkActions
+					table={table}
+					entityName="post"
+					operations={bulkOperations}
+					batchOptions={{ enabled: true, batchSize: 5, delayMs: 100 }}
+				/>
+			)}
 		</PageContainer>
 	);
 }

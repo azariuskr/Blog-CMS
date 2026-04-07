@@ -16,6 +16,12 @@ export const Route = createFileRoute(
 	component: PostEditorPage,
 });
 
+function toLocalDatetimeString(date: Date): string {
+	const offset = date.getTimezoneOffset();
+	const local = new Date(date.getTime() - offset * 60000);
+	return local.toISOString().slice(0, 16);
+}
+
 function slugify(str: string) {
 	return str
 		.toLowerCase()
@@ -89,7 +95,7 @@ function PostEditorPage() {
 			featuredImageUrl: post.featuredImageUrl ?? "",
 		});
 		setStatus((post.status as Status) ?? "draft");
-		setScheduledAt((post as any).scheduledAt ? new Date((post as any).scheduledAt).toISOString().slice(0, 16) : "");
+		setScheduledAt((post as any).scheduledAt ? toLocalDatetimeString(new Date((post as any).scheduledAt)) : "");
 		setIsPremium((post as any).isPremium ?? false);
 		setPreviewBlocks((post as any).previewBlocks ?? 3);
 

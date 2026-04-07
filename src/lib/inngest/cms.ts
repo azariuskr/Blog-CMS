@@ -137,7 +137,7 @@ export const newsletterConfirmFunction = inngest.createFunction(
  * Publishes all posts with status="scheduled" where scheduledAt <= now().
  */
 export const blogSchedulePublishFunction = inngest.createFunction(
-	{ id: "blog-schedule-publish" },
+	{ id: "blog-schedule-publish", retries: 3 },
 	{ cron: "* * * * *" },
 	async ({ step }) => {
 		const now = new Date();
@@ -145,20 +145,41 @@ export const blogSchedulePublishFunction = inngest.createFunction(
 		const scheduled = await step.run("find-scheduled-posts", async () => {
 			return db.query.posts.findMany({
 				where: and(eq(posts.status, "scheduled"), lte(posts.scheduledAt, now)),
-				columns: { id: true, title: true },
+				columns: { id: true, title: true, slug: true, authorId: true, siteId: true },
 			});
 		});
 
 		if (scheduled.length === 0) return { published: 0 };
 
-		await step.run("publish-scheduled-posts", async () => {
-			for (const post of scheduled) {
+		// Publish each post in its own step so failures are isolated and retried independently
+		for (const post of scheduled) {
+			await step.run(`publish-post-${post.id}`, async () => {
+				// Re-check status to be idempotent on retry
+				const current = await db.query.posts.findFirst({
+					where: and(eq(posts.id, post.id), eq(posts.status, "scheduled")),
+					columns: { id: true },
+				});
+				if (!current) return; // already published by a previous retry
+
 				await db
 					.update(posts)
 					.set({ status: "published", publishedAt: now, updatedAt: now })
-					.where(eq(posts.id, post.id));
-			}
-		});
+					.where(and(eq(posts.id, post.id), eq(posts.status, "scheduled")));
+			});
+
+			// Fire the same event that manual publishing uses — triggers git sync + webhooks
+			await step.run(`notify-published-${post.id}`, async () => {
+				await inngest.send({
+					name: "blog/post.published",
+					data: {
+						postId: post.id,
+						userId: post.authorId ?? "",
+						slug: post.slug ?? "",
+						siteId: post.siteId ?? undefined,
+					},
+				});
+			});
+		}
 
 		return { published: scheduled.length, postIds: scheduled.map((p) => p.id) };
 	},

@@ -4,7 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { STORAGE_PATHS, VALID_UPLOAD_PREFIXES } from "@/constants";
 import { auth } from "@/lib/auth/auth";
 import { db } from "@/lib/db";
-import { file, storageQuota, user as userTable } from "@/lib/db/schema";
+import { storageQuota, user as userTable } from "@/lib/db/schema";
 import { getStorage } from "@/lib/storage/client";
 import {
 	isAllowedImageSize,
@@ -159,45 +159,28 @@ export const Route = createFileRoute("/api/storage/upload")({
 				const finalSizeBytes = buffer.length;
 
 				// ---------------------------------------------------------------
-				// 8. Record file in DB + update quota (best-effort, non-blocking)
+				// 8. Update quota usage (best-effort, non-blocking)
+				//    File DB record is created by $completeFileUpload / $completeAvatarUpload
+				//    after the client confirms the upload. We only track quota here.
 				// ---------------------------------------------------------------
-				const originalName = uploadedFile.name || finalPath.split("/").pop() || finalPath;
-				db.insert(file)
+				db.insert(storageQuota)
 					.values({
-						userId: sessionUser.id,
-						filename: finalPath.split("/").pop() || finalPath,
-						originalName,
-						mimeType: finalMimeType,
-						sizeBytes: finalSizeBytes,
-						storagePath: finalPath,
-						storageUrl: getPublicUrl(finalPath),
-						isPublic: category === STORAGE_PATHS.MEDIA,
-						metadata: JSON.stringify({ category, uploadedAt: new Date().toISOString() }),
+						ownerType: "user",
+						ownerId: sessionUser.id,
+						usedBytes: finalSizeBytes,
+						limitBytes: limitBytes ?? 10 * 1024 * 1024 * 1024,
+						fileCount: 1,
 					})
-					.onConflictDoNothing()
-					.returning()
-					.then(() => {
-						// Update quota usage
-						return db
-							.insert(storageQuota)
-							.values({
-								ownerType: "user",
-								ownerId: sessionUser.id,
-								usedBytes: finalSizeBytes,
-								limitBytes: limitBytes ?? 10 * 1024 * 1024 * 1024,
-								fileCount: 1,
-							})
-							.onConflictDoUpdate({
-								target: [storageQuota.ownerType, storageQuota.ownerId],
-								set: {
-									usedBytes: sql`GREATEST(0, ${storageQuota.usedBytes} + ${finalSizeBytes})`,
-									fileCount: sql`GREATEST(0, ${storageQuota.fileCount} + 1)`,
-									limitBytes: limitBytes ?? sql`${storageQuota.limitBytes}`,
-									updatedAt: new Date(),
-								},
-							});
+					.onConflictDoUpdate({
+						target: [storageQuota.ownerType, storageQuota.ownerId],
+						set: {
+							usedBytes: sql`GREATEST(0, ${storageQuota.usedBytes} + ${finalSizeBytes})`,
+							fileCount: sql`GREATEST(0, ${storageQuota.fileCount} + 1)`,
+							limitBytes: limitBytes ?? sql`${storageQuota.limitBytes}`,
+							updatedAt: new Date(),
+						},
 					})
-					.catch((err) => console.error("[upload] quota/DB update failed:", err));
+					.catch((err) => console.error("[upload] quota update failed:", err));
 
 				// ---------------------------------------------------------------
 				// 9. Return result

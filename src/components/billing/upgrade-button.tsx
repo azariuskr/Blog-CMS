@@ -13,7 +13,7 @@ interface UpgradeButtonProps extends Omit<ButtonProps, "onClick"> {
 }
 
 export function UpgradeButton({
-  planId = "pro",
+  planId = "author",
   interval = "month",
   showIcon = true,
   children,

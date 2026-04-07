@@ -4,7 +4,7 @@ import {
 	useQuery,
 } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants";
-import { $getUserFilesPaginated, $adminGetFiles, $getMyQuota } from "./server";
+import { $getUserFilesPaginated, $adminGetFiles, $getMyQuota, $getUsersWithQuota } from "./server";
 
 export const filesPaginatedQueryOptions = (params: {
 	page: number;
@@ -26,12 +26,13 @@ export type FilesPaginatedResult = Awaited<
 	ReturnType<typeof $getUserFilesPaginated>
 >;
 
-// Admin file listing with category filter
+// Admin file listing with category + optional userId filter
 export const adminFilesPaginatedQueryOptions = (params: {
 	page: number;
 	limit: number;
 	category?: string;
 	search?: string;
+	userId?: string;
 }) =>
 	queryOptions({
 		queryKey: ["admin", "files", params],
@@ -46,8 +47,21 @@ export function useAdminFiles(params: {
 	limit: number;
 	category?: string;
 	search?: string;
+	userId?: string;
 }) {
 	return useQuery(adminFilesPaginatedQueryOptions(params));
+}
+
+// Admin: users with quota summary
+export const usersWithQuotaQueryOptions = () =>
+	queryOptions({
+		queryKey: ["admin", "storage", "users-quota"],
+		queryFn: () => $getUsersWithQuota(),
+		staleTime: 1000 * 60,
+	});
+
+export function useUsersWithQuota() {
+	return useQuery(usersWithQuotaQueryOptions());
 }
 
 export const myQuotaQueryOptions = () =>

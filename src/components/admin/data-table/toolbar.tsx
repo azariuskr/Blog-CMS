@@ -60,7 +60,8 @@ export function DataTableToolbar<TData>({
 		if (externalValue !== searchValue) {
 			setSearchValue(externalValue);
 		}
-	}, [searchKey, searchValue, table]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [searchKey, table]);
 
 	const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const value = event.target.value;

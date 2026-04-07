@@ -21,7 +21,7 @@ services:
       # Traefik/Tailscale public base URL
       VITE_BASE_URL: https://${TRAEFIK_HOST:-localhost}/blog
       BETTER_AUTH_URL: https://${TRAEFIK_HOST:-localhost}/blog
-      INNGEST_APP_URL: https://${TRAEFIK_HOST:-localhost}/blog
+      INNGEST_APP_URL: http://blog-cms-web:3000
 
       # Container-internal service hostnames (shared app-network from template project)
       # blog_cms uses direct postgres (pgbouncer is configured for blog3 only)

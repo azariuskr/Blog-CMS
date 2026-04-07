@@ -42,7 +42,7 @@ export const UserFiltersSchema = BaseFilterSchema.extend({
 
 export const OrganizationFiltersSchema = BaseFilterSchema.extend({
 	search: z.string().optional(),
-	plan: z.enum(["free", "pro", "enterprise"]).optional(),
+	plan: z.enum(["free", "author", "author_premium", "site_basic", "site_pro"]).optional(),
 	status: z.enum(["active", "inactive", "trial"]).optional(),
 	sortBy: z.enum(["name", "createdAt", "memberCount"]).optional(),
 });
@@ -62,7 +62,7 @@ export const SubscriptionFiltersSchema = BaseFilterSchema.extend({
 	plan: z
 		.preprocess(
 			(value) => (typeof value === "string" ? [value] : value),
-			z.array(z.enum(["free", "pro", "enterprise"])),
+			z.array(z.enum(["free", "author", "author_premium", "site_basic", "site_pro"])),
 		)
 		.optional(),
 	status: z

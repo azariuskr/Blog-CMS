@@ -232,7 +232,7 @@ function PricingPage() {
 								{COMPARISON_FEATURES.map((row, i) => (
 									<tr key={row.label} className={`border-b border-[hsl(216,33%,20%)]/50 ${i % 2 === 0 ? "bg-[hsl(222,47%,10%)]" : "bg-[hsl(222,47%,12%)]"}`}>
 										<td className="px-6 py-3.5 text-[hsl(216,33%,80%)]">{row.label}</td>
-										{(["free", "pro", "enterprise"] as const).map((planId) => {
+										{(["free", "author", "author_premium", "site_basic", "site_pro"] as const).map((planId) => {
 											const val = row[planId];
 											return (
 												<td key={planId} className="text-center px-4 py-3.5">
