@@ -233,6 +233,15 @@ export function getStripePriceId(
 }
 
 /**
+ * Polar product id for a plan, from POLAR_<PLAN_ID>_PRODUCT_ID (e.g. POLAR_SITE_PRO_PRODUCT_ID).
+ * Mirrors getStripePriceId; returns undefined when the plan has no Polar product configured.
+ */
+export function getPolarProductId(planId: string): string | undefined {
+  const key = `POLAR_${planId.toUpperCase().replace(/-/g, "_")}_PRODUCT_ID` as keyof typeof env;
+  return env[key] as string | undefined;
+}
+
+/**
  * Determine what role a plan grants.
  * Returns null if the plan doesn't change the role.
  */

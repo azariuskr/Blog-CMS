@@ -50,7 +50,7 @@ const config = defineConfig({
   plugins: [
     patchTanstackClientEnv(),
     devtools(),
-    nitro(),
+    nitro({ baseURL: '/blog/' }),
     // this is the plugin that enables path aliases
     viteTsConfigPaths({
       projects: ['./tsconfig.json'],

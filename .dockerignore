@@ -55,4 +55,4 @@ LICENSE
 README.md
 WORKLOG.md
 *.md
-!README.md
+!README.mdnode_modules
